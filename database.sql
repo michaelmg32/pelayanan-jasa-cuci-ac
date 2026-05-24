@@ -29,17 +29,22 @@ CREATE TABLE IF NOT EXISTS ac_categories (
   id VARCHAR(50) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
+  hasServices BOOLEAN DEFAULT true,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- AC Services Table
 CREATE TABLE IF NOT EXISTS ac_services (
   id VARCHAR(50) PRIMARY KEY,
+  categoryId VARCHAR(50),
   name VARCHAR(255) NOT NULL,
   description TEXT,
   basePrice DECIMAL(10, 2) NOT NULL,
+  price DECIMAL(10, 2),
   duration INT,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (categoryId) REFERENCES ac_categories(id),
+  INDEX idx_categoryId (categoryId)
 );
 
 -- AC Addons Table
@@ -55,13 +60,33 @@ CREATE TABLE IF NOT EXISTS ac_addons (
 CREATE TABLE IF NOT EXISTS orders (
   id VARCHAR(50) PRIMARY KEY,
   customerId VARCHAR(50) NOT NULL,
+  customerName VARCHAR(255),
+  customerPhone VARCHAR(20),
+  address TEXT,
   workerId VARCHAR(50),
-  status ENUM('pending', 'assigned', 'in_progress', 'completed', 'cancelled') NOT NULL,
-  schedule DATETIME NOT NULL,
+  assignedEmployeeName VARCHAR(255),
+  status VARCHAR(50) NOT NULL,
+  schedule DATETIME,
+  scheduledDate VARCHAR(50),
+  scheduledTime VARCHAR(50),
   serviceIds JSON,
   addonIds JSON,
+  acDetail JSON,
   notes TEXT,
+  serviceCost DECIMAL(10, 2) DEFAULT 0,
+  addonsCost DECIMAL(10, 2) DEFAULT 0,
   totalPrice DECIMAL(10, 2),
+  totalCost DECIMAL(10, 2),
+  photoBefore LONGTEXT,
+  photoAfter LONGTEXT,
+  paymentMethod VARCHAR(20),
+  paymentStatus VARCHAR(50),
+  rating INT,
+  ratingNotes TEXT,
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(10, 8),
+  completedAt TIMESTAMP NULL,
+  completionNotes TEXT,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (customerId) REFERENCES users(id),
@@ -78,16 +103,24 @@ INSERT INTO users (id, name, email, phone, role, password) VALUES
 ('user-3', 'Admin User', 'admin@example.com', '0812345680', 'admin', 'password123'),
 ('user-4', 'Owner Business', 'owner@example.com', '0812345681', 'owner', 'password123');
 
+INSERT INTO ac_categories (id, name, description, hasServices) VALUES
+('cat-1', 'Pembersihan AC', 'Layanan pembersihan dan perawatan AC', true),
+('cat-2', 'Perbaikan AC', 'Layanan perbaikan AC yang rusak', true),
+('cat-3', 'Perawatan Rutin', 'Layanan perawatan berkala AC', true);
+
 INSERT INTO ac_models (id, name, manufacturer) VALUES
 ('model-1', 'Window Unit 1.5PK', 'Panasonic'),
 ('model-2', 'Window Unit 2PK', 'LG'),
 ('model-3', 'Split Unit 1.5PK', 'Daikin');
 
-INSERT INTO ac_services (id, name, description, basePrice, duration) VALUES
-('svc-1', 'Pembersihan AC', 'Pembersihan menyeluruh AC', 150000, 60),
-('svc-2', 'Penggantian Filter', 'Ganti filter udara AC', 100000, 30),
-('svc-3', 'Service Rutin', 'Service rutin bulanan', 200000, 90);
+INSERT INTO ac_services (id, categoryId, name, description, basePrice, price, duration) VALUES
+('svc-1', 'cat-1', 'Cuci AC Rutin', 'Pembersihan menyeluruh AC', 150000, 150000, 60),
+('svc-2', 'cat-1', 'Cuci AC Overhaul', 'Pembersihan lengkap dengan penggantian spare', 250000, 250000, 120),
+('svc-3', 'cat-2', 'Perbaikan Kompresor', 'Perbaikan kompresor AC', 500000, 500000, 180),
+('svc-4', 'cat-3', 'Service Bulanan', 'Service rutin bulanan', 100000, 100000, 45);
 
 INSERT INTO ac_addons (id, name, description, price) VALUES
 ('addon-1', 'Desinfektan', 'Disinfektasi khusus AC', 50000),
-('addon-2', 'Refill Freon', 'Penambahan freon AC', 300000);
+('addon-2', 'Refill Freon', 'Penambahan freon AC', 300000),
+('addon-3', 'Pembersihan Indoor Coil', 'Pembersihan coil indoor khusus', 75000),
+('addon-4', 'Penggantian Filter', 'Ganti filter udara AC baru', 100000);

@@ -84,41 +84,77 @@ app.get('/api/orders', async (req, res) => {
     const connection = await pool.getConnection();
     const [orders] = await connection.query('SELECT * FROM orders');
     connection.release();
-    res.json(orders);
+    
+    // Parse JSON fields
+    const parsedOrders = orders.map(order => ({
+      ...order,
+      acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
+      serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
+      addonIds: order.addonIds ? JSON.parse(order.addonIds) : []
+    }));
+    
+    res.json(parsedOrders);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/api/orders', async (req, res) => {
-  const { id, customerId, workerId, status, schedule, serviceIds, addonIds, notes, totalPrice, acDetail, scheduledDate, scheduledTime, address, customerName, customerPhone, serviceCost, addonsCost, totalCost, photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude } = req.body;
+  const { 
+    id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
+    status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes, 
+    serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter, 
+    paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
+  } = req.body;
+  
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      `INSERT INTO orders (id, customerId, workerId, status, schedule, serviceIds, addonIds, notes, totalPrice) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, customerId, workerId, status, schedule, JSON.stringify(serviceIds), JSON.stringify(addonIds), notes, totalPrice]
+      `INSERT INTO orders (
+        id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
+        status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes,
+        serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
+        paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      )`,
+      [
+        id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
+        status, schedule, scheduledDate, scheduledTime, 
+        JSON.stringify(serviceIds), JSON.stringify(addonIds), JSON.stringify(acDetail), notes,
+        serviceCost || 0, addonsCost || 0, totalPrice, totalCost,
+        photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
+      ]
     );
     connection.release();
     res.status(201).json({ 
       id, 
       customerId, 
-      workerId, 
-      status, 
-      schedule,
-      serviceIds,
-      addonIds,
-      notes,
-      totalPrice,
-      acDetail,
-      scheduledDate,
-      scheduledTime,
-      address,
       customerName,
       customerPhone,
+      address,
+      workerId, 
+      assignedEmployeeName,
+      status, 
+      schedule,
+      scheduledDate,
+      scheduledTime,
+      serviceIds,
+      addonIds,
+      acDetail,
+      notes,
       serviceCost,
       addonsCost,
+      totalPrice,
       totalCost,
+      photoBefore,
+      photoAfter,
+      paymentMethod,
+      paymentStatus,
+      rating,
+      ratingNotes,
+      latitude,
+      longitude,
       createdAt: new Date().toISOString()
     });
   } catch (error) {
@@ -128,7 +164,10 @@ app.post('/api/orders', async (req, res) => {
 
 app.put('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
-  const { status, workerId, notes, totalPrice, photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes } = req.body;
+  const { 
+    status, workerId, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter, 
+    paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost
+  } = req.body;
   try {
     const connection = await pool.getConnection();
     
@@ -138,8 +177,19 @@ app.put('/api/orders/:id', async (req, res) => {
     
     if (status !== undefined) { updateFields.push('status = ?'); updateValues.push(status); }
     if (workerId !== undefined) { updateFields.push('workerId = ?'); updateValues.push(workerId); }
+    if (assignedEmployeeName !== undefined) { updateFields.push('assignedEmployeeName = ?'); updateValues.push(assignedEmployeeName); }
     if (notes !== undefined) { updateFields.push('notes = ?'); updateValues.push(notes); }
     if (totalPrice !== undefined) { updateFields.push('totalPrice = ?'); updateValues.push(totalPrice); }
+    if (photoBefore !== undefined) { updateFields.push('photoBefore = ?'); updateValues.push(photoBefore); }
+    if (photoAfter !== undefined) { updateFields.push('photoAfter = ?'); updateValues.push(photoAfter); }
+    if (paymentMethod !== undefined) { updateFields.push('paymentMethod = ?'); updateValues.push(paymentMethod); }
+    if (paymentStatus !== undefined) { updateFields.push('paymentStatus = ?'); updateValues.push(paymentStatus); }
+    if (rating !== undefined) { updateFields.push('rating = ?'); updateValues.push(rating); }
+    if (ratingNotes !== undefined) { updateFields.push('ratingNotes = ?'); updateValues.push(ratingNotes); }
+    if (acDetail !== undefined) { updateFields.push('acDetail = ?'); updateValues.push(JSON.stringify(acDetail)); }
+    if (serviceCost !== undefined) { updateFields.push('serviceCost = ?'); updateValues.push(serviceCost); }
+    if (addonsCost !== undefined) { updateFields.push('addonsCost = ?'); updateValues.push(addonsCost); }
+    if (totalCost !== undefined) { updateFields.push('totalCost = ?'); updateValues.push(totalCost); }
     
     updateFields.push('updatedAt = NOW()');
     updateValues.push(id);
@@ -153,7 +203,19 @@ app.put('/api/orders/:id', async (req, res) => {
     
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
     connection.release();
-    res.json(updatedOrder[0] || req.body);
+    
+    if (updatedOrder.length > 0) {
+      const order = updatedOrder[0];
+      const parsedOrder = {
+        ...order,
+        acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
+        serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
+        addonIds: order.addonIds ? JSON.parse(order.addonIds) : []
+      };
+      res.json(parsedOrder);
+    } else {
+      res.json(req.body);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
