@@ -1,0 +1,6 @@
+{
+  "name": "Pelayanan Jasa Cuci AC",
+  "description": "Aplikasi multi-role (Pelanggan, Admin, Karyawan) untuk memesan, mengevaluasi, menugaskan teknisi, serta melacak progres jasa pencucian AC berkualitas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
