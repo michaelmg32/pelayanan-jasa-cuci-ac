@@ -11,8 +11,10 @@ export default function LoginPage() {
   const { activeUser, users, login, registerCustomer, logout, isLoading } = useApp();
 
   useEffect(() => {
+    console.log('LoginPage useEffect - isLoading:', isLoading, 'activeUser:', activeUser);
     if (!isLoading && activeUser) {
       const role = activeUser.role.toLowerCase();
+      console.log('LoginPage - Redirecting to:', `/dashboard/${role}`);
       router.push(`/dashboard/${role}`);
     }
   }, [activeUser, isLoading, router]);

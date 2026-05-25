@@ -88,7 +88,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCategories(fetchedCategories);
         setAddons(fetchedAddons);
 
-        // Active user managed via Context API only, no localStorage persistence
+        // Restore active user session from localStorage
+        if (typeof window !== 'undefined') {
+          const savedUserId = localStorage.getItem('active_user_id');
+          if (savedUserId) {
+            const matchedUser = fetchedUsers.find(u => u.id === savedUserId);
+            if (matchedUser) {
+              setActiveUserState(matchedUser);
+            }
+          }
+        }
       } catch (error) {
         console.error('❌ Error initializing data from database:', error);
       } finally {
@@ -104,8 +113,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (user) {
       const normalizedUser = api.normalizeUser(user);
       setActiveUserState(normalizedUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('active_user_id', user.id);
+      }
     } else {
       setActiveUserState(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('active_user_id');
+      }
     }
   };
 
@@ -114,6 +129,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    if (typeof window !== 'undefined') {
+      document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     setActiveUser(null);
   };
 

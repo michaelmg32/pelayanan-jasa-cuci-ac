@@ -14,10 +14,11 @@ const JWT_EXPIRY = '24h';
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5001', 'http://192.168.18.96:3000'],
+  origin: true,
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // JWT Verification Middleware
 const verifyToken = (req, res, next) => {

@@ -40,14 +40,21 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      console.log('LoginScreen - Submitting login for email:', email.trim());
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+      }
+      console.log('LoginScreen - Using apiUrl:', apiUrl);
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password: password.trim() })
       });
 
+      console.log('LoginScreen - Response status:', response.status);
       const data = await response.json();
+      console.log('LoginScreen - Parsed data:', data);
       
       if (!response.ok) {
         setErrorMsg(data.error || 'Login gagal. Silakan coba lagi.');
@@ -60,7 +67,13 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setPassword('');
       
       if (data.user) {
+        if (data.token) {
+          document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+        }
+        console.log('LoginScreen - Success, calling onLogin with user:', data.user);
         onLogin(data.user);
+      } else {
+        console.warn('LoginScreen - Success response but data.user is missing!', data);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -76,7 +89,10 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+      }
       const response = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,6 +122,9 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setPassword('');
       
       if (data.user) {
+        if (data.token) {
+          document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+        }
         onLogin(data.user);
       }
     } catch (error) {

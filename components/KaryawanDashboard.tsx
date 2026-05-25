@@ -570,6 +570,22 @@ export default function KaryawanDashboard() {
                                   Upload Foto Before
                                   <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'before')} className="hidden" />
                                 </label>
+
+                                {photoBeforeUrl && (
+                                  <div className="mt-1 space-y-1">
+                                    <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Preview Foto Terpilih:</span>
+                                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                                      <img src={photoBeforeUrl} alt="Preview Before" className="w-full h-full object-contain" />
+                                      <button
+                                        type="button"
+                                        onClick={() => setPhotoBeforeUrl('')}
+                                        className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md cursor-pointer"
+                                      >
+                                        <X size={10} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -842,6 +858,22 @@ export default function KaryawanDashboard() {
                     Upload Foto After
                     <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'after')} className="hidden" />
                   </label>
+
+                  {photoAfterUrl && (
+                    <div className="mt-1 space-y-1">
+                      <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Preview Foto Terpilih:</span>
+                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                        <img src={photoAfterUrl} alt="Preview After" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => setPhotoAfterUrl('')}
+                          className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md cursor-pointer"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

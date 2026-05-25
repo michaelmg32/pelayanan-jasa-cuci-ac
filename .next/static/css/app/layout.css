@@ -533,11 +533,17 @@ body{
 .left-3\.5{
   left: 0.875rem;
 }
+.right-2{
+  right: 0.5rem;
+}
 .top-0{
   top: 0px;
 }
 .top-1\/2{
   top: 50%;
+}
+.top-2{
+  top: 0.5rem;
 }
 .top-3{
   top: 0.75rem;
@@ -635,6 +641,9 @@ body{
 }
 .h-20{
   height: 5rem;
+}
+.h-32{
+  height: 8rem;
 }
 .h-4{
   height: 1rem;
@@ -1147,6 +1156,10 @@ body{
   --tw-bg-opacity: 1;
   background-color: rgb(255 241 242 / var(--tw-bg-opacity, 1));
 }
+.bg-rose-600{
+  --tw-bg-opacity: 1;
+  background-color: rgb(225 29 72 / var(--tw-bg-opacity, 1));
+}
 .bg-slate-100{
   --tw-bg-opacity: 1;
   background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1));
@@ -1275,6 +1288,10 @@ body{
 }
 .fill-amber-500{
   fill: #f59e0b;
+}
+.object-contain{
+  -o-object-fit: contain;
+     object-fit: contain;
 }
 .object-cover{
   -o-object-fit: cover;
@@ -1940,6 +1957,11 @@ body{
 .hover\:bg-rose-100:hover{
   --tw-bg-opacity: 1;
   background-color: rgb(255 228 230 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-rose-700:hover{
+  --tw-bg-opacity: 1;
+  background-color: rgb(190 18 60 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:bg-slate-100:hover{
