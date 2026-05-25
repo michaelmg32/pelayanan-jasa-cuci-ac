@@ -25,44 +25,99 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   const [regPhone, setRegPhone] = useState('');
   const [regAddress, setRegAddress] = useState('');
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       setErrorMsg('Email tidak boleh kosong.');
       return;
     }
     
-    const foundUser = availableUsers.find(
-      u => u.email.toLowerCase() === email.trim().toLowerCase()
-    );
+    if (!password.trim()) {
+      setErrorMsg('Kata sandi tidak boleh kosong.');
+      return;
+    }
 
-    if (foundUser) {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password: password.trim() })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setErrorMsg(data.error || 'Login gagal. Silakan coba lagi.');
+        return;
+      }
+
+      // Store token in localStorage
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+
       setErrorMsg('');
-      onLogin(foundUser);
-    } else {
-      setErrorMsg('Email tidak terdaftar. Pilih akun pengujian di bagian bawah.');
+      setEmail('');
+      setPassword('');
+      
+      if (data.user) {
+        onLogin(data.user);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrorMsg('Kesalahan koneksi. Silakan periksa server.');
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regPhone.trim() || !regAddress.trim()) {
+    if (!regName.trim() || !regEmail.trim() || !regPhone.trim() || !password.trim()) {
       setErrorMsg('Semua data wajib diisi.');
       return;
     }
 
-    if (availableUsers.some(u => u.email.toLowerCase() === regEmail.trim().toLowerCase())) {
-      setErrorMsg('E-mail tersebut sudah terdaftar.');
-      return;
-    }
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const response = await fetch(`${apiUrl}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regName.trim(),
+          email: regEmail.trim(),
+          phone: regPhone.trim(),
+          address: regAddress.trim() || null,
+          password: password.trim(),
+          role: 'pelanggan'
+        })
+      });
 
-    onRegisterCustomer(
-      regName.trim(),
-      regEmail.trim(),
-      regPhone.trim(),
-      regAddress.trim()
-    );
-    setErrorMsg('');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setErrorMsg(data.error || 'Registrasi gagal. Silakan coba lagi.');
+        return;
+      }
+
+      // Store token in localStorage
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+
+      setErrorMsg('');
+      setRegName('');
+      setRegEmail('');
+      setRegPhone('');
+      setRegAddress('');
+      setPassword('');
+      
+      if (data.user) {
+        onLogin(data.user);
+      }
+    } catch (error) {
+      console.error('Register error:', error);
+      setErrorMsg('Kesalahan koneksi. Silakan periksa server.');
+    }
   };
 
   const selectQuickLogin = (user: User) => {
@@ -206,6 +261,21 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-blue-500 transition h-12 resize-none"
                 required
               ></textarea>
+            </div>
+
+            <div>
+              <label className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-0.5">Kata Sandi</label>
+              <div className="relative">
+                <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs pl-9 pr-3 py-2 rounded-xl outline-none focus:bg-white focus:border-blue-500 transition"
+                  required
+                />
+              </div>
             </div>
 
             <button

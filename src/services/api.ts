@@ -6,6 +6,30 @@ import { Role } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// ===== AUTHENTICATION HELPERS =====
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('auth_token');
+};
+
+export const setAuthToken = (token: string) => {
+  localStorage.setItem('auth_token', token);
+};
+
+export const clearAuthToken = () => {
+  localStorage.removeItem('auth_token');
+};
+
+export const getAuthHeaders = () => {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 // ===== ROLE MAPPING =====
 // Map database roles to React Role enum
 const normalizeRole = (dbRole: string): string => {
@@ -31,7 +55,9 @@ export const normalizeUser = (user: any) => {
 // ===== USERS =====
 export const fetchUsers = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users`);
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) throw new Error('Failed to fetch users');
     const users = await response.json();
     // Normalize roles from database to React format
@@ -46,7 +72,7 @@ export const createUser = async (userData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(userData),
     });
     if (!response.ok) throw new Error('Failed to create user');
@@ -61,7 +87,7 @@ export const updateUser = async (userId: string, userData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(userData),
     });
     if (!response.ok) throw new Error('Failed to update user');
@@ -75,7 +101,9 @@ export const updateUser = async (userId: string, userData: any) => {
 // ===== ORDERS =====
 export const fetchOrders = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/orders`);
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) throw new Error('Failed to fetch orders');
     return await response.json();
   } catch (error) {
@@ -88,7 +116,7 @@ export const createOrder = async (orderData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(orderData),
     });
     if (!response.ok) throw new Error('Failed to create order');

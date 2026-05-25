@@ -152,6 +152,8 @@ export default function App() {
 
   const handleLogout = () => {
     updateActiveUserState(null);
+    // Clear JWT token from localStorage
+    localStorage.removeItem('auth_token');
   };
 
   const handleRegisterCustomer = (name: string, email: string, phone: string, address: string) => {
