@@ -98,10 +98,10 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- Insert Sample Data
 INSERT INTO users (id, name, email, phone, role, password) VALUES
-('user-1', 'Budi Santoso', 'budi@example.com', '0812345678', 'pelanggan', 'password123'),
-('user-2', 'Ahmad Riyanto', 'ahmad@example.com', '0812345679', 'karyawan', 'password123'),
-('user-3', 'Admin User', 'admin@example.com', '0812345680', 'admin', 'password123'),
-('user-4', 'Owner Business', 'owner@example.com', '0812345681', 'owner', 'password123');
+('user-1', 'Budi Santoso', 'budi@example.com', '0812345678', 'pelanggan', '$2b$10$IyJaHTB1.yDO9P07X1GcRuWPSvYDmBH.SJbxzS0IuAV/WttH6uSY6'),
+('user-2', 'Ahmad Riyanto', 'ahmad@example.com', '0812345679', 'karyawan', '$2b$10$IyJaHTB1.yDO9P07X1GcRuWPSvYDmBH.SJbxzS0IuAV/WttH6uSY6'),
+('user-3', 'Admin User', 'admin@example.com', '0812345680', 'admin', '$2b$10$IyJaHTB1.yDO9P07X1GcRuWPSvYDmBH.SJbxzS0IuAV/WttH6uSY6'),
+('user-4', 'Owner Business', 'owner@example.com', '0812345681', 'owner', '$2b$10$IyJaHTB1.yDO9P07X1GcRuWPSvYDmBH.SJbxzS0IuAV/WttH6uSY6');
 
 INSERT INTO ac_categories (id, name, description, hasServices) VALUES
 ('cat-1', 'Pembersihan AC', 'Layanan pembersihan dan perawatan AC', true),

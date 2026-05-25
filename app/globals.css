@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans;
+  }
+}
+
+/* Simulator-specific responsive overrides to ensure proper mobile layout inside the desktop iframe container */
+.is-mobile-frame .sm\:grid-cols-2,
+.is-mobile-frame .sm\:grid-cols-3,
+.is-mobile-frame .md\:grid-cols-2,
+.is-mobile-frame .md\:grid-cols-3,
+.is-mobile-frame .lg\:grid-cols-2,
+.is-mobile-frame .lg\:grid-cols-3 {
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+}
+
+.is-mobile-frame .lg\:col-span-2,
+.is-mobile-frame .lg\:col-span-3,
+.is-mobile-frame .md\:col-span-2 {
+  grid-column: span 1 / span 1 !important;
+}

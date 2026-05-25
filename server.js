@@ -13,7 +13,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 const JWT_EXPIRY = '24h';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5001', 'http://192.168.18.96:3000'],
+  credentials: true,
+}));
 app.use(express.json());
 
 // JWT Verification Middleware
@@ -44,11 +47,14 @@ const pool = mysql.createPool({
 
 // Test Database Connection
 app.get('/api/test-connection', async (req, res) => {
+  console.log('✅ Test connection endpoint called');
   try {
     const connection = await pool.getConnection();
-    res.json({ status: 'Database connected successfully' });
+    console.log('✅ Database connection successful');
+    res.json({ status: 'Database connected successfully', timestamp: new Date().toISOString() });
     connection.release();
   } catch (error) {
+    console.error('❌ Database connection failed:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -192,30 +198,61 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const { name, email, phone, role, password } = req.body;
+  const { name, email, phone, role, password, address } = req.body;
   try {
     const connection = await pool.getConnection();
     
+    // Build update query dynamically based on provided fields
+    let updateFields = [];
+    let updateValues = [];
+    
+    if (name) {
+      updateFields.push('name = ?');
+      updateValues.push(name);
+    }
+    if (email) {
+      updateFields.push('email = ?');
+      updateValues.push(email);
+    }
+    if (phone) {
+      updateFields.push('phone = ?');
+      updateValues.push(phone || null);
+    }
+    if (role) {
+      updateFields.push('role = ?');
+      updateValues.push(role);
+    }
     if (password) {
       // If password is being updated, hash it
       const salt = await bcryptjs.genSalt(10);
       const hashedPassword = await bcryptjs.hash(password, salt);
-      await connection.query(
-        'UPDATE users SET name = ?, email = ?, phone = ?, role = ?, password = ? WHERE id = ?',
-        [name, email, phone || null, role, hashedPassword, id]
-      );
-    } else {
-      // Update without changing password
-      await connection.query(
-        'UPDATE users SET name = ?, email = ?, phone = ?, role = ? WHERE id = ?',
-        [name, email, phone || null, role, id]
-      );
+      updateFields.push('password = ?');
+      updateValues.push(hashedPassword);
     }
+    
+    // Note: address field is currently not stored in database, but we accept it for future compatibility
+    // if (address) { ... } // Add when address column is added to users table
+    
+    if (updateFields.length === 0) {
+      connection.release();
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    updateValues.push(id);
+    const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+    
+    await connection.query(updateQuery, updateValues);
     
     const [user] = await connection.query('SELECT id, name, email, phone, role FROM users WHERE id = ?', [id]);
     connection.release();
-    res.json(user[0] || { id, name, email, phone, role });
+    
+    if (user.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user[0]);
   } catch (error) {
+    console.error('Error updating user:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -227,9 +264,10 @@ app.get('/api/orders', async (req, res) => {
     const [orders] = await connection.query('SELECT * FROM orders');
     connection.release();
     
-    // Parse JSON fields
+    // Parse JSON fields and map workerId to assignedTo
     const parsedOrders = orders.map(order => ({
       ...order,
+      assignedTo: order.workerId, // Map database field to API field
       acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
       serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
       addonIds: order.addonIds ? JSON.parse(order.addonIds) : []
@@ -307,18 +345,21 @@ app.post('/api/orders', async (req, res) => {
 app.put('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
   const { 
-    status, workerId, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter, 
+    status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter, 
     paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost
   } = req.body;
   try {
     const connection = await pool.getConnection();
+    
+    // Support both workerId and assignedTo (assignedTo is the frontend name, workerId is the database name)
+    const staffId = workerId || assignedTo;
     
     // Build dynamic update query
     let updateFields = [];
     let updateValues = [];
     
     if (status !== undefined) { updateFields.push('status = ?'); updateValues.push(status); }
-    if (workerId !== undefined) { updateFields.push('workerId = ?'); updateValues.push(workerId); }
+    if (staffId !== undefined) { updateFields.push('workerId = ?'); updateValues.push(staffId); }
     if (assignedEmployeeName !== undefined) { updateFields.push('assignedEmployeeName = ?'); updateValues.push(assignedEmployeeName); }
     if (notes !== undefined) { updateFields.push('notes = ?'); updateValues.push(notes); }
     if (totalPrice !== undefined) { updateFields.push('totalPrice = ?'); updateValues.push(totalPrice); }

@@ -1,0 +1,282 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Role, OrderStatus, User, Order, ACModel, ACCategory, ACService, ACAddon } from '@/types';
+import * as api from './api';
+
+interface AppContextType {
+  // Users
+  users: User[];
+  setUsers: (users: User[]) => void;
+  activeUser: User | null;
+  setActiveUser: (user: User | null) => void;
+  
+  // Orders
+  orders: Order[];
+  setOrders: (orders: Order[]) => void;
+  
+  // Master data
+  models: ACModel[];
+  setModels: (models: ACModel[]) => void;
+  categories: ACCategory[];
+  setCategories: (categories: ACCategory[]) => void;
+  services: ACService[];
+  setServices: (services: ACService[]) => void;
+  addons: ACAddon[];
+  setAddons: (addons: ACAddon[]) => void;
+  
+  // Loading/Connection
+  isLoading: boolean;
+  dbConnected: boolean;
+  
+  // Actions
+  login: (user: User) => void;
+  logout: () => void;
+  registerCustomer: (name: string, email: string, phone: string, address: string) => Promise<void>;
+  addNewOrder: (orderData: any) => Promise<void>;
+  assignEmployee: (orderId: string, staffId: string, staffName: string, extraPayload?: Partial<Order>) => Promise<void>;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  // Core States
+  const [users, setUsers] = useState<User[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeUser, setActiveUserState] = useState<User | null>(null);
+
+  // Master Lists State
+  const [models, setModels] = useState<ACModel[]>([]);
+  const [categories, setCategories] = useState<ACCategory[]>([]);
+  const [services, setServices] = useState<ACService[]>([]);
+  const [addons, setAddons] = useState<ACAddon[]>([]);
+
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [dbConnected, setDbConnected] = useState(false);
+
+  // Initialize data from database
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        console.log('📦 Fetching data from database...');
+        
+        // Test database connection
+        const connectionTest = await api.testConnection();
+        if (connectionTest) {
+          setDbConnected(true);
+          console.log('✅ Database connected!');
+        } else {
+          console.warn('⚠️ Database not connected, using fallback data');
+          setDbConnected(false);
+        }
+
+        // Fetch all data
+        const [fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons] = await Promise.all([
+          api.fetchUsers(),
+          api.fetchOrders(),
+          api.fetchModels(),
+          api.fetchServices(),
+          api.fetchCategories(),
+          api.fetchAddons(),
+        ]);
+
+        setUsers(fetchedUsers);
+        setOrders(fetchedOrders);
+        setModels(fetchedModels);
+        setServices(fetchedServices);
+        setCategories(fetchedCategories);
+        setAddons(fetchedAddons);
+
+        // Active user managed via Context API only, no localStorage persistence
+      } catch (error) {
+        console.error('❌ Error initializing data from database:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+  }, []);
+
+  // Action handlers
+  const setActiveUser = (user: User | null) => {
+    if (user) {
+      const normalizedUser = api.normalizeUser(user);
+      setActiveUserState(normalizedUser);
+    } else {
+      setActiveUserState(null);
+    }
+  };
+
+  const login = (user: User) => {
+    setActiveUser(user);
+  };
+
+  const logout = () => {
+    setActiveUser(null);
+  };
+
+  const registerCustomer = async (name: string, email: string, phone: string, address: string) => {
+    const newUser: User = {
+      id: `usr_user_${Date.now()}`,
+      email,
+      name,
+      role: Role.USER,
+      phone,
+      address,
+    };
+
+    try {
+      await api.createUser({
+        id: newUser.id,
+        name,
+        email,
+        phone,
+        role: 'pelanggan',
+        password: 'default123',
+      });
+      setUsers([...users, newUser]);
+      setActiveUser(newUser);
+    } catch (error) {
+      console.error('❌ Failed to register user:', error);
+      setUsers([...users, newUser]);
+      setActiveUser(newUser);
+    }
+  };
+
+  const addNewOrder = async (orderData: any) => {
+    if (!activeUser) return;
+
+    let serviceCost = 50000;
+    if (orderData.serviceType && orderData.serviceType !== 'none') {
+      const match = services.find(s => s.name === orderData.serviceType);
+      if (match) {
+        serviceCost = match.price;
+      }
+    }
+    serviceCost = serviceCost * orderData.quantity;
+
+    const year = new Date().getFullYear();
+    const sequenceNum = String(orders.length + 1).padStart(3, '0');
+    const orderId = `ORD-${year}-${sequenceNum}`;
+
+    const newOrder: Order = {
+      id: orderId,
+      customerId: activeUser.id,
+      customerName: activeUser.name,
+      customerPhone: orderData.customerPhone,
+      address: orderData.address,
+      latitude: orderData.latitude,
+      longitude: orderData.longitude,
+      scheduledDate: orderData.scheduledDate,
+      scheduledTime: orderData.scheduledTime,
+      acDetail: {
+        acType: orderData.acType,
+        category: orderData.category,
+        serviceType: orderData.serviceType,
+        quantity: orderData.quantity,
+      },
+      notes: orderData.notes,
+      status: OrderStatus.MENUNGGU,
+      createdAt: new Date().toISOString(),
+      serviceCost,
+      addonsCost: 0,
+      totalCost: serviceCost,
+    };
+
+    try {
+      await api.createOrder({
+        id: orderId,
+        customerId: activeUser.id,
+        workerId: null,
+        status: 'pending',
+        schedule: `${orderData.scheduledDate} ${orderData.scheduledTime}`,
+        serviceIds: [orderData.serviceType],
+        addonIds: [],
+        notes: orderData.notes,
+        totalPrice: serviceCost,
+      });
+      setOrders([newOrder, ...orders]);
+    } catch (error) {
+      console.error('❌ Failed to create order:', error);
+      setOrders([newOrder, ...orders]);
+    }
+  };
+
+  const assignEmployee = async (orderId: string, staffId: string, staffName: string, extraPayload?: Partial<Order>) => {
+    try {
+      await api.updateOrder(orderId, {
+        assignedTo: staffId,
+        status: 'assigned',
+        ...extraPayload,
+      });
+      setOrders(prevOrders =>
+        prevOrders.map(o =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: OrderStatus.DITUGASKAN,
+                assignedTo: staffId,
+                assignedEmployeeName: staffName,
+                ...extraPayload,
+              }
+            : o
+        )
+      );
+    } catch (error) {
+      console.error('❌ Failed to assign staff:', error);
+      setOrders(prevOrders =>
+        prevOrders.map(o =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: OrderStatus.DITUGASKAN,
+                assignedTo: staffId,
+                assignedEmployeeName: staffName,
+                ...extraPayload,
+              }
+            : o
+        )
+      );
+    }
+  };
+
+  return (
+    <AppContext.Provider
+      value={{
+        users,
+        setUsers,
+        activeUser,
+        setActiveUser,
+        orders,
+        setOrders,
+        models,
+        setModels,
+        categories,
+        setCategories,
+        services,
+        setServices,
+        addons,
+        setAddons,
+        isLoading,
+        dbConnected,
+        login,
+        logout,
+        registerCustomer,
+        addNewOrder,
+        assignEmployee,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+export function useApp() {
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useApp must be used within AppProvider');
+  }
+  return context;
+}
