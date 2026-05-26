@@ -4,6 +4,9 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
 dotenv.config();
 
@@ -100,6 +103,67 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Google Login endpoint
+app.post('/api/auth/google', async (req, res) => {
+  const { credential } = req.body;
+  try {
+    if (!credential) {
+      return res.status(400).json({ error: 'Google credential required' });
+    }
+
+    // Verify Google Token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+    
+    const connection = await pool.getConnection();
+    const [users] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
+    
+    let user;
+    if (users.length === 0) {
+      // User doesn't exist, create them
+      const newId = `usr_google_${Date.now()}`;
+      
+      // Generate dummy password for Google users
+      const salt = await bcryptjs.genSalt(10);
+      const dummyPassword = await bcryptjs.hash(Math.random().toString(36), salt);
+      
+      await connection.query(
+        'INSERT INTO users (id, name, email, role, password) VALUES (?, ?, ?, ?, ?)',
+        [newId, name, email, 'pelanggan', dummyPassword]
+      );
+      
+      user = { id: newId, name, email, role: 'pelanggan' };
+    } else {
+      user = users[0];
+    }
+    
+    connection.release();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRY }
+    );
+
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      token,
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(500).json({ error: 'Failed to authenticate with Google' });
   }
 });
 

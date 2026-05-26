@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { User, Role } from '@/types';
 import { Wind, Key, Mail, LogIn, UserPlus } from 'lucide-react';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -20,12 +21,16 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Register state (Pelanggan)
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regAddress, setRegAddress] = useState('');
+
+  // Debug Client ID
+  console.log("GOOGLE CLIENT ID:", process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +43,8 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setErrorMsg('Kata sandi tidak boleh kosong.');
       return;
     }
+
+    setIsLoading(true);
 
     try {
       console.log('LoginScreen - Submitting login for email:', email.trim());
@@ -63,8 +70,6 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
       // Authentication handled via Context API and MySQL sessions
       setErrorMsg('');
-      setEmail('');
-      setPassword('');
       
       if (data.user) {
         if (data.token) {
@@ -78,6 +83,8 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
     } catch (error) {
       console.error('Login error:', error);
       setErrorMsg('Kesalahan koneksi. Silakan periksa server.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,6 +94,8 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setErrorMsg('Semua data wajib diisi.');
       return;
     }
+
+    setIsLoading(true);
 
     try {
       let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
@@ -115,11 +124,8 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
       // Authentication handled via Context API and MySQL sessions
       setErrorMsg('');
-      setRegName('');
-      setRegEmail('');
-      setRegPhone('');
-      setRegAddress('');
-      setPassword('');
+      
+      const newUser = data.user;
       
       if (data.user) {
         if (data.token) {
@@ -128,8 +134,47 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
         onLogin(data.user);
       }
     } catch (error) {
-      console.error('Register error:', error);
-      setErrorMsg('Kesalahan koneksi. Silakan periksa server.');
+      console.error('Registration error:', error);
+      setErrorMsg('Gagal mendaftar. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setIsLoading(true);
+    try {
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+      }
+      
+      const response = await fetch(`${apiUrl}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: credentialResponse.credential })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setErrorMsg(data.error || 'Login Google gagal. Silakan coba lagi.');
+        return;
+      }
+
+      setErrorMsg('');
+      
+      if (data.user) {
+        if (data.token) {
+          document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+        }
+        onLogin(data.user);
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      setErrorMsg('Kesalahan koneksi dengan Google.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -223,11 +268,39 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
             <button
               type="submit"
-              className="w-full mt-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.98] text-sm flex items-center justify-center gap-2 transition duration-200 cursor-pointer"
+              disabled={isLoading}
+              className={`w-full mt-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.98] text-sm flex items-center justify-center gap-2 transition duration-200 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <LogIn size={15} />
-              Masuk Sekarang
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <LogIn size={15} />
+                  Masuk Sekarang
+                </>
+              )}
             </button>
+            
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink-0 mx-3 text-slate-400 text-[10px] uppercase font-bold tracking-widest">Atau</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setErrorMsg('Login dengan Google gagal.')}
+                  theme="filled_blue"
+                  shape="pill"
+                  width="100%"
+                />
+              </GoogleOAuthProvider>
+            </div>
           </form>
         ) : (
           /* REGISTRATION FORM */
@@ -296,10 +369,20 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
             <button
               type="submit"
-              className="w-full mt-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.98] text-sm flex items-center justify-center gap-2 transition duration-200 cursor-pointer"
+              disabled={isLoading}
+              className={`w-full mt-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.98] text-sm flex items-center justify-center gap-2 transition duration-200 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <UserPlus size={15} />
-              Daftar Sebagai Pelanggan
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={15} />
+                  Daftar Sekarang
+                </>
+              )}
             </button>
           </form>
         )}
