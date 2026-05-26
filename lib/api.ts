@@ -16,11 +16,25 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 // ===== AUTHENTICATION HELPERS =====
-// Authentication handled via MySQL database sessions, no localStorage tokens
+// Authentication handled via MySQL database sessions, reading token from cookies
 export const getAuthHeaders = () => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+  
+  if (typeof document !== 'undefined') {
+    const cookies = document.cookie.split(';');
+    const tokenCookie = cookies.find(c => c.trim().startsWith('auth_token='));
+    if (tokenCookie) {
+      const token = tokenCookie.split('=')[1];
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      headers['Authorization'] = 'Bearer dummy-jwt-token-123';
+    }
+  } else {
+    headers['Authorization'] = 'Bearer dummy-jwt-token-123';
+  }
+  
   return headers;
 };
 
@@ -42,6 +56,16 @@ export const normalizeUser = (user: any) => {
     ...user,
     role: normalizeRole(user.role),
   };
+};
+
+export const denormalizeRole = (frontendRole: string): string => {
+  const roleMap: Record<string, string> = {
+    [Role.USER]: 'pelanggan',
+    [Role.STAFF]: 'karyawan',
+    [Role.ADMIN]: 'admin',
+    [Role.OWNER]: 'owner',
+  };
+  return roleMap[frontendRole] || 'pelanggan';
 };
 
 // ===== USERS =====
@@ -76,13 +100,18 @@ export const createUser = async (userData: any) => {
 
 export const updateUser = async (userId: string, userData: any) => {
   try {
+    const payload = { ...userData };
+    if (payload.role) {
+      payload.role = denormalizeRole(payload.role);
+    }
+    
     console.log('🔄 Updating user:', userId);
-    console.log('📤 Payload:', userData);
+    console.log('📤 Payload:', payload);
     
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(userData),
+      body: JSON.stringify(payload),
     });
     
     console.log('📡 Response status:', response.status);
@@ -98,6 +127,26 @@ export const updateUser = async (userId: string, userData: any) => {
     return result;
   } catch (error) {
     console.error('Error updating user:', error);
+    throw error;
+  }
+};
+
+export const updatePassword = async (userId: string, passwordData: { oldPassword: string, newPassword: string }) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/password`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(passwordData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Gagal update password: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating password:', error);
     throw error;
   }
 };

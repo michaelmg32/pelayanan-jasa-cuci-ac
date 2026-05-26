@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useApp } from '@/lib/auth-context';
 import { OrderStatus } from '@/types';
 import * as api from '@/lib/api';
+
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 import {
   Plus,
   Clock,
@@ -23,19 +26,24 @@ import {
   CreditCard,
   Sparkles,
   CheckCircle,
+  Phone,
   AlertCircle,
   Loader,
   ArrowUp,
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, models, categories, services, addons, logout } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, models, categories, services, addons, logout, showAlert } = useApp();
+  const alert = showAlert;
 
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
 
   // Booking Form State
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+  const [showConfirmOrderModal, setShowConfirmOrderModal] = useState(false);
+  const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null);
+  const [confirmErrorMsg, setConfirmErrorMsg] = useState('');
 
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -48,9 +56,10 @@ export default function PelangganDashboard() {
   const [notes, setNotes] = useState('');
 
   // Simulated Location details
-  const [lat, setLat] = useState<number | undefined>(undefined);
-  const [lng, setLng] = useState<number | undefined>(undefined);
+  const [lat, setLat] = useState<number | undefined>(activeUser?.lat);
+  const [lng, setLng] = useState<number | undefined>(activeUser?.lng);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Rating input state
   const [ratingInput, setRatingInput] = useState<{ [orderId: string]: { score: number; review: string } }>({});
@@ -59,12 +68,21 @@ export default function PelangganDashboard() {
   const [orderPaymentMethods, setOrderPaymentMethods] = useState<{ [orderId: string]: 'CASH' | 'TRANSFER' }>({});
 
   // Profile Form States
+  const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
   const [editName, setEditName] = useState(activeUser?.name || '');
   const [editPhone, setEditPhone] = useState(activeUser?.phone || '');
   const [editAddress, setEditAddress] = useState(activeUser?.address || '');
+  const [editLat, setEditLat] = useState<number | undefined>(activeUser?.lat);
+  const [editLng, setEditLng] = useState<number | undefined>(activeUser?.lng);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showProfileMapPicker, setShowProfileMapPicker] = useState(false);
+
+  // Password Edit States
+  const [editOldPassword, setEditOldPassword] = useState('');
+  const [editNewPassword, setEditNewPassword] = useState('');
+  const [editConfirmPassword, setEditConfirmPassword] = useState('');
 
   // Initialize dropdowns
   useEffect(() => {
@@ -86,8 +104,12 @@ export default function PelangganDashboard() {
       setEditName(activeUser.name);
       setEditPhone(activeUser.phone || '');
       setEditAddress(activeUser.address || '');
+      setEditLat(activeUser.lat);
+      setEditLng(activeUser.lng);
       setAddress(activeUser.address || '');
       setPhone(activeUser.phone || '');
+      setLat(activeUser.lat);
+      setLng(activeUser.lng);
     }
   }, [activeUser]);
 
@@ -123,16 +145,22 @@ export default function PelangganDashboard() {
   const currentServicePrice = getSelectedServicePrice();
   const estimatedCost = currentServicePrice * quantity;
 
-  // Submit new booking
-  const handleSubmitOrder = async (e: React.FormEvent) => {
+  // Submit new booking (pre-submit confirmation)
+  const handlePreSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!address.trim() || !phone.trim() || !date) {
       alert('Mohon lengkapi alamat, nomor telepon, dan tanggal pengerjaan.');
       return;
     }
+    setConfirmErrorMsg('');
+    setShowConfirmOrderModal(true);
+  };
 
+  // Actual API submit on confirmation
+  const handleConfirmSubmitOrder = async () => {
     try {
       setIsLoading(true);
+      setConfirmErrorMsg('');
       const catObj = categories.find(c => c.id === selectedCategory);
       const categoryName = catObj ? catObj.name : 'Inspeksi & Konsultasi';
       
@@ -140,7 +168,7 @@ export default function PelangganDashboard() {
       const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Get service price
-      const serviceObj = services.find(s => s.id === selectedService);
+      const serviceObj = services.find(s => s.id === selectedService || s.name === selectedService);
       const serviceCost = serviceObj ? serviceObj.price : 75000;
       const totalCost = serviceCost * quantity;
 
@@ -175,20 +203,32 @@ export default function PelangganDashboard() {
       setOrders(updatedOrders);
 
       setNotes('');
-      setLat(undefined);
-      setLng(undefined);
+      setLat(activeUser.lat);
+      setLng(activeUser.lng);
       setShowNewOrderModal(false);
-      setSelectedModel('');
-      setSelectedCategory('');
-      setSelectedService('');
+      setShowConfirmOrderModal(false);
+      
+      // Reset dropdown values to default values
+      if (models.length > 0) setSelectedModel(models[0].name);
+      if (categories.length > 0) {
+        setSelectedCategory(categories[0].id);
+        const filtered = services.filter(s => s.categoryId === categories[0].id);
+        if (filtered.length > 0) {
+          setSelectedService(filtered[0].name);
+        } else {
+          setSelectedService('none');
+        }
+      }
       setQuantity(1);
       setDate('');
       setTime('09:00');
       setIsLoading(false);
-      alert('✓ Pesanan berhasil dibuat! ID: ' + orderId);
+      
+      // Set success order ID to trigger the success popup
+      setOrderSuccessId(orderId);
     } catch (error: any) {
       setIsLoading(false);
-      alert('❌ Gagal membuat pesanan: ' + error.message);
+      setConfirmErrorMsg(error.message || 'Gagal membuat pesanan');
     }
   };
 
@@ -208,6 +248,9 @@ export default function PelangganDashboard() {
         email: activeUser!.email,
         phone: editPhone.trim(),
         role: activeUser!.role,
+        address: editAddress.trim(),
+        lat: editLat,
+        lng: editLng,
       });
 
       const updatedUser = {
@@ -215,14 +258,54 @@ export default function PelangganDashboard() {
         name: editName.trim(),
         phone: editPhone.trim(),
         address: editAddress.trim(),
+        lat: editLat,
+        lng: editLng,
       };
       setActiveUser(updatedUser);
 
       setSaveSuccess(true);
+      setProfileViewMode('readonly');
       setTimeout(() => setSaveSuccess(false), 2500);
       setIsLoading(false);
     } catch (error: any) {
       setErrorMsg(error?.message || 'Gagal memperbarui profil');
+      setIsLoading(false);
+    }
+  };
+
+  // Update password
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editNewPassword !== editConfirmPassword) {
+      setErrorMsg('Password baru dan konfirmasi tidak cocok');
+      return;
+    }
+    if (editNewPassword.length < 6) {
+      setErrorMsg('Password baru minimal 6 karakter');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMsg('');
+
+      await api.updatePassword(activeUser!.id, {
+        oldPassword: editOldPassword,
+        newPassword: editNewPassword,
+      });
+
+      setSaveSuccess(true);
+      setProfileViewMode('readonly');
+      
+      // Clear password fields
+      setEditOldPassword('');
+      setEditNewPassword('');
+      setEditConfirmPassword('');
+      
+      setTimeout(() => setSaveSuccess(false), 3000);
+      setIsLoading(false);
+    } catch (error: any) {
+      setErrorMsg(error?.message || 'Gagal mengganti password');
       setIsLoading(false);
     }
   };
@@ -296,8 +379,8 @@ export default function PelangganDashboard() {
   };
 
   // Format Rupiah
-  const formatRupiah = (num: number) => {
-    return 'Rp' + num.toLocaleString('id-ID');
+  const formatRupiah = (num: any) => {
+    return 'Rp' + Number(num || 0).toLocaleString('id-ID');
   };
 
   // Status step index
@@ -331,9 +414,10 @@ export default function PelangganDashboard() {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative min-h-0 h-full">
+      <div className="w-full h-full flex flex-col relative">
       {/* TAB NAVIGATION - TOP */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shrink-0">
-        <div className="flex items-center justify-start gap-1 px-4 py-0">
+        <div className="flex items-center justify-start gap-1 px-4 md:px-8 lg:px-12 py-0">
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
@@ -384,7 +468,7 @@ export default function PelangganDashboard() {
         {activeTab === 'dashboard' && (
           <div>
             {/* Wave Header */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 pt-5 pb-6 rounded-b-[24px] shadow-lg shrink-0 text-left text-white">
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0 text-left text-white">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-0.5 rounded-full font-black uppercase tracking-widest">
@@ -418,7 +502,7 @@ export default function PelangganDashboard() {
             </div>
 
             {/* Active Orders */}
-            <div className="px-4 py-4 space-y-4">
+            <div className="px-4 md:px-8 lg:px-12 py-6 space-y-4">
               <div className="flex justify-between items-center px-1">
                 <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Status Pesanan Aktif</h3>
                 <span className="flex items-center gap-1 text-[8px] text-emerald-600 font-black uppercase tracking-wider">
@@ -428,7 +512,7 @@ export default function PelangganDashboard() {
               </div>
 
               {activeOrders.length === 0 ? (
-                <div className="bg-white border border-slate-200 rounded-2xl p-7 flex flex-col items-center justify-center text-center space-y-3 shadow-xs">
+                <div className="max-w-md mx-auto bg-white border border-slate-200 rounded-2xl p-7 flex flex-col items-center justify-center text-center space-y-3 shadow-xs">
                   <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
                     <Sparkles size={20} className="animate-spin" />
                   </div>
@@ -446,13 +530,13 @@ export default function PelangganDashboard() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {activeOrders.map(order => {
                     const currentStepIdx = getStatusStepIndex(order.status);
                     const selectedPayMethod = orderPaymentMethods[order.id] || 'CASH';
 
                     return (
-                      <div key={order.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4 text-left">
+                      <div key={order.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 space-y-4 text-left flex flex-col">
                         {/* Header */}
                         <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
                           <div>
@@ -738,7 +822,7 @@ export default function PelangganDashboard() {
         {/* ==================== TAB 2: HISTORY ==================== */}
         {activeTab === 'history' && (
           <div>
-            <div className="bg-slate-900 px-5 pt-5 pb-6 text-white text-left rounded-b-[24px] shrink-0">
+            <div className="bg-slate-900 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
               <span className="text-[8px] text-blue-300 bg-white/5 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
                 Arsip
               </span>
@@ -759,14 +843,14 @@ export default function PelangganDashboard() {
               </div>
             </div>
 
-            <div className="px-4 py-4 space-y-4">
+            <div className="px-4 md:px-8 lg:px-12 py-6 space-y-4">
               {completedOrders.length === 0 ? (
                 <div className="bg-white border rounded-2xl p-8 text-center space-y-3">
                   <span className="text-xl">📊</span>
                   <p className="font-extrabold text-xs uppercase">Belum Ada Histori</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {completedOrders.map(order => (
                     <div key={order.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
                       <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
@@ -829,7 +913,7 @@ export default function PelangganDashboard() {
         {/* ==================== TAB 3: PROFILE ==================== */}
         {activeTab === 'profile' && (
           <div>
-            <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 py-5 text-white text-left rounded-b-[24px] shrink-0">
+            <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 md:px-8 lg:px-12 py-5 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
               <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
                 Informasi Pengguna
               </span>
@@ -844,9 +928,12 @@ export default function PelangganDashboard() {
               </div>
             </div>
 
-            <div className="px-4 py-4 space-y-4">
+            <div className="px-4 md:px-8 lg:px-12 py-6 space-y-4 max-w-2xl mx-auto">
               <div className="flex justify-between items-center px-1">
-                <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Perbarui Profil</h3>
+                <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">
+                  {profileViewMode === 'readonly' ? 'Informasi Akun' : 
+                   profileViewMode === 'edit-profile' ? 'Perbarui Profil' : 'Ubah Password'}
+                </h3>
                 <button
                   onClick={() => logout()}
                   className="bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-black uppercase px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-100 transition"
@@ -857,7 +944,7 @@ export default function PelangganDashboard() {
 
               {saveSuccess && (
                 <div className="bg-emerald-100 border border-emerald-250 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold">
-                  ✅ Profil berhasil diperbarui!
+                  ✅ {profileViewMode === 'edit-password' ? 'Password' : 'Profil'} berhasil diperbarui!
                 </div>
               )}
 
@@ -867,49 +954,195 @@ export default function PelangganDashboard() {
                 </div>
               )}
 
-              <form onSubmit={handleSaveProfile} className="bg-white border p-4.5 rounded-2xl shadow-xs space-y-4">
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none disabled:opacity-50"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
+              {profileViewMode === 'readonly' && (
+                <div className="bg-white border p-5 rounded-2xl shadow-xs space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.name}</p>
+                      </div>
+                      <UserIcon size={18} className="text-slate-300" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email Terdaftar</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.email}</p>
+                      </div>
+                      <Mail size={18} className="text-slate-300" />
+                    </div>
 
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
-                  <input
-                    type="text"
-                    value={editPhone}
-                    onChange={e => setEditPhone(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none disabled:opacity-50"
-                    disabled={isLoading}
-                  />
-                </div>
+                    <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nomor Handphone</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.phone || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
+                      </div>
+                      <Phone size={18} className="text-slate-300" />
+                    </div>
 
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat Rumah Default</label>
-                  <textarea
-                    value={editAddress}
-                    onChange={e => setEditAddress(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none h-16 resize-none disabled:opacity-50"
-                    disabled={isLoading}
-                  />
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Default</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
+                        {activeUser.lat && activeUser.lng && (
+                          <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-1">
+                            📍 {activeUser.lat.toFixed(5)}, {activeUser.lng.toFixed(5)}
+                          </p>
+                        )}
+                      </div>
+                      <MapPin size={18} className="text-slate-300" />
+                    </div>
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-slate-900 disabled:bg-slate-400 text-white font-extrabold text-xs py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition"
-                >
-                  {isLoading && <Loader size={14} className="animate-spin" />}
-                  {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
-                </button>
-              </form>
+                  <div className="grid grid-cols-2 gap-3 pt-3">
+                    <button
+                      onClick={() => { setErrorMsg(''); setProfileViewMode('edit-profile'); }}
+                      className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
+                    >
+                      Edit Profil
+                    </button>
+                    <button
+                      onClick={() => { setErrorMsg(''); setProfileViewMode('edit-password'); }}
+                      className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
+                    >
+                      Ubah Password
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {profileViewMode === 'edit-profile' && (
+                <form onSubmit={handleSaveProfile} className="bg-white border p-5 rounded-2xl shadow-xs space-y-4">
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={e => setEditPhone(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat Rumah Default</label>
+                    <div className="flex gap-2">
+                      <textarea
+                        value={editAddress}
+                        onChange={e => setEditAddress(e.target.value)}
+                        className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 h-16 resize-none disabled:opacity-50 transition"
+                        disabled={isLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowProfileMapPicker(true)}
+                        className="bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-xl px-3 flex flex-col items-center justify-center gap-1 hover:bg-indigo-100 transition cursor-pointer"
+                      >
+                        <MapPin size={16} />
+                        <span className="text-[8px] font-black uppercase">Peta</span>
+                      </button>
+                    </div>
+                  </div>
+
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setProfileViewMode('readonly')}
+                      disabled={isLoading}
+                      className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-600 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-slate-900 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                    >
+                      {isLoading && <Loader size={12} className="animate-spin" />}
+                      {isLoading ? 'Menyimpan...' : 'Simpan Profil'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {profileViewMode === 'edit-password' && (
+                <form onSubmit={handleUpdatePassword} className="bg-white border p-5 rounded-2xl shadow-xs space-y-4">
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Lama</label>
+                    <input
+                      type="password"
+                      value={editOldPassword}
+                      onChange={e => setEditOldPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Baru</label>
+                    <input
+                      type="password"
+                      value={editNewPassword}
+                      onChange={e => setEditNewPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Konfirmasi Password Baru</label>
+                    <input
+                      type="password"
+                      value={editConfirmPassword}
+                      onChange={e => setEditConfirmPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileViewMode('readonly');
+                        setEditOldPassword('');
+                        setEditNewPassword('');
+                        setEditConfirmPassword('');
+                        setErrorMsg('');
+                      }}
+                      disabled={isLoading}
+                      className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-600 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-slate-900 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                    >
+                      {isLoading && <Loader size={12} className="animate-spin" />}
+                      {isLoading ? 'Menyimpan...' : 'Ubah Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}
@@ -917,8 +1150,8 @@ export default function PelangganDashboard() {
 
       {/* NEW ORDER MODAL */}
       {showNewOrderModal && (
-        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex flex-col justify-end z-45 animate-in slide-in-from-bottom duration-300 pt-10">
-          <div className="bg-white rounded-t-[24px] flex flex-col max-h-full overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex flex-col justify-end z-45 animate-fade-in pt-10">
+          <div className="bg-white rounded-t-[24px] flex flex-col max-h-[calc(100%-2.5rem)] overflow-hidden shadow-2xl animate-slide-up">
             {/* Modal Header */}
             <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
               <div>
@@ -935,7 +1168,7 @@ export default function PelangganDashboard() {
 
             {/* Modal Content */}
             <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50">
-              <form onSubmit={handleSubmitOrder} className="space-y-4">
+              <form onSubmit={handlePreSubmitOrder} className="space-y-4">
                 {/* Model Selection */}
                 <div>
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
@@ -1069,16 +1302,15 @@ export default function PelangganDashboard() {
                 {/* GPS Detection */}
                 <div>
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                    8. Lokasi (GPS)
+                    8. Lokasi (Peta Interaktif)
                   </label>
                   <button
                     type="button"
-                    onClick={handleGPSDetection}
-                    disabled={isDetectingLocation}
-                    className="w-full bg-indigo-100 hover:bg-indigo-150 text-indigo-700 border border-indigo-200 font-bold text-[10.5px] py-2 rounded-xl uppercase flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
+                    onClick={() => setShowMapPicker(true)}
+                    className="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-200 font-bold text-[10.5px] py-2 rounded-xl uppercase flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm"
                   >
-                    {isDetectingLocation ? <Loader size={13} className="animate-spin" /> : <Navigation size={13} />}
-                    {isDetectingLocation ? 'Mendeteksi...' : 'Deteksi Lokasi GPS'}
+                    <MapPin size={13} />
+                    Pilih dari Peta Pintar
                   </button>
                 </div>
 
@@ -1133,6 +1365,183 @@ export default function PelangganDashboard() {
           </div>
         </div>
       )}
+
+      {/* 1. CONFIRM ORDER MODAL */}
+      {showConfirmOrderModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-[28px] shadow-2xl p-6 max-w-md w-full text-left flex flex-col space-y-4 animate-scale-in">
+            <div>
+              <span className="text-[9px] bg-amber-100 text-amber-800 font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider">Konfirmasi Pesanan</span>
+              <h4 className="text-base font-extrabold text-slate-800 mt-1">Periksa Kembali Pesanan Anda</h4>
+            </div>
+
+            <div className="bg-slate-50 border rounded-2xl p-4 space-y-2.5 text-xs text-slate-650">
+              <div className="flex justify-between">
+                <span>Model AC:</span>
+                <strong className="text-slate-800">{selectedModel}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Kategori Jasa:</span>
+                <strong className="text-slate-800">
+                  {categories.find(c => c.id === selectedCategory)?.name || 'Inspeksi & Konsultasi'}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Jenis Layanan:</span>
+                <strong className="text-indigo-700">{selectedService === 'none' ? 'Inspeksi & Konsultasi' : selectedService}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Jumlah Unit:</span>
+                <strong className="text-slate-800 font-mono">{quantity} Unit</strong>
+              </div>
+              <div className="flex justify-between border-t border-slate-200/60 pt-2">
+                <span>Tanggal Kunjungan:</span>
+                <strong className="text-slate-800">{date} ({time})</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>No. HP Kontak:</span>
+                <strong className="text-slate-800 font-mono">{phone}</strong>
+              </div>
+              <div className="border-t border-slate-200/60 pt-2">
+                <span className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Alamat Kunjungan:</span>
+                <span className="block text-slate-800 font-medium leading-relaxed">{address}</span>
+              </div>
+              {notes.trim() && (
+                <div className="border-t border-slate-200/60 pt-2">
+                  <span className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Catatan/Keluhan:</span>
+                  <span className="block text-slate-700 italic">"{notes}"</span>
+                </div>
+              )}
+            </div>
+
+            {/* Total Cost */}
+            <div className="bg-indigo-50 border border-indigo-150 p-4 rounded-2xl flex justify-between items-center">
+              <div>
+                <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block">Total Pembayaran</span>
+                <span className="text-xs text-slate-500">{quantity} Unit x {formatRupiah(currentServicePrice)}</span>
+              </div>
+              <span className="text-lg font-black text-indigo-700 font-mono">{formatRupiah(estimatedCost)}</span>
+            </div>
+
+            {confirmErrorMsg && (
+              <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3 rounded-xl text-center font-semibold">
+                {confirmErrorMsg}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmOrderModal(false)}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition cursor-pointer"
+                disabled={isLoading}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSubmitOrder}
+                className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-indigo-800 hover:from-indigo-700 hover:to-indigo-900 active:scale-[0.98] text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-indigo-600/10 transition cursor-pointer flex items-center justify-center gap-2"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader size={14} className="animate-spin" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <span>Pesan Sekarang</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. SUCCESS ORDER MODAL */}
+      {orderSuccessId && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-[28px] shadow-2xl p-6 max-w-sm w-full text-center flex flex-col items-center animate-scale-in">
+            {/* Green success icon wrapper */}
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 shadow-inner">
+              <CheckCircle size={36} className="text-emerald-500" />
+            </div>
+
+            <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wider mb-2">Pesanan Sukses</h3>
+            <p className="text-xs text-slate-650 font-semibold leading-relaxed mb-4">
+              Pesanan servis AC Anda berhasil dibuat dan telah terdaftar di sistem.
+            </p>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 mb-6 w-full flex flex-col items-center">
+              <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">ID PESANAN</span>
+              <span className="text-xs font-mono font-bold text-slate-800 mt-0.5 select-all">{orderSuccessId}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setOrderSuccessId(null)}
+              className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 active:scale-[0.98] text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition duration-200 cursor-pointer"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+      {/* MAP PICKER MODALS */}
+      {showMapPicker && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex flex-col justify-end animate-fade-in">
+          <div className="bg-white rounded-t-3xl flex flex-col h-[85vh] overflow-hidden shadow-2xl animate-slide-up">
+            <div className="px-5 py-4 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <h4 className="text-sm font-extrabold text-white">Pilih Lokasi</h4>
+              <button
+                onClick={() => setShowMapPicker(false)}
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-slate-50 relative">
+              <MapPicker
+                onLocationSelect={(addr, l, r) => {
+                  setAddress(addr);
+                  setLat(l);
+                  setLng(r);
+                  setShowMapPicker(false);
+                }}
+                onCancel={() => setShowMapPicker(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProfileMapPicker && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex flex-col justify-end animate-fade-in">
+          <div className="bg-white rounded-t-3xl flex flex-col h-[85vh] overflow-hidden shadow-2xl animate-slide-up">
+            <div className="px-5 py-4 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <h4 className="text-sm font-extrabold text-white">Pilih Alamat Rumah Default</h4>
+              <button
+                onClick={() => setShowProfileMapPicker(false)}
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-slate-50 relative">
+              <MapPicker
+                onLocationSelect={(addr, l, r) => {
+                  setEditAddress(addr);
+                  setEditLat(l);
+                  setEditLng(r);
+                  setShowProfileMapPicker(false);
+                }}
+                onCancel={() => setShowProfileMapPicker(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 }

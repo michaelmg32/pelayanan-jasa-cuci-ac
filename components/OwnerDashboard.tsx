@@ -8,8 +8,8 @@ import { LogOut, TrendingUp, Users, DollarSign, Star, Briefcase } from 'lucide-r
 export default function OwnerDashboard() {
   const { activeUser, orders, logout } = useApp();
 
-  const formatRupiah = (num: number) => {
-    return 'Rp' + num.toLocaleString('id-ID');
+  const formatRupiah = (num: any) => {
+    return 'Rp' + Number(num || 0).toLocaleString('id-ID');
   };
 
   // Filter completed orders for revenue

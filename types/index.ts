@@ -26,6 +26,8 @@ export interface User {
   role: Role;
   phone?: string;
   address?: string;
+  lat?: number;
+  lng?: number;
   photoUrl?: string;
 }
 
@@ -67,6 +69,8 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   address: string;
+  lat?: number;
+  lng?: number;
   latitude?: number;
   longitude?: number;
   scheduledDate: string;
@@ -88,6 +92,11 @@ export interface Order {
   serviceCost: number; // Harga dasar layanan
   addonsCost: number;  // Total harga perlengkapan tambahan
   totalCost: number;   // serviceCost + addonsCost
+  addonsUsed?: {
+    name: string;
+    price: number;
+    quantity: number;
+  }[];
   
   rating?: number; // 1-5 bintang
   ratingNotes?: string;

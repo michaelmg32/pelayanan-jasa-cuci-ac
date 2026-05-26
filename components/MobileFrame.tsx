@@ -22,7 +22,7 @@ export default function MobileFrame({
   onLogout,
 }: MobileFrameProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 flex flex-col font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
       {/* Header */}
       <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -68,8 +68,8 @@ export default function MobileFrame({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="w-full h-full">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="w-full flex-grow flex flex-col min-h-0">
           {children}
         </div>
       </main>

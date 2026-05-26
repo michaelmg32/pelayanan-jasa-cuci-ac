@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Role, OrderStatus, User, Order, ACModel, ACCategory, ACService, ACAddon } from '@/types';
 import * as api from './api';
+import CustomAlertDialog from '@/components/CustomAlertDialog';
 
 interface AppContextType {
   // Users
@@ -13,7 +14,7 @@ interface AppContextType {
   
   // Orders
   orders: Order[];
-  setOrders: (orders: Order[]) => void;
+  setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   
   // Master data
   models: ACModel[];
@@ -35,6 +36,7 @@ interface AppContextType {
   registerCustomer: (name: string, email: string, phone: string, address: string) => Promise<void>;
   addNewOrder: (orderData: any) => Promise<void>;
   assignEmployee: (orderId: string, staffId: string, staffName: string, extraPayload?: Partial<Order>) => Promise<void>;
+  showAlert: (message: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,6 +44,23 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   // Core States
   const [users, setUsers] = useState<User[]>([]);
+
+  // Custom Alert state
+  const [customAlert, setCustomAlert] = useState<{ message: string; isOpen: boolean }>({ message: '', isOpen: false });
+
+  const showAlert = (message: string) => {
+    console.log('🔔 showAlert called with message:', message);
+    setCustomAlert({ message, isOpen: true });
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.alert = (msg) => {
+        console.log('🚨 Intercepted window.alert! Message:', msg);
+        showAlert(String(msg));
+      };
+    }
+  }, []);
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeUser, setActiveUserState] = useState<User | null>(null);
 
@@ -92,7 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (typeof window !== 'undefined') {
           const savedUserId = localStorage.getItem('active_user_id');
           if (savedUserId) {
-            const matchedUser = fetchedUsers.find(u => u.id === savedUserId);
+            const matchedUser = fetchedUsers.find((u: User) => u.id === savedUserId);
             if (matchedUser) {
               setActiveUserState(matchedUser);
             }
@@ -284,9 +303,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         registerCustomer,
         addNewOrder,
         assignEmployee,
+        showAlert,
       }}
     >
       {children}
+      {customAlert.isOpen && (
+        <CustomAlertDialog
+          message={customAlert.message}
+          onClose={() => setCustomAlert(prev => ({ ...prev, isOpen: false }))}
+        />
+      )}
     </AppContext.Provider>
   );
 }

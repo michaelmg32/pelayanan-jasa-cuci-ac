@@ -45,8 +45,10 @@ export default function AdminDashboard() {
     categories, setCategories, 
     services, setServices, 
     addons, setAddons, 
-    logout 
+    logout,
+    showAlert
   } = useApp();
+  const alert = showAlert;
   
   // Extract staff members from users
   const staffList = users.filter(u => u.role === Role.STAFF);
@@ -104,9 +106,9 @@ export default function AdminDashboard() {
   const [editMasterField3, setEditMasterField3] = useState('');
 
   // Helper formats
-  const formatRupiah = (num: number | undefined | null) => {
-    if (!num && num !== 0) return 'Rp0';
-    return 'Rp' + num.toLocaleString('id-ID');
+  const formatRupiah = (num: any) => {
+    if (!num && num !== 0 && num !== '0') return 'Rp0';
+    return 'Rp' + Number(num || 0).toLocaleString('id-ID');
   };
 
   // Filter orders according to selection
@@ -571,7 +573,22 @@ export default function AdminDashboard() {
                     <div className="text-[11px] text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-medium">
                       <div>👤 Pemesan: <strong className="text-slate-800">{order.customerName}</strong> (<span className="font-mono">{order.customerPhone}</span>)</div>
                       <div>📅 Jadwal Mulai: <strong>{order.scheduledDate}</strong> pukul <strong className="font-mono">{order.scheduledTime}</strong></div>
-                      <div className="truncate">📍 Alamat Fisik: <span className="text-slate-800 font-semibold">{order.address}</span></div>
+                      <div className="truncate flex items-start gap-1">
+                        <span className="shrink-0 mt-0.5">📍</span>
+                        <div>
+                          <span>Alamat Fisik: <span className="text-slate-800 font-semibold">{order.address}</span></span>
+                          {(order.latitude || order.lat) && (order.longitude || order.lng) && (
+                            <a 
+                              href={`https://www.google.com/maps?q=${order.latitude || order.lat},${order.longitude || order.lng}`} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="mt-1 flex w-fit items-center gap-1 bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-[9px] font-bold hover:bg-indigo-200 transition"
+                            >
+                              Buka di Google Maps
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Staff Allocated info */}
@@ -849,7 +866,7 @@ export default function AdminDashboard() {
             <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
               <div>
                 <h3 className="font-extrabold text-sm uppercase text-slate-800">Manajemen Akses & Pengguna</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Edit hak akses, telepon, dan alamat pengguna</p>
+                <p className="text-[11px] text-slate-500 mt-1">Edit hak akses/peran pengguna</p>
               </div>
               <div className="relative w-full sm:w-64">
                 <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
@@ -961,7 +978,7 @@ export default function AdminDashboard() {
                     <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga</label>
                     <input 
                       type="number"
-                      value={editMasterField2 || ''}
+                      value={typeof editMasterField2 === 'number' ? editMasterField2 : ''}
                       onChange={(e) => setEditMasterField2(parseInt(e.target.value) || 0)}
                       className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
                       disabled={isLoading}
@@ -989,7 +1006,7 @@ export default function AdminDashboard() {
                   <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Satuan</label>
                   <input 
                     type="number"
-                    value={editMasterField2 || ''}
+                    value={typeof editMasterField2 === 'number' ? editMasterField2 : ''}
                     onChange={(e) => setEditMasterField2(parseInt(e.target.value) || 0)}
                     className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
                     disabled={isLoading}
@@ -1149,30 +1166,6 @@ export default function AdminDashboard() {
                   <option value={Role.ADMIN}>Admin</option>
                   <option value={Role.OWNER}>Owner</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nomor Telepon</label>
-                <input 
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
-                  placeholder="081234567890"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat</label>
-                <textarea 
-                  value={editAddress}
-                  onChange={(e) => setEditAddress(e.target.value)}
-                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 resize-none"
-                  rows={3}
-                  placeholder="Masukkan alamat lengkap..."
-                  disabled={isLoading}
-                />
               </div>
 
               {errorMsg && (

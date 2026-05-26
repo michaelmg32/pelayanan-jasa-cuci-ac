@@ -231,8 +231,18 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
       updateValues.push(hashedPassword);
     }
     
-    // Note: address field is currently not stored in database, but we accept it for future compatibility
-    // if (address) { ... } // Add when address column is added to users table
+    if (address) {
+      updateFields.push('address = ?');
+      updateValues.push(address);
+    }
+    if (req.body.lat !== undefined) {
+      updateFields.push('lat = ?');
+      updateValues.push(req.body.lat);
+    }
+    if (req.body.lng !== undefined) {
+      updateFields.push('lng = ?');
+      updateValues.push(req.body.lng);
+    }
     
     if (updateFields.length === 0) {
       connection.release();
@@ -244,7 +254,7 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
     
     await connection.query(updateQuery, updateValues);
     
-    const [user] = await connection.query('SELECT id, name, email, phone, role FROM users WHERE id = ?', [id]);
+    const [user] = await connection.query('SELECT id, name, email, phone, role, address, lat, lng FROM users WHERE id = ?', [id]);
     connection.release();
     
     if (user.length === 0) {
@@ -254,6 +264,49 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
     res.json(user[0]);
   } catch (error) {
     console.error('Error updating user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint khusus untuk update password
+app.put('/api/users/:id/password', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
+  
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'Password lama dan baru harus diisi' });
+  }
+
+  try {
+    const connection = await pool.getConnection();
+    
+    // Ambil user saat ini
+    const [users] = await connection.query('SELECT password FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'User tidak ditemukan' });
+    }
+    
+    const user = users[0];
+    
+    // Verifikasi password lama
+    const passwordMatch = await bcryptjs.compare(oldPassword, user.password);
+    if (!passwordMatch) {
+      connection.release();
+      return res.status(401).json({ error: 'Password lama tidak sesuai' });
+    }
+    
+    // Hash password baru
+    const salt = await bcryptjs.genSalt(10);
+    const hashedNewPassword = await bcryptjs.hash(newPassword, salt);
+    
+    // Update ke database
+    await connection.query('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, id]);
+    
+    connection.release();
+    res.json({ message: 'Password berhasil diubah' });
+  } catch (error) {
+    console.error('Error updating password:', error);
     res.status(500).json({ error: error.message });
   }
 });

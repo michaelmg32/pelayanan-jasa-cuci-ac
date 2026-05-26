@@ -15,10 +15,19 @@ import {
   Trash2,
   Star,
   Loader,
+  Phone,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 
+import dynamic from 'next/dynamic';
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
+
 export default function KaryawanDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert } = useApp();
+  const alert = showAlert;
 
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
@@ -58,15 +67,26 @@ export default function KaryawanDashboard() {
   const [editName, setEditName] = useState(activeUser?.name || '');
   const [editPhone, setEditPhone] = useState(activeUser?.phone || '');
   const [editAddress, setEditAddress] = useState(activeUser?.address || '');
+  const [editLat, setEditLat] = useState<number | undefined>(activeUser?.lat);
+  const [editLng, setEditLng] = useState<number | undefined>(activeUser?.lng);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Added for new Profile View Modes
+  const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
+  const [showProfileMapPicker, setShowProfileMapPicker] = useState(false);
+  const [editOldPassword, setEditOldPassword] = useState('');
+  const [editNewPassword, setEditNewPassword] = useState('');
+  const [editConfirmPassword, setEditConfirmPassword] = useState('');
 
   useEffect(() => {
     if (activeUser) {
       setEditName(activeUser.name);
       setEditPhone(activeUser.phone || '');
       setEditAddress(activeUser.address || '');
+      setEditLat(activeUser.lat);
+      setEditLng(activeUser.lng);
     }
   }, [activeUser]);
 
@@ -77,8 +97,8 @@ export default function KaryawanDashboard() {
   const activeTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status !== OrderStatus.SELESAI);
   const completedTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status === OrderStatus.SELESAI);
 
-  const formatRupiah = (num: number) => {
-    return 'Rp' + num.toLocaleString('id-ID');
+  const formatRupiah = (num: any) => {
+    return 'Rp' + Number(num || 0).toLocaleString('id-ID');
   };
 
   // ==================== HANDLERS ====================
@@ -99,6 +119,9 @@ export default function KaryawanDashboard() {
         email: activeUser!.email,
         phone: editPhone.trim(),
         role: activeUser!.role,
+        address: editAddress.trim(),
+        lat: editLat,
+        lng: editLng,
       });
 
       const updatedUser = {
@@ -106,14 +129,55 @@ export default function KaryawanDashboard() {
         name: editName.trim(),
         phone: editPhone.trim(),
         address: editAddress.trim(),
+        lat: editLat,
+        lng: editLng,
       };
       setActiveUser(updatedUser);
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
       setIsLoading(false);
+      setProfileViewMode('readonly');
     } catch (error: any) {
       setErrorMsg(error?.message || 'Gagal memperbarui profil');
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editOldPassword || !editNewPassword || !editConfirmPassword) {
+      setErrorMsg('Semua kolom password wajib diisi');
+      return;
+    }
+    if (editNewPassword !== editConfirmPassword) {
+      setErrorMsg('Konfirmasi password baru tidak cocok');
+      return;
+    }
+    if (editNewPassword.length < 6) {
+      setErrorMsg('Password baru minimal 6 karakter');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMsg('');
+
+      await api.updatePassword(activeUser!.id, {
+        oldPassword: editOldPassword,
+        newPassword: editNewPassword
+      });
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+      setIsLoading(false);
+      
+      setEditOldPassword('');
+      setEditNewPassword('');
+      setEditConfirmPassword('');
+      setProfileViewMode('readonly');
+    } catch (error: any) {
+      setErrorMsg(error?.message || 'Gagal memperbarui password');
       setIsLoading(false);
     }
   };
@@ -323,6 +387,7 @@ export default function KaryawanDashboard() {
   };
 
   return (
+    <>
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative min-h-0 h-full">
 
       {/* TAB NAVIGATION - TOP */}
@@ -429,7 +494,22 @@ export default function KaryawanDashboard() {
 
                       <div className="text-[10.5px] text-slate-500 font-medium space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200/50">
                         <div>👤 {task.customerName} ({task.customerPhone})</div>
-                        <div>📍 {task.address}</div>
+                        <div className="flex items-start gap-1">
+                          <span className="shrink-0 mt-0.5">📍</span>
+                          <div>
+                            <span>{task.address}</span>
+                            {(task.latitude || task.lat) && (task.longitude || task.lng) && (
+                              <a 
+                                href={`https://www.google.com/maps?q=${task.latitude || task.lat},${task.longitude || task.lng}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="mt-1 flex w-fit items-center gap-1 bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-[9px] font-bold hover:bg-indigo-200 transition"
+                              >
+                                Buka di Google Maps
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       {/* ACTION BUTTONS PER STATUS */}
@@ -722,87 +802,236 @@ export default function KaryawanDashboard() {
         {/* ==================== TAB 3: PROFILE ==================== */}
         {activeTab === 'profile' && (
           <div>
-            <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 py-5 text-white text-left rounded-b-[24px]">
-              <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
-                Informasi Personel
-              </span>
-              <div className="flex items-center gap-3 mt-3">
-                <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl">
-                  {activeUser.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
-                  <p className="text-[10px] text-slate-400 mt-1">{activeUser.email}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-4 py-4 space-y-4">
-              <div className="flex justify-between items-center px-1">
-                <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Perbarui Profil</h3>
+            <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 md:px-8 lg:px-12 py-5 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
+              <div className="flex justify-between items-start">
+                <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
+                  Informasi Personel
+                </span>
                 <button
                   onClick={() => logout()}
-                  className="bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-black uppercase px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-100"
+                  className="bg-rose-500/20 border border-rose-500/50 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-500 transition"
                 >
                   Keluar
                 </button>
               </div>
+              <div className="flex items-center gap-3 mt-4">
+                <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl shadow-lg">
+                  {activeUser.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
+                  <p className="text-[10px] text-emerald-200 mt-1 uppercase font-bold tracking-wider">{activeUser.role}</p>
+                </div>
+              </div>
+            </div>
 
+            <div className="px-4 md:px-8 lg:px-12 py-6 space-y-4 max-w-2xl mx-auto">
               {saveSuccess && (
-                <div className="bg-emerald-100 border border-emerald-250 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold">
-                  ✅ Profil berhasil diperbarui ke database!
+                <div className="bg-emerald-100 border border-emerald-250 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold flex items-center gap-2">
+                  <Check size={14} /> Profil berhasil diperbarui!
                 </div>
               )}
 
               {errorMsg && (
-                <div className="bg-red-50 border border-red-200 p-2.5 rounded-xl text-[11px] text-red-700 font-semibold">
-                  ❌ {errorMsg}
+                <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-xl text-[11px] text-rose-700 font-semibold flex items-center gap-2">
+                  <X size={14} /> {errorMsg}
                 </div>
               )}
 
-              <form onSubmit={handleSaveProfile} className="bg-white border p-4.5 rounded-2xl shadow-xs space-y-4">
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none disabled:opacity-50"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
+              {profileViewMode === 'readonly' && (
+                <div className="bg-white border p-5 rounded-2xl shadow-xs space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.name}</p>
+                      </div>
+                      <UserIcon size={18} className="text-slate-300" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email Terdaftar</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.email}</p>
+                      </div>
+                      <Mail size={18} className="text-slate-300" />
+                    </div>
 
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
-                  <input
-                    type="text"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none disabled:opacity-50"
-                    disabled={isLoading}
-                  />
-                </div>
+                    <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nomor Handphone</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.phone || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
+                      </div>
+                      <Phone size={18} className="text-slate-300" />
+                    </div>
 
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat</label>
-                  <textarea
-                    value={editAddress}
-                    onChange={(e) => setEditAddress(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none h-16 resize-none disabled:opacity-50"
-                    disabled={isLoading}
-                  />
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Rumah</p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
+                        {activeUser.lat && activeUser.lng && (
+                          <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-1">
+                            📍 {activeUser.lat.toFixed(5)}, {activeUser.lng.toFixed(5)}
+                          </p>
+                        )}
+                      </div>
+                      <MapPin size={18} className="text-slate-300" />
+                    </div>
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-slate-900 disabled:bg-slate-400 text-white font-extrabold text-xs py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {isLoading && <Loader size={14} className="animate-spin" />}
-                  {isLoading ? 'Menyimpan...' : 'Simpan'}
-                </button>
-              </form>
+                  <div className="grid grid-cols-2 gap-3 pt-3">
+                    <button
+                      onClick={() => { setErrorMsg(''); setProfileViewMode('edit-profile'); }}
+                      className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
+                    >
+                      Edit Profil
+                    </button>
+                    <button
+                      onClick={() => { setErrorMsg(''); setProfileViewMode('edit-password'); }}
+                      className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
+                    >
+                      Ubah Password
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {profileViewMode === 'edit-profile' && (
+                <form onSubmit={handleSaveProfile} className="bg-white border p-5 rounded-2xl shadow-xs space-y-4">
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-teal-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-teal-500 disabled:opacity-50 transition"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat Rumah</label>
+                    <div className="flex gap-2">
+                      <textarea
+                        value={editAddress}
+                        onChange={(e) => setEditAddress(e.target.value)}
+                        className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-teal-500 h-16 resize-none disabled:opacity-50 transition"
+                        disabled={isLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowProfileMapPicker(true)}
+                        className="bg-teal-50 text-teal-600 border border-teal-200 rounded-xl px-3 flex flex-col items-center justify-center gap-1 hover:bg-teal-100 transition cursor-pointer"
+                      >
+                        <MapPin size={16} />
+                        <span className="text-[8px] font-black uppercase">Peta</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setProfileViewMode('readonly')}
+                      disabled={isLoading}
+                      className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-600 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                    >
+                      {isLoading && <Loader size={12} className="animate-spin" />}
+                      {isLoading ? 'Menyimpan...' : 'Simpan'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {profileViewMode === 'edit-password' && (
+                <form onSubmit={handleUpdatePassword} className="bg-white border p-5 rounded-2xl shadow-xs space-y-4">
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start gap-2 mb-2">
+                    <ShieldCheck size={16} className="text-teal-600 shrink-0 mt-0.5" />
+                    <p className="text-[9.5px] text-slate-500 font-medium leading-relaxed">
+                      Silakan masukkan password lama Anda untuk memverifikasi perubahan password baru.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Lama</label>
+                    <input
+                      type="password"
+                      value={editOldPassword}
+                      onChange={(e) => setEditOldPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-teal-500 transition"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Baru</label>
+                    <input
+                      type="password"
+                      value={editNewPassword}
+                      onChange={(e) => setEditNewPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-teal-500 transition"
+                      disabled={isLoading}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Konfirmasi Password Baru</label>
+                    <input
+                      type="password"
+                      value={editConfirmPassword}
+                      onChange={(e) => setEditConfirmPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-teal-500 transition"
+                      disabled={isLoading}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileViewMode('readonly');
+                        setEditOldPassword('');
+                        setEditNewPassword('');
+                        setEditConfirmPassword('');
+                        setErrorMsg('');
+                      }}
+                      disabled={isLoading}
+                      className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-600 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-slate-900 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                    >
+                      {isLoading && <Loader size={12} className="animate-spin" />}
+                      {isLoading ? 'Menyimpan...' : 'Ubah Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}
@@ -812,7 +1041,7 @@ export default function KaryawanDashboard() {
       {/* WORK PANEL MODAL (PENGERJAAN STAGE) */}
       {activeWorkingTask && (
         <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex flex-col justify-end z-45 animate-in slide-in-from-bottom duration-300 pt-10">
-          <div className="bg-white rounded-t-[24px] flex flex-col max-h-full overflow-hidden shadow-2xl">
+          <div className="bg-white rounded-t-[24px] flex flex-col max-h-[calc(100%-2.5rem)] overflow-hidden shadow-2xl">
 
             <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
               <div>
@@ -962,5 +1191,20 @@ export default function KaryawanDashboard() {
       )}
 
     </div>
+      {/* Map Picker Modal for Profile */}
+      {showProfileMapPicker && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white overflow-hidden animate-in fade-in duration-300">
+          <MapPicker
+            onLocationSelect={(address, lat, lng) => {
+              setEditAddress(address);
+              setEditLat(lat);
+              setEditLng(lng);
+              setShowProfileMapPicker(false);
+            }}
+            onCancel={() => setShowProfileMapPicker(false)}
+          />
+        </div>
+      )}
+    </>
   );
 }
