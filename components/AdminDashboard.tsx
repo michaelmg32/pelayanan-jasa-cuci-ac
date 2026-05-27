@@ -598,8 +598,8 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl text-[10.5px]">
                         <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
                         <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
-                          {users?.find(u => u.id === order.workerId)?.photo ? (
-                            <img src={users.find(u => u.id === order.workerId)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                          {users?.find(u => u.id === order.assignedTo)?.photo ? (
+                            <img src={users.find(u => u.id === order.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
                           ) : (
                             order.assignedEmployeeName.charAt(0).toUpperCase()
                           )}
@@ -1351,8 +1351,8 @@ export default function AdminDashboard() {
                   {selectedOrderDetail.assignedEmployeeName ? (
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase overflow-hidden">
-                        {users?.find(u => u.id === selectedOrderDetail.workerId)?.photo ? (
-                          <img src={users.find(u => u.id === selectedOrderDetail.workerId)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                        {users?.find(u => u.id === selectedOrderDetail.assignedTo)?.photo ? (
+                          <img src={users.find(u => u.id === selectedOrderDetail.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
                         ) : (
                           selectedOrderDetail.assignedEmployeeName.charAt(0)
                         )}
