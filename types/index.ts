@@ -107,4 +107,6 @@ export interface Order {
   paymentMethod?: 'CASH' | 'TRANSFER';
   paymentStatus?: 'WAITING_APPROVAL' | 'PAID';
   bankName?: string; // Norek detail
+  paymentInvoiceId?: string; // Xendit Invoice ID
+  paymentUrl?: string; // Xendit Payment URL
 }
