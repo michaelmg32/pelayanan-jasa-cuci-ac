@@ -594,14 +594,25 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Staff Allocated info */}
-                    {order.assignedEmployeeName ? (
-                      <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl text-[10.5px]">
-                        <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
-                        <span className="font-extrabold text-slate-800">{order.assignedEmployeeName}</span>
-                        <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-1.5 rounded uppercase font-black tracking-widest ml-auto">
-                          Tersedia
-                        </span>
-                      </div>
+                    {order.assignedEmployeeName ? (() => {
+                      const assignedWorker = users?.find(u => u.id === order.workerId);
+                      return (
+                        <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl text-[10.5px]">
+                          <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
+                          <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
+                            {assignedWorker?.photo ? (
+                              <img src={assignedWorker.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                            ) : (
+                              order.assignedEmployeeName.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <span className="font-extrabold text-slate-800">{order.assignedEmployeeName}</span>
+                          <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-1.5 rounded uppercase font-black tracking-widest ml-auto">
+                            Tersedia
+                          </span>
+                        </div>
+                      );
+                    })()
                     ) : (
                       <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
                         <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
@@ -1342,16 +1353,24 @@ export default function AdminDashboard() {
               <div className="space-y-2 text-xs">
                 <h5 className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block border-b pb-1.5">👥 Teknisi Lapangan</h5>
                 <div className="bg-white p-3 rounded-xl border border-slate-100">
-                  {selectedOrderDetail.assignedEmployeeName ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase">
-                        {selectedOrderDetail.assignedEmployeeName.charAt(0)}
+                  {selectedOrderDetail.assignedEmployeeName ? (() => {
+                    const assignedWorker = users?.find(u => u.id === selectedOrderDetail.workerId);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase overflow-hidden">
+                          {assignedWorker?.photo ? (
+                            <img src={assignedWorker.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                          ) : (
+                            selectedOrderDetail.assignedEmployeeName.charAt(0)
+                          )}
+                        </div>
+                        <div>
+                          <strong className="text-slate-800 text-xs block font-extrabold">{selectedOrderDetail.assignedEmployeeName}</strong>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">TEKNISI UTAMA PRO</span>
+                        </div>
                       </div>
-                      <div>
-                        <strong className="text-slate-800 text-xs block font-extrabold">{selectedOrderDetail.assignedEmployeeName}</strong>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">TEKNISI UTAMA PRO</span>
-                      </div>
-                    </div>
+                    );
+                  })()
                   ) : (
                     <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
                   )}

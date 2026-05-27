@@ -56,6 +56,7 @@ export default function KaryawanDashboard() {
   const [editAddress, setEditAddress] = useState(activeUser?.address || '');
   const [editLat, setEditLat] = useState<number | undefined>(activeUser?.lat);
   const [editLng, setEditLng] = useState<number | undefined>(activeUser?.lng);
+  const [editPhoto, setEditPhoto] = useState<string>(activeUser?.photo || '');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -74,6 +75,7 @@ export default function KaryawanDashboard() {
       setEditAddress(activeUser.address || '');
       setEditLat(activeUser.lat);
       setEditLng(activeUser.lng);
+      setEditPhoto(activeUser.photo || '');
     }
   }, [activeUser]);
 
@@ -109,6 +111,7 @@ export default function KaryawanDashboard() {
         address: editAddress.trim(),
         lat: editLat,
         lng: editLng,
+        photo: editPhoto,
       });
 
       const updatedUser = {
@@ -118,6 +121,7 @@ export default function KaryawanDashboard() {
         address: editAddress.trim(),
         lat: editLat,
         lng: editLng,
+        photo: editPhoto,
       };
       setActiveUser(updatedUser);
 
@@ -128,6 +132,17 @@ export default function KaryawanDashboard() {
     } catch (error: any) {
       setErrorMsg(error?.message || 'Gagal memperbarui profil');
       setIsLoading(false);
+    }
+  };
+
+  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -848,8 +863,12 @@ export default function KaryawanDashboard() {
                   </button>
                 </div>
                 <div className="flex items-center gap-3 mt-4">
-                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl shadow-lg">
-                    {activeUser.name.charAt(0).toUpperCase()}
+                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl shadow-lg overflow-hidden border">
+                    {activeUser.photo ? (
+                      <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      activeUser.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
@@ -873,6 +892,13 @@ export default function KaryawanDashboard() {
 
                 {profileViewMode === 'readonly' && (
                   <div className="bg-white border p-5 rounded-2xl shadow-xs space-y-5">
+                    {activeUser.photo && (
+                      <div className="flex justify-center pb-2">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden border shadow-sm">
+                          <img src={activeUser.photo} alt="Profile Picture" className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                    )}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between border-b pb-3 border-slate-100">
                         <div>
@@ -931,6 +957,29 @@ export default function KaryawanDashboard() {
 
                 {profileViewMode === 'edit-profile' && (
                   <form onSubmit={handleSaveProfile} className="bg-white border p-5 rounded-2xl shadow-xs space-y-4">
+                    {/* Foto Profil Upload */}
+                    <div className="space-y-2 pb-2">
+                      <label className="text-[9.5px] text-slate-400 font-bold uppercase block">Foto Profil</label>
+                      <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <div className="w-14 h-14 bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center overflow-hidden border">
+                          {editPhoto ? (
+                            <img src={editPhoto} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold">No Photo</span>
+                          )}
+                        </div>
+                        <div className="flex-grow text-left">
+                          <span className="text-[10px] text-slate-600 font-bold block mb-1">Pilih Foto Diri</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePhotoChange}
+                            className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
                       <input

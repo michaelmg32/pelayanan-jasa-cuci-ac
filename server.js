@@ -79,7 +79,7 @@ const initializeDatabaseSettings = async () => {
         value LONGTEXT
       )
     `);
-    
+
     await connection.query(`
       INSERT INTO settings (key_name, value) VALUES 
       ('business_name', 'CoolAir Pro'),
@@ -153,7 +153,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = users[0];
-    
+
     // Verify password
     const passwordMatch = await bcryptjs.compare(password, user.password);
     if (!passwordMatch) {
@@ -191,33 +191,33 @@ app.post('/api/auth/google', async (req, res) => {
       idToken: credential,
       audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     });
-    
+
     const payload = ticket.getPayload();
     const email = payload.email;
     const name = payload.name;
-    
+
     const connection = await pool.getConnection();
     const [users] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
-    
+
     let user;
     if (users.length === 0) {
       // User doesn't exist, create them
       const newId = `usr_google_${Date.now()}`;
-      
+
       // Generate dummy password for Google users
       const salt = await bcryptjs.genSalt(10);
       const dummyPassword = await bcryptjs.hash(Math.random().toString(36), salt);
-      
+
       await connection.query(
         'INSERT INTO users (id, name, email, role, password) VALUES (?, ?, ?, ?, ?)',
         [newId, name, email, 'pelanggan', dummyPassword]
       );
-      
+
       user = { id: newId, name, email, role: 'pelanggan' };
     } else {
       user = users[0];
     }
-    
+
     connection.release();
 
     // Generate JWT token
@@ -252,7 +252,7 @@ app.post('/api/auth/register', async (req, res) => {
     const hashedPassword = await bcryptjs.hash(password, salt);
 
     const connection = await pool.getConnection();
-    
+
     // Check if email already exists
     const [existingUsers] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existingUsers.length > 0) {
@@ -301,7 +301,7 @@ app.post('/api/auth/logout', verifyToken, (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT id, name, email, phone, role, createdAt FROM users');
+    const [users] = await connection.query('SELECT id, name, email, phone, role, photo, createdAt FROM users');
     connection.release();
     res.json(users);
   } catch (error) {
@@ -335,14 +335,14 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const { name, email, phone, role, password, address } = req.body;
+  const { name, email, phone, role, password, address, photo } = req.body;
   try {
     const connection = await pool.getConnection();
-    
+
     // Build update query dynamically based on provided fields
     let updateFields = [];
     let updateValues = [];
-    
+
     if (name) {
       updateFields.push('name = ?');
       updateValues.push(name);
@@ -366,7 +366,7 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
       updateFields.push('password = ?');
       updateValues.push(hashedPassword);
     }
-    
+
     if (address) {
       updateFields.push('address = ?');
       updateValues.push(address);
@@ -379,24 +379,28 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
       updateFields.push('lng = ?');
       updateValues.push(req.body.lng);
     }
-    
+    if (photo !== undefined) {
+      updateFields.push('photo = ?');
+      updateValues.push(photo);
+    }
+
     if (updateFields.length === 0) {
       connection.release();
       return res.status(400).json({ error: 'No fields to update' });
     }
-    
+
     updateValues.push(id);
     const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
-    
+
     await connection.query(updateQuery, updateValues);
-    
-    const [user] = await connection.query('SELECT id, name, email, phone, role, address, lat, lng FROM users WHERE id = ?', [id]);
+
+    const [user] = await connection.query('SELECT id, name, email, phone, role, address, lat, lng, photo FROM users WHERE id = ?', [id]);
     connection.release();
-    
+
     if (user.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     res.json(user[0]);
   } catch (error) {
     console.error('Error updating user:', error);
@@ -408,37 +412,37 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
 app.put('/api/users/:id/password', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { oldPassword, newPassword } = req.body;
-  
+
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ error: 'Password lama dan baru harus diisi' });
   }
 
   try {
     const connection = await pool.getConnection();
-    
+
     // Ambil user saat ini
     const [users] = await connection.query('SELECT password FROM users WHERE id = ?', [id]);
     if (users.length === 0) {
       connection.release();
       return res.status(404).json({ error: 'User tidak ditemukan' });
     }
-    
+
     const user = users[0];
-    
+
     // Verifikasi password lama
     const passwordMatch = await bcryptjs.compare(oldPassword, user.password);
     if (!passwordMatch) {
       connection.release();
       return res.status(401).json({ error: 'Password lama tidak sesuai' });
     }
-    
+
     // Hash password baru
     const salt = await bcryptjs.genSalt(10);
     const hashedNewPassword = await bcryptjs.hash(newPassword, salt);
-    
+
     // Update ke database
     await connection.query('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, id]);
-    
+
     connection.release();
     res.json({ message: 'Password berhasil diubah' });
   } catch (error) {
@@ -453,7 +457,7 @@ app.get('/api/orders', async (req, res) => {
     const connection = await pool.getConnection();
     const [orders] = await connection.query('SELECT * FROM orders');
     connection.release();
-    
+
     // Parse JSON fields and map workerId to assignedTo
     const parsedOrders = orders.map(order => ({
       ...order,
@@ -462,7 +466,7 @@ app.get('/api/orders', async (req, res) => {
       serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
       addonIds: order.addonIds ? JSON.parse(order.addonIds) : []
     }));
-    
+
     res.json(parsedOrders);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -470,13 +474,13 @@ app.get('/api/orders', async (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-  const { 
+  const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
-    status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes, 
-    serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter, 
+    status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes,
+    serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
     paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
   } = req.body;
-  
+
   try {
     const connection = await pool.getConnection();
     await connection.query(
@@ -490,22 +494,22 @@ app.post('/api/orders', async (req, res) => {
       )`,
       [
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
-        status, schedule, scheduledDate, scheduledTime, 
+        status, schedule, scheduledDate, scheduledTime,
         JSON.stringify(serviceIds), JSON.stringify(addonIds), JSON.stringify(acDetail), notes,
         serviceCost || 0, addonsCost || 0, totalPrice, totalCost,
         photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
       ]
     );
     connection.release();
-    res.status(201).json({ 
-      id, 
-      customerId, 
+    res.status(201).json({
+      id,
+      customerId,
       customerName,
       customerPhone,
       address,
-      workerId, 
+      workerId,
       assignedEmployeeName,
-      status, 
+      status,
       schedule,
       scheduledDate,
       scheduledTime,
@@ -534,14 +538,14 @@ app.post('/api/orders', async (req, res) => {
 
 app.put('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
-  const { 
-    status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter, 
+  const {
+    status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter,
     paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost
   } = req.body;
   let connection;
   try {
     connection = await pool.getConnection();
-    
+
     let finalPaymentUrl = undefined;
     let finalPaymentInvoiceId = undefined;
 
@@ -608,11 +612,11 @@ app.put('/api/orders/:id', async (req, res) => {
 
     // Support both workerId and assignedTo (assignedTo is the frontend name, workerId is the database name)
     const staffId = workerId || assignedTo;
-    
+
     // Build dynamic update query
     let updateFields = [];
     let updateValues = [];
-    
+
     if (status !== undefined) { updateFields.push('status = ?'); updateValues.push(status); }
     if (staffId !== undefined) { updateFields.push('workerId = ?'); updateValues.push(staffId); }
     if (assignedEmployeeName !== undefined) { updateFields.push('assignedEmployeeName = ?'); updateValues.push(assignedEmployeeName); }
@@ -628,22 +632,22 @@ app.put('/api/orders/:id', async (req, res) => {
     if (serviceCost !== undefined) { updateFields.push('serviceCost = ?'); updateValues.push(serviceCost); }
     if (addonsCost !== undefined) { updateFields.push('addonsCost = ?'); updateValues.push(addonsCost); }
     if (totalCost !== undefined) { updateFields.push('totalCost = ?'); updateValues.push(totalCost); }
-    
+
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }
 
     updateFields.push('updatedAt = NOW()');
     updateValues.push(id);
-    
+
     if (updateFields.length > 1) {
       await connection.query(
         `UPDATE orders SET ${updateFields.join(', ')} WHERE id = ?`,
         updateValues
       );
     }
-    
+
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
-    
+
     if (updatedOrder.length > 0) {
       const order = updatedOrder[0];
       const parsedOrder = {
@@ -667,7 +671,7 @@ app.put('/api/orders/:id', async (req, res) => {
 app.post('/api/webhooks/xendit', async (req, res) => {
   const { status, external_id } = req.body;
   console.log(`📡 Xendit webhook received:`, req.body);
-  
+
   if (status === 'PAID') {
     let connection;
     try {
@@ -694,21 +698,21 @@ app.get('/api/orders/:id/payment-status', async (req, res) => {
   try {
     connection = await pool.getConnection();
     const [orders] = await connection.query('SELECT paymentInvoiceId, paymentStatus, status FROM orders WHERE id = ?', [id]);
-    
+
     if (orders.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    
+
     const order = orders[0];
-    
+
     // Jika status di DB sudah PAID, langsung kembalikan
     if (order.paymentStatus === 'PAID') {
       return res.json({ paymentStatus: 'PAID', status: order.status });
     }
-    
+
     const invoiceId = order.paymentInvoiceId;
     const xenditApiKey = process.env.XENDIT_SECRET_KEY;
-    
+
     if (invoiceId && xenditApiKey) {
       const authHeader = 'Basic ' + Buffer.from(xenditApiKey + ':').toString('base64');
       const xenditResponse = await fetch(`https://api.xendit.co/v2/invoices/${invoiceId}`, {
@@ -717,11 +721,11 @@ app.get('/api/orders/:id/payment-status', async (req, res) => {
           'Authorization': authHeader
         }
       });
-      
+
       if (xenditResponse.ok) {
         const xenditData = await xenditResponse.json();
         console.log(`Checking Xendit status for ${invoiceId}: ${xenditData.status}`);
-        
+
         if (xenditData.status === 'PAID' || xenditData.status === 'SETTLED') {
           // Update status pembayaran & pesanan di database
           await connection.query(
@@ -733,7 +737,7 @@ app.get('/api/orders/:id/payment-status', async (req, res) => {
         }
       }
     }
-    
+
     res.json({ paymentStatus: order.paymentStatus, status: order.status });
   } catch (err) {
     console.error('Error checking payment status:', err);
