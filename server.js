@@ -94,6 +94,13 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE users ADD COLUMN photo LONGTEXT NULL");
       console.log("✅ Added 'photo' column to 'users' table in database");
     }
+
+    // Auto-migration: Check if 'addonsUsed' column exists in 'orders' table, if not add it
+    const [orderCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'addonsUsed'");
+    if (orderCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN addonsUsed JSON NULL");
+      console.log("✅ Added 'addonsUsed' column to 'orders' table in database");
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -471,7 +478,8 @@ app.get('/api/orders', async (req, res) => {
       assignedTo: order.workerId, // Map database field to API field
       acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
       serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
-      addonIds: order.addonIds ? JSON.parse(order.addonIds) : []
+      addonIds: order.addonIds ? JSON.parse(order.addonIds) : [],
+      addonsUsed: order.addonsUsed ? JSON.parse(order.addonsUsed) : []
     }));
 
     res.json(parsedOrders);
@@ -547,7 +555,7 @@ app.put('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
   const {
     status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter,
-    paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost
+    paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost, addonsUsed
   } = req.body;
   let connection;
   try {
@@ -559,7 +567,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (paymentMethod === 'TRANSFER') {
       try {
         const [existing] = await connection.query(
-          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, customerName, customerPhone FROM orders WHERE id = ?',
+          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, customerName, customerPhone, acDetail, addonsUsed FROM orders WHERE id = ?',
           [id]
         );
         if (existing.length > 0) {
@@ -574,6 +582,53 @@ app.put('/api/orders/:id', async (req, res) => {
             customerPhone = customerPhone.replace(/[^0-9]/g, '');
             if (customerPhone.startsWith('0')) {
               customerPhone = '62' + customerPhone.substring(1);
+            }
+
+            // Build itemized items list for Xendit
+            const items = [];
+            
+            // Add basic service
+            let acDetail = null;
+            try {
+              acDetail = orderData.acDetail ? JSON.parse(orderData.acDetail) : null;
+            } catch (e) {
+              console.error('Error parsing acDetail for Xendit invoice:', e);
+            }
+
+            if (acDetail) {
+              const serviceName = `${acDetail.quantity}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType}`;
+              items.push({
+                name: serviceName.substring(0, 255),
+                quantity: 1,
+                price: Number(orderData.serviceCost) || 0,
+                category: 'Service AC'
+              });
+            } else {
+              items.push({
+                name: `Jasa Layanan AC`,
+                quantity: 1,
+                price: Number(orderData.serviceCost) || 0,
+                category: 'Service AC'
+              });
+            }
+
+            // Add addons/spareparts
+            let addonsUsed = [];
+            try {
+              addonsUsed = orderData.addonsUsed ? JSON.parse(orderData.addonsUsed) : [];
+            } catch (e) {
+              console.error('Error parsing addonsUsed for Xendit invoice:', e);
+            }
+
+            if (Array.isArray(addonsUsed) && addonsUsed.length > 0) {
+              addonsUsed.forEach(ad => {
+                items.push({
+                  name: `Tambahan: ${ad.name}`.substring(0, 255),
+                  quantity: Number(ad.quantity) || 1,
+                  price: Number(ad.price) || 0,
+                  category: 'Sparepart/Addons'
+                });
+              });
             }
 
             const xenditApiKey = process.env.XENDIT_SECRET_KEY;
@@ -595,6 +650,7 @@ app.put('/api/orders/:id', async (req, res) => {
                     given_names: customerName,
                     mobile_number: customerPhone || undefined
                   },
+                  items: items,
                   success_redirect_url: process.env.FRONTEND_URL || 'https://sugarac.com',
                   failure_redirect_url: process.env.FRONTEND_URL || 'https://sugarac.com'
                 })
@@ -639,6 +695,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (serviceCost !== undefined) { updateFields.push('serviceCost = ?'); updateValues.push(serviceCost); }
     if (addonsCost !== undefined) { updateFields.push('addonsCost = ?'); updateValues.push(addonsCost); }
     if (totalCost !== undefined) { updateFields.push('totalCost = ?'); updateValues.push(totalCost); }
+    if (addonsUsed !== undefined) { updateFields.push('addonsUsed = ?'); updateValues.push(JSON.stringify(addonsUsed)); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }
@@ -661,7 +718,8 @@ app.put('/api/orders/:id', async (req, res) => {
         ...order,
         acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
         serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
-        addonIds: order.addonIds ? JSON.parse(order.addonIds) : []
+        addonIds: order.addonIds ? JSON.parse(order.addonIds) : [],
+        addonsUsed: order.addonsUsed ? JSON.parse(order.addonsUsed) : []
       };
       res.json(parsedOrder);
     } else {

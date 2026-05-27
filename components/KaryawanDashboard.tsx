@@ -306,7 +306,8 @@ export default function KaryawanDashboard() {
         addonsCost,
         completionNotes: completionNotes.trim(),
         totalCost,
-        paymentStatus: 'WAITING_APPROVAL'
+        paymentStatus: 'WAITING_APPROVAL',
+        addonsUsed: addonsUsed
       });
 
       setOrders(prevOrders =>
@@ -318,7 +319,8 @@ export default function KaryawanDashboard() {
               photoAfter: photoAfterUrl,
               addonsCost,
               completionNotes: completionNotes.trim(),
-              totalCost
+              totalCost,
+              addonsUsed: addonsUsed
             }
             : o
         )

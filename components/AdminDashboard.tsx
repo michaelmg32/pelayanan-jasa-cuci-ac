@@ -61,7 +61,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('JOBS_TRACKER');
 
   // Job status filter
-  const [statusFilter, setStatusFilter] = useState<'ALL' | OrderStatus>('ALL');
+  const [statusFilter, setStatusFilter] = useState<OrderStatus>(OrderStatus.MENUNGGU);
 
   // Selected order for staff allocation
   const [selectedOrderForAssign, setSelectedOrderForAssign] = useState<Order | null>(null);
@@ -116,7 +116,6 @@ export default function AdminDashboard() {
 
   // Filter orders according to selection
   const filteredOrders = orders.filter(o => {
-    if (statusFilter === 'ALL') return true;
     return o.status === statusFilter;
   });
 
@@ -516,13 +515,6 @@ export default function AdminDashboard() {
 
             {/* Horizontal state filter */}
             <div className="flex overflow-x-auto flex-nowrap gap-1 bg-white p-1.5 rounded-xl border border-slate-200">
-              <button
-                onClick={() => setStatusFilter('ALL')}
-                className={`px-3 py-1 text-[10.5px] font-black rounded-lg transition uppercase whitespace-nowrap shrink-0 ${statusFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
-              >
-                Semua ({orders.length})
-              </button>
               {Object.values(OrderStatus).map((st) => (
                 <button
                   key={st}

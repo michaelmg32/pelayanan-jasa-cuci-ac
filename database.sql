@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS orders (
   totalCost DECIMAL(10, 2),
   photoBefore LONGTEXT,
   photoAfter LONGTEXT,
+  addonsUsed JSON,
   paymentMethod VARCHAR(20),
   paymentStatus VARCHAR(50),
   rating INT,

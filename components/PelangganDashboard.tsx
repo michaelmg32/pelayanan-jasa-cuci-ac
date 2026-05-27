@@ -742,18 +742,60 @@ export default function PelangganDashboard() {
                               </div>
 
                               {selectedPayMethod === 'CASH' && (
-                                <div className="bg-white border border-emerald-100 p-2.5 rounded-lg text-[10px] text-slate-700 space-y-1">
+                                <div className="bg-white border border-emerald-100 p-3.5 rounded-lg text-[10px] text-slate-700 space-y-2">
                                   <p className="font-bold text-emerald-700">💵 Pembayaran Tunai</p>
-                                  <p>Instruksi: Siapkan uang tunai sebesar {formatRupiah(order.totalCost || 0)} untuk teknisi di lokasi.</p>
+                                  <p className="font-medium">Instruksi: Siapkan uang tunai sebesar <strong className="text-slate-900 font-extrabold">{formatRupiah(order.totalCost || 0)}</strong> untuk teknisi di lokasi dengan rincian berikut:</p>
+                                  <div className="border-t border-slate-100 pt-2 space-y-1 text-slate-600 text-[10px]">
+                                    <div className="flex justify-between">
+                                      <span>Biaya Jasa Utama:</span>
+                                      <span className="font-mono font-bold">{formatRupiah(order.serviceCost)}</span>
+                                    </div>
+                                    {order.addonsUsed && order.addonsUsed.length > 0 && (
+                                      <div className="space-y-1 bg-slate-50 p-2 rounded-lg border border-slate-100 mt-1">
+                                        <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Alat & Bahan Tambahan:</span>
+                                        {order.addonsUsed.map((ad, idx) => (
+                                          <div key={idx} className="flex justify-between text-[9.5px]">
+                                            <span className="text-slate-500">• {ad.name} ({ad.quantity}x)</span>
+                                            <span className="font-mono font-bold text-slate-700">{formatRupiah(ad.price * ad.quantity)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 mt-1.5">
+                                      <span>Grand Total:</span>
+                                      <span className="font-mono text-emerald-600 text-xs">{formatRupiah(order.totalCost || order.serviceCost)}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
 
                               {selectedPayMethod === 'TRANSFER' && (
-                                <div className="bg-white border border-indigo-100 p-3 rounded-lg text-[11px] text-slate-700 space-y-3 text-left">
+                                <div className="bg-white border border-indigo-100 p-3.5 rounded-lg text-[11px] text-slate-700 space-y-3 text-left">
                                   <p className="font-bold text-indigo-700">🏦 Transfer Bank & E-Wallet (Xendit)</p>
                                   <p className="text-[10px] text-slate-500 leading-normal">
                                     Anda dapat membayar tagihan dengan mudah menggunakan Virtual Account (BCA, Mandiri, BRI, BNI), QRIS (GoPay, OVO, ShopeePay, DANA), atau Alfamart.
                                   </p>
+                                  <div className="border-t border-slate-100 pt-2.5 space-y-1 text-slate-600 text-[10px]">
+                                    <div className="flex justify-between">
+                                      <span>Biaya Jasa Utama:</span>
+                                      <span className="font-mono font-bold">{formatRupiah(order.serviceCost)}</span>
+                                    </div>
+                                    {order.addonsUsed && order.addonsUsed.length > 0 && (
+                                      <div className="space-y-1 bg-slate-50 p-2 rounded-lg border border-slate-100 mt-1">
+                                        <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Alat & Bahan Tambahan:</span>
+                                        {order.addonsUsed.map((ad, idx) => (
+                                          <div key={idx} className="flex justify-between text-[9.5px]">
+                                            <span className="text-slate-500">• {ad.name} ({ad.quantity}x)</span>
+                                            <span className="font-mono font-bold text-slate-700">{formatRupiah(ad.price * ad.quantity)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 mt-1.5">
+                                      <span>Grand Total:</span>
+                                      <span className="font-mono text-indigo-700 text-xs">{formatRupiah(order.totalCost || order.serviceCost)}</span>
+                                    </div>
+                                  </div>
 
                                   {order.paymentUrl ? (
                                     <div className="space-y-2 pt-1">
