@@ -301,7 +301,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             <div className="flex justify-center">
               <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'}>
                 <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
+                  onSuccess={handleGoogleLoginSuccess}
                   onError={() => setErrorMsg('Login dengan Google gagal.')}
                   theme="filled_blue"
                   shape="pill"
