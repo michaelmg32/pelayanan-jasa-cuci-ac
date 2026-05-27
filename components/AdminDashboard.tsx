@@ -651,7 +651,7 @@ export default function AdminDashboard() {
 
                     <div className="flex justify-between items-center pt-2 border-t border-slate-100 font-black">
                       <span className="text-[10px] uppercase text-slate-400 tracking-wider">Total Jasa:</span>
-                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(order.totalCost || order.serviceCost)}</span>
+                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
                     </div>
                   </div>
                 ))
@@ -1497,7 +1497,7 @@ export default function AdminDashboard() {
                     )}
                     <div className="flex justify-between font-black text-slate-800 border-t pt-2 mt-1">
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
-                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.totalCost || selectedOrderDetail.serviceCost)}</span>
+                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0))}</span>
                     </div>
                   </div>
                 </div>

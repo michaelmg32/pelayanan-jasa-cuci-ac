@@ -576,7 +576,7 @@ app.put('/api/orders/:id', async (req, res) => {
             finalPaymentUrl = orderData.paymentUrl;
             finalPaymentInvoiceId = orderData.paymentInvoiceId;
           } else {
-            const amount = orderData.totalCost || orderData.serviceCost || 0;
+            const amount = Number(orderData.serviceCost || 0) + Number(orderData.addonsCost || 0);
             const customerName = orderData.customerName || 'Pelanggan';
             let customerPhone = orderData.customerPhone || '';
             customerPhone = customerPhone.replace(/[^0-9]/g, '');

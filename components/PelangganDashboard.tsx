@@ -595,7 +595,7 @@ export default function PelangganDashboard() {
                             </div>
                             <div className="text-right shrink-0">
                               <span className="text-xs font-black text-indigo-700 font-mono block">
-                                {formatRupiah(order.totalCost || order.serviceCost || 0)}
+                                {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
                               </span>
                             </div>
                           </div>
@@ -953,7 +953,7 @@ export default function PelangganDashboard() {
                     <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Total Pengeluaran</span>
                     <span className="text-sm font-black text-emerald-400 mt-0.5 block">
                       {formatRupiah(
-                        completedOrders.reduce((sum, o) => sum + (Number(o.totalCost) || Number(o.serviceCost) || 0), 0)
+                        completedOrders.reduce((sum, o) => sum + Number(o.serviceCost || 0) + Number(o.addonsCost || 0), 0)
                       )}
                     </span>
                   </div>
@@ -977,7 +977,7 @@ export default function PelangganDashboard() {
                           </div>
                           <div className="text-right shrink-0">
                             <span className="text-xs font-black text-emerald-600 font-mono block">
-                              {formatRupiah(order.totalCost || order.serviceCost || 0)}
+                              {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
                             </span>
                             <span className="text-[8px] bg-emerald-50 text-emerald-600 font-black uppercase px-1.5 block mt-0.5">
                               CLOSED

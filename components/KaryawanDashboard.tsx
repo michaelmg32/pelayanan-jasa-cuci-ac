@@ -798,7 +798,7 @@ export default function KaryawanDashboard() {
                             <h4 className="font-bold text-xs text-slate-800 mt-0.5">{task.customerName}</h4>
                           </div>
                           <div className="text-right">
-                            <span className="text-xs font-black text-emerald-600 block">{formatRupiah(task.totalCost || task.serviceCost || 0)}</span>
+                            <span className="text-xs font-black text-emerald-600 block">{formatRupiah(Number(task.serviceCost || 0) + Number(task.addonsCost || 0))}</span>
                             <span className="text-[8px] bg-emerald-50 text-emerald-600 font-black uppercase px-1.5 block mt-0.5">CLOSED</span>
                           </div>
                         </div>
