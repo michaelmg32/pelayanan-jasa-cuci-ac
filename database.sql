@@ -129,3 +129,14 @@ INSERT INTO ac_addons (id, name, description, price) VALUES
 ('addon-2', 'Refill Freon', 'Penambahan freon AC', 300000),
 ('addon-3', 'Pembersihan Indoor Coil', 'Pembersihan coil indoor khusus', 75000),
 ('addon-4', 'Penggantian Filter', 'Ganti filter udara AC baru', 100000);
+
+-- Settings Table
+CREATE TABLE IF NOT EXISTS settings (
+  key_name VARCHAR(50) PRIMARY KEY,
+  value LONGTEXT
+);
+
+INSERT INTO settings (key_name, value) VALUES 
+('business_name', 'CoolAir Pro'),
+('business_logo', '')
+ON DUPLICATE KEY UPDATE key_name=key_name;

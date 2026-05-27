@@ -68,6 +68,73 @@ app.get('/api/test-connection', async (req, res) => {
   }
 });
 
+// Initialize database settings table
+const initializeDatabaseSettings = async () => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key_name VARCHAR(50) PRIMARY KEY,
+        value LONGTEXT
+      )
+    `);
+    
+    await connection.query(`
+      INSERT INTO settings (key_name, value) VALUES 
+      ('business_name', 'CoolAir Pro'),
+      ('business_logo', '')
+      ON DUPLICATE KEY UPDATE key_name=key_name
+    `);
+    console.log('✅ Settings table initialized in database');
+  } catch (err) {
+    console.error('❌ Failed to initialize settings table in database:', err);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+initializeDatabaseSettings();
+
+// GET App Settings
+app.get('/api/settings', async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [rows] = await connection.query('SELECT * FROM settings');
+    const settings = {};
+    rows.forEach(row => {
+      settings[row.key_name] = row.value;
+    });
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// PUT App Settings (Update Settings)
+app.put('/api/settings', async (req, res) => {
+  const { business_name, business_logo } = req.body;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    if (business_name !== undefined) {
+      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_name', business_name, business_name]);
+    }
+    if (business_logo !== undefined) {
+      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_logo', business_logo, business_logo]);
+    }
+    res.json({ message: 'Settings updated successfully' });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 // ===== AUTHENTICATION API =====
 // Login endpoint
 app.post('/api/auth/login', async (req, res) => {

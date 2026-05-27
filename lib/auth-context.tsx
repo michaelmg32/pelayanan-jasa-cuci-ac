@@ -29,6 +29,8 @@ interface AppContextType {
   // Loading/Connection
   isLoading: boolean;
   dbConnected: boolean;
+  appSettings: { business_name: string; business_logo: string };
+  updateAppSettings: (business_name: string, business_logo: string) => Promise<void>;
   
   // Actions
   login: (user: User) => void;
@@ -73,6 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [dbConnected, setDbConnected] = useState(false);
+  const [appSettings, setAppSettings] = useState({ business_name: 'CoolAir Pro', business_logo: '' });
 
   // Initialize data from database
   useEffect(() => {
@@ -91,13 +94,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         // Fetch all data
-        const [fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons] = await Promise.all([
+        const [fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings] = await Promise.all([
           api.fetchUsers(),
           api.fetchOrders(),
           api.fetchModels(),
           api.fetchServices(),
           api.fetchCategories(),
           api.fetchAddons(),
+          api.fetchSettings(),
         ]);
 
         setUsers(fetchedUsers);
@@ -106,6 +110,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setServices(fetchedServices);
         setCategories(fetchedCategories);
         setAddons(fetchedAddons);
+        if (fetchedSettings) {
+          setAppSettings({
+            business_name: fetchedSettings.business_name || 'CoolAir Pro',
+            business_logo: fetchedSettings.business_logo || '',
+          });
+        }
 
         // Restore active user session from localStorage
         if (typeof window !== 'undefined') {
@@ -126,6 +136,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     initializeData();
   }, []);
+
+  // Dynamic Tab Title and Favicon based on settings
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (appSettings.business_name) {
+        document.title = `${appSettings.business_name} - Sistem Jasa AC`;
+      }
+      if (appSettings.business_logo) {
+        let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'shortcut icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = appSettings.business_logo;
+      }
+    }
+  }, [appSettings.business_name, appSettings.business_logo]);
+
+  const updateAppSettings = async (business_name: string, business_logo: string) => {
+    try {
+      await api.updateSettings({ business_name, business_logo });
+      setAppSettings({ business_name, business_logo });
+      showAlert('Pengaturan bisnis berhasil diperbarui!');
+    } catch (error) {
+      console.error('Failed to update app settings:', error);
+      showAlert('Gagal memperbarui pengaturan bisnis.');
+    }
+  };
 
   // Action handlers
   const setActiveUser = (user: User | null) => {
@@ -298,6 +337,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAddons,
         isLoading,
         dbConnected,
+        appSettings,
+        updateAppSettings,
         login,
         logout,
         registerCustomer,

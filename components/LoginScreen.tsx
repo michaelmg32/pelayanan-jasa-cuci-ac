@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { User, Role } from '@/types';
 import { Wind, Key, Mail, LogIn, UserPlus } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { useApp } from '@/lib/auth-context';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -141,12 +142,14 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    setIsLoading(true);
+  const handleGoogleLoginSuccess = async (credentialResponse: any) => {
     try {
-      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+      setIsLoading(true);
+      setErrorMsg('');
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      if (!credentialResponse.credential) {
+        throw new Error('Google credential token is missing.');
       }
       
       const response = await fetch(`${apiUrl}/auth/google`, {
@@ -190,10 +193,14 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
         
         {/* Brand Logo & Tagline */}
         <div className="flex flex-col items-center justify-center mb-6 shrink-0">
-          <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 mb-3 transform hover:rotate-6 transition duration-300 cursor-pointer">
-            <Wind size={28} className="text-white shrink-0 animate-pulse" />
+          <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 mb-3 transform hover:rotate-6 transition duration-300 cursor-pointer overflow-hidden">
+            {appSettings?.business_logo ? (
+              <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <Wind size={28} className="text-white shrink-0 animate-pulse" />
+            )}
           </div>
-          <h2 className="text-xl font-extrabold tracking-tight text-slate-800 leading-none">CoolAir Pro</h2>
+          <h2 className="text-xl font-extrabold tracking-tight text-slate-800 leading-none">{appSettings?.business_name || 'CoolAir Pro'}</h2>
           <p className="text-[10px] text-slate-400 font-bold tracking-wider mt-2 uppercase">Sistem Jasa AC Multi-Role Terpadu</p>
         </div>
 
