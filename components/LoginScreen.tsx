@@ -18,6 +18,7 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLogin, onRegisterCustomer, availableUsers }: LoginScreenProps) {
+  const { appSettings } = useApp();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
