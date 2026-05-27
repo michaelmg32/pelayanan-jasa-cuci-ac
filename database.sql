@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   lng DOUBLE,
   role ENUM('pelanggan', 'karyawan', 'admin', 'owner') NOT NULL,
   password VARCHAR(255) NOT NULL,
+  photo LONGTEXT NULL,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_role (role),

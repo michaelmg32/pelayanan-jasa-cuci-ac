@@ -87,6 +87,13 @@ const initializeDatabaseSettings = async () => {
       ON DUPLICATE KEY UPDATE key_name=key_name
     `);
     console.log('✅ Settings table initialized in database');
+
+    // Auto-migration: Check if 'photo' column exists in 'users' table, if not add it
+    const [columns] = await connection.query("SHOW COLUMNS FROM users LIKE 'photo'");
+    if (columns.length === 0) {
+      await connection.query("ALTER TABLE users ADD COLUMN photo LONGTEXT NULL");
+      console.log("✅ Added 'photo' column to 'users' table in database");
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {

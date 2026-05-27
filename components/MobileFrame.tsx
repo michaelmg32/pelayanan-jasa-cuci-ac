@@ -54,8 +54,14 @@ export default function MobileFrame({
                   <p className="text-sm font-semibold text-slate-900">{activeUser.name}</p>
                   <p className="text-xs text-slate-500 capitalize">{activeUser.role}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white">
-                  <UserIcon size={18} />
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-white flex items-center justify-center shrink-0 shadow-sm">
+                  {activeUser.photo ? (
+                    <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white">
+                      <UserIcon size={18} />
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={onLogout}
