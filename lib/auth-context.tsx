@@ -144,6 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         document.title = `${appSettings.business_name} - Sistem Jasa AC`;
       }
       if (appSettings.business_logo) {
+        // Update Favicon
         let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
         if (!link) {
           link = document.createElement('link');
@@ -151,6 +152,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           document.getElementsByTagName('head')[0].appendChild(link);
         }
         link.href = appSettings.business_logo;
+
+        // Update Apple Touch Icon (For Add to Home Screen)
+        let appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement;
+        if (!appleLink) {
+          appleLink = document.createElement('link');
+          appleLink.rel = 'apple-touch-icon';
+          document.getElementsByTagName('head')[0].appendChild(appleLink);
+        }
+        appleLink.href = appSettings.business_logo;
       }
     }
   }, [appSettings.business_name, appSettings.business_logo]);
