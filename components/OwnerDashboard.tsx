@@ -233,7 +233,7 @@ export default function OwnerDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-bold text-slate-700">{formatRupiah(order.totalCost || order.serviceCost)}</div>
+                  <div className="font-mono font-bold text-slate-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</div>
                   <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded inline-block mt-1 ${
                     order.status === OrderStatus.SELESAI ? 'bg-emerald-100 text-emerald-800' :
                     order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
