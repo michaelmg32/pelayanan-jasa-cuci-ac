@@ -4,11 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "node server.js",
     "server": "node server.js",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
   },
   "dependencies": {

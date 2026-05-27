@@ -1,4 +1,5 @@
 import express from 'express';
+import next from 'next';
 import cors from 'cors';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
@@ -6,12 +7,16 @@ import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 
-const googleClient = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
-
 dotenv.config();
 
+const dev = process.env.NODE_ENV !== 'production';
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
+
+const googleClient = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
 const app = express();
-const PORT = process.env.API_PORT || 5000;
+const PORT = process.env.API_PORT || process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production-env';
 const JWT_EXPIRY = '24h';
 
@@ -898,26 +903,36 @@ app.delete('/api/addons/:id', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-  console.log(`📚 API Documentation:`);
-  console.log(`   GET  /api/test-connection    - Test database connection`);
-  console.log(`   GET  /api/users              - Get all users`);
-  console.log(`   POST /api/users              - Create new user`);
-  console.log(`   PUT  /api/users/:id          - Update user`);
-  console.log(`   GET  /api/orders             - Get all orders`);
-  console.log(`   POST /api/orders             - Create new order`);
-  console.log(`   PUT  /api/orders/:id         - Update order`);
-  console.log(`   GET  /api/models             - Get AC models`);
-  console.log(`   POST /api/models             - Create AC model`);
-  console.log(`   PUT  /api/models/:id         - Update AC model`);
-  console.log(`   GET  /api/categories         - Get AC categories`);
-  console.log(`   POST /api/categories         - Create AC category`);
-  console.log(`   PUT  /api/categories/:id     - Update AC category`);
-  console.log(`   GET  /api/services           - Get AC services`);
-  console.log(`   POST /api/services           - Create AC service`);
-  console.log(`   PUT  /api/services/:id       - Update AC service`);
-  console.log(`   GET  /api/addons             - Get AC addons`);
-  console.log(`   POST /api/addons             - Create AC addon`);
-  console.log(`   PUT  /api/addons/:id         - Update AC addon`);
+nextApp.prepare().then(() => {
+  // Semua request selain /api akan diserahkan ke Next.js
+  app.all('*', (req, res) => {
+    return handle(req, res);
+  });
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server (API + Next.js) running on http://localhost:${PORT}`);
+    console.log(`📚 API Documentation:`);
+    console.log(`   GET  /api/test-connection    - Test database connection`);
+    console.log(`   GET  /api/users              - Get all users`);
+    console.log(`   POST /api/users              - Create new user`);
+    console.log(`   PUT  /api/users/:id          - Update user`);
+    console.log(`   GET  /api/orders             - Get all orders`);
+    console.log(`   POST /api/orders             - Create new order`);
+    console.log(`   PUT  /api/orders/:id         - Update order`);
+    console.log(`   GET  /api/models             - Get AC models`);
+    console.log(`   POST /api/models             - Create AC model`);
+    console.log(`   PUT  /api/models/:id         - Update AC model`);
+    console.log(`   GET  /api/categories         - Get AC categories`);
+    console.log(`   POST /api/categories         - Create AC category`);
+    console.log(`   PUT  /api/categories/:id     - Update AC category`);
+    console.log(`   GET  /api/services           - Get AC services`);
+    console.log(`   POST /api/services           - Create AC service`);
+    console.log(`   PUT  /api/services/:id       - Update AC service`);
+    console.log(`   GET  /api/addons             - Get AC addons`);
+    console.log(`   POST /api/addons             - Create AC addon`);
+    console.log(`   PUT  /api/addons/:id         - Update AC addon`);
+  });
+}).catch((err) => {
+  console.error('Error starting Next.js:', err);
+  process.exit(1);
 });
