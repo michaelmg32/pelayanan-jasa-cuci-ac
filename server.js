@@ -572,11 +572,38 @@ app.put('/api/orders/:id', async (req, res) => {
         );
         if (existing.length > 0) {
           const orderData = existing[0];
-          if (orderData.paymentUrl) {
-            finalPaymentUrl = orderData.paymentUrl;
-            finalPaymentInvoiceId = orderData.paymentInvoiceId;
-          } else {
-            const amount = Number(orderData.serviceCost || 0) + Number(orderData.addonsCost || 0);
+          const amount = Number(orderData.serviceCost || 0) + Number(orderData.addonsCost || 0);
+
+          let reuseInvoice = false;
+          if (orderData.paymentUrl && orderData.paymentInvoiceId) {
+            const xenditApiKey = process.env.XENDIT_SECRET_KEY;
+            if (xenditApiKey) {
+              try {
+                const authHeader = 'Basic ' + Buffer.from(xenditApiKey + ':').toString('base64');
+                const xenditResponse = await fetch(`https://api.xendit.co/v2/invoices/${orderData.paymentInvoiceId}`, {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': authHeader
+                  }
+                });
+                if (xenditResponse.ok) {
+                  const xenditData = await xenditResponse.json();
+                  if (Number(xenditData.amount) === amount && xenditData.status !== 'EXPIRED') {
+                    reuseInvoice = true;
+                    finalPaymentUrl = orderData.paymentUrl;
+                    finalPaymentInvoiceId = orderData.paymentInvoiceId;
+                    console.log(`Reusing existing Xendit invoice for order ${id} as amount matches: ${amount}`);
+                  } else {
+                    console.log(`Xendit invoice amount mismatch or expired. (Xendit: ${xenditData.amount}, Current: ${amount}). Regenerating invoice...`);
+                  }
+                }
+              } catch (e) {
+                console.error('Error verifying existing Xendit invoice:', e);
+              }
+            }
+          }
+
+          if (!reuseInvoice) {
             const customerName = orderData.customerName || 'Pelanggan';
             let customerPhone = orderData.customerPhone || '';
             customerPhone = customerPhone.replace(/[^0-9]/g, '');
