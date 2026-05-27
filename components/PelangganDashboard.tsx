@@ -744,7 +744,7 @@ export default function PelangganDashboard() {
                               {selectedPayMethod === 'CASH' && (
                                 <div className="bg-white border border-emerald-100 p-3.5 rounded-lg text-[10px] text-slate-700 space-y-2">
                                   <p className="font-bold text-emerald-700">💵 Pembayaran Tunai</p>
-                                  <p className="font-medium">Instruksi: Siapkan uang tunai sebesar <strong className="text-slate-900 font-extrabold">{formatRupiah(order.totalCost || 0)}</strong> untuk teknisi di lokasi dengan rincian berikut:</p>
+                                  <p className="font-medium">Instruksi: Siapkan uang tunai sebesar <strong className="text-slate-900 font-extrabold">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</strong> untuk teknisi di lokasi dengan rincian berikut:</p>
                                   <div className="border-t border-slate-100 pt-2 space-y-1 text-slate-600 text-[10px]">
                                     <div className="flex justify-between">
                                       <span>Biaya Jasa Utama:</span>
@@ -763,7 +763,7 @@ export default function PelangganDashboard() {
                                     )}
                                     <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 mt-1.5">
                                       <span>Grand Total:</span>
-                                      <span className="font-mono text-emerald-600 text-xs">{formatRupiah(order.totalCost || order.serviceCost)}</span>
+                                      <span className="font-mono text-emerald-600 text-xs">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -793,7 +793,7 @@ export default function PelangganDashboard() {
                                     )}
                                     <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 mt-1.5">
                                       <span>Grand Total:</span>
-                                      <span className="font-mono text-indigo-700 text-xs">{formatRupiah(order.totalCost || order.serviceCost)}</span>
+                                      <span className="font-mono text-indigo-700 text-xs">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
                                     </div>
                                   </div>
 

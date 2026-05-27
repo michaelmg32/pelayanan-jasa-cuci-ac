@@ -567,7 +567,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (paymentMethod === 'TRANSFER') {
       try {
         const [existing] = await connection.query(
-          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, customerName, customerPhone, acDetail, addonsUsed FROM orders WHERE id = ?',
+          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, addonsCost, customerName, customerPhone, acDetail, addonsUsed FROM orders WHERE id = ?',
           [id]
         );
         if (existing.length > 0) {
