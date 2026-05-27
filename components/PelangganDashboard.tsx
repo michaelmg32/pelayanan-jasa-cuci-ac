@@ -78,6 +78,60 @@ export default function PelangganDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showProfileMapPicker, setShowProfileMapPicker] = useState(false);
+  const [editPhoto, setEditPhoto] = useState(activeUser?.photo || '');
+
+  // Client-side image compression
+  const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context not available'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedBase64);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 600, 600, 0.75);
+        setEditPhoto(compressedBase64);
+      } catch (err) {
+        console.error('Error compressing profile image:', err);
+        alert('❌ Gagal memproses foto profil. Silakan coba lagi.');
+      }
+    }
+  };
 
   // Password Edit States
   const [editOldPassword, setEditOldPassword] = useState('');
@@ -110,6 +164,7 @@ export default function PelangganDashboard() {
       setPhone(activeUser.phone || '');
       setLat(activeUser.lat);
       setLng(activeUser.lng);
+      setEditPhoto(activeUser.photo || '');
     }
   }, [activeUser]);
 
@@ -292,6 +347,7 @@ export default function PelangganDashboard() {
         address: editAddress.trim(),
         lat: editLat,
         lng: editLng,
+        photo: editPhoto,
       });
 
       const updatedUser = {
@@ -301,6 +357,7 @@ export default function PelangganDashboard() {
         address: editAddress.trim(),
         lat: editLat,
         lng: editLng,
+        photo: editPhoto,
       };
       setActiveUser(updatedUser);
 
@@ -1054,8 +1111,12 @@ export default function PelangganDashboard() {
                   Informasi Pengguna
                 </span>
                 <div className="flex items-center gap-3 mt-3">
-                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl">
-                    {activeUser.name.charAt(0).toUpperCase()}
+                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl overflow-hidden border">
+                    {activeUser.photo ? (
+                      <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      activeUser.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
@@ -1092,6 +1153,13 @@ export default function PelangganDashboard() {
 
                 {profileViewMode === 'readonly' && (
                   <div className="bg-white border p-5 rounded-2xl shadow-xs space-y-5">
+                    {activeUser.photo && (
+                      <div className="flex justify-center pb-2">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden border shadow-sm">
+                          <img src={activeUser.photo} alt="Profile Picture" className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                    )}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between border-b pb-3 border-slate-100">
                         <div>
@@ -1150,6 +1218,29 @@ export default function PelangganDashboard() {
 
                 {profileViewMode === 'edit-profile' && (
                   <form onSubmit={handleSaveProfile} className="bg-white border p-5 rounded-2xl shadow-xs space-y-4">
+                    {/* Foto Profil Upload */}
+                    <div className="space-y-2 pb-2">
+                      <label className="text-[9.5px] text-slate-400 font-bold uppercase block">Foto Profil</label>
+                      <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <div className="w-14 h-14 bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center overflow-hidden border">
+                          {editPhoto ? (
+                            <img src={editPhoto} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold">No Photo</span>
+                          )}
+                        </div>
+                        <div className="flex-grow text-left">
+                          <span className="text-[10px] text-slate-600 font-bold block mb-1">Pilih Foto Diri</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePhotoChange}
+                            className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
                       <input

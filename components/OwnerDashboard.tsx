@@ -1,12 +1,173 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OrderStatus } from '@/types';
 import { useApp } from '@/lib/auth-context';
-import { LogOut, TrendingUp, Users, DollarSign, Star, Briefcase, Settings } from 'lucide-react';
+import * as api from '@/lib/api';
+import {
+  LogOut,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Star,
+  Briefcase,
+  Settings,
+  User as UserIcon,
+  Mail,
+  Phone,
+  MapPin,
+  ShieldCheck,
+  Camera,
+  Check,
+  Loader,
+  X
+} from 'lucide-react';
 
 export default function OwnerDashboard() {
-  const { activeUser, orders, logout, appSettings, updateAppSettings } = useApp();
+  const { activeUser, setActiveUser, orders, logout, appSettings, updateAppSettings } = useApp();
+
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile'>('dashboard');
+
+  // Owner Profile States
+  const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
+  const [editProfileName, setEditProfileName] = useState(activeUser?.name || '');
+  const [editProfilePhone, setEditProfilePhone] = useState(activeUser?.phone || '');
+  const [editProfileAddress, setEditProfileAddress] = useState(activeUser?.address || '');
+  const [editProfilePhoto, setEditProfilePhoto] = useState(activeUser?.photo || '');
+  const [editOldPassword, setEditOldPassword] = useState('');
+  const [editNewPassword, setEditNewPassword] = useState('');
+  const [editConfirmPassword, setEditConfirmPassword] = useState('');
+  const [saveProfileSuccess, setSaveProfileSuccess] = useState(false);
+  const [profileErrorMsg, setProfileErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Sync edits when user props update
+  useEffect(() => {
+    if (activeUser) {
+      setEditProfileName(activeUser.name || '');
+      setEditProfilePhone(activeUser.phone || '');
+      setEditProfileAddress(activeUser.address || '');
+      setEditProfilePhoto(activeUser.photo || '');
+    }
+  }, [activeUser]);
+
+  // Client-side image compression
+  const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context not available'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedBase64);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 600, 600, 0.75);
+        setEditProfilePhoto(compressedBase64);
+      } catch (err) {
+        console.error('Error compressing profile image:', err);
+        alert('❌ Gagal memproses foto profil. Silakan coba lagi.');
+      }
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editProfileName.trim()) {
+      setProfileErrorMsg('Nama tidak boleh kosong');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      setProfileErrorMsg('');
+      await api.updateUser(activeUser!.id, {
+        name: editProfileName.trim(),
+        email: activeUser!.email,
+        phone: editProfilePhone.trim(),
+        role: activeUser!.role,
+        address: editProfileAddress.trim(),
+        photo: editProfilePhoto,
+      });
+      const updatedUser = {
+        ...activeUser!,
+        name: editProfileName.trim(),
+        phone: editProfilePhone.trim(),
+        address: editProfileAddress.trim(),
+        photo: editProfilePhoto,
+      };
+      setActiveUser(updatedUser);
+      setSaveProfileSuccess(true);
+      setProfileViewMode('readonly');
+      setTimeout(() => setSaveProfileSuccess(false), 2500);
+    } catch (error: any) {
+      setProfileErrorMsg(error?.message || 'Gagal memperbarui profil');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editNewPassword !== editConfirmPassword) {
+      setProfileErrorMsg('Password baru dan konfirmasi tidak cocok');
+      return;
+    }
+    if (editNewPassword.length < 6) {
+      setProfileErrorMsg('Password baru minimal 6 karakter');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      setProfileErrorMsg('');
+      await api.updatePassword(activeUser!.id, {
+        oldPassword: editOldPassword,
+        newPassword: editNewPassword,
+      });
+      setSaveProfileSuccess(true);
+      setProfileViewMode('readonly');
+      setEditOldPassword('');
+      setEditNewPassword('');
+      setEditConfirmPassword('');
+      setTimeout(() => setSaveProfileSuccess(false), 3000);
+    } catch (error: any) {
+      setProfileErrorMsg(error?.message || 'Gagal mengganti password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editName, setEditName] = useState(appSettings?.business_name || '');
@@ -88,8 +249,38 @@ export default function OwnerDashboard() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'dashboard'
+            ? 'text-slate-900 border-slate-900'
+            : 'text-slate-600 border-transparent hover:text-slate-800'
+            }`}
+        >
+          <span className="flex items-center gap-2">
+            <TrendingUp size={15} />
+            <span>Dashboard Analisis</span>
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'profile'
+            ? 'text-slate-900 border-slate-900'
+            : 'text-slate-600 border-transparent hover:text-slate-800'
+            }`}
+        >
+          <span className="flex items-center gap-2">
+            <UserIcon size={15} />
+            <span>Profil Saya</span>
+          </span>
+        </button>
+      </div>
+
       {/* Body - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {activeTab === 'dashboard' && (
+          <>
         
         {/* Metrics Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -251,6 +442,243 @@ export default function OwnerDashboard() {
             )}
           </div>
         </div>
+        </>)}
+
+        {activeTab === 'profile' && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-2xl mx-auto shadow-sm">
+            <div className="flex justify-between items-center px-1 border-b pb-3 border-slate-100">
+              <div>
+                <h3 className="font-extrabold text-sm uppercase text-slate-800">Profil Owner</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Informasi akun pemilik usaha</p>
+              </div>
+              <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[8.5px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">
+                OWNER
+              </span>
+            </div>
+
+            {saveProfileSuccess && (
+              <div className="bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold flex items-center gap-2">
+                <Check size={14} /> Profil berhasil diperbarui!
+              </div>
+            )}
+
+            {profileErrorMsg && (
+              <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-xl text-[11px] text-rose-700 font-semibold flex items-center gap-2">
+                <X size={14} /> {profileErrorMsg}
+              </div>
+            )}
+
+            {profileViewMode === 'readonly' && (
+              <div className="space-y-5">
+                <div className="flex flex-col items-center justify-center pb-4 border-b border-slate-150">
+                  <div className="w-20 h-20 bg-indigo-100 text-indigo-700 font-black text-lg flex items-center justify-center rounded-2xl shadow-sm border overflow-hidden">
+                    {activeUser.photo ? (
+                      <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      activeUser.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-sm text-slate-850 mt-2">{activeUser.name}</h4>
+                  <p className="text-[10px] text-slate-400 font-medium">{activeUser.email}</p>
+                </div>
+
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between border-b pb-3 border-slate-50">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</p>
+                      <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser.name}</p>
+                    </div>
+                    <UserIcon size={16} className="text-slate-350" />
+                  </div>
+
+                  <div className="flex items-center justify-between border-b pb-3 border-slate-50">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">No. Handphone</p>
+                      <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser.phone || <span className="italic text-slate-400">Belum diatur</span>}</p>
+                    </div>
+                    <Phone size={16} className="text-slate-350" />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Rumah</p>
+                      <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400">Belum diatur</span>}</p>
+                    </div>
+                    <MapPin size={16} className="text-slate-350" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-3">
+                  <button
+                    onClick={() => { setProfileErrorMsg(''); setProfileViewMode('edit-profile'); }}
+                    className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
+                  >
+                    Edit Profil
+                  </button>
+                  <button
+                    onClick={() => { setProfileErrorMsg(''); setProfileViewMode('edit-password'); }}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
+                  >
+                    Ubah Password
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {profileViewMode === 'edit-profile' && (
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                {/* Profile Photo Upload */}
+                <div className="space-y-2 pb-2 border-b border-slate-100">
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block">Foto Profil</label>
+                  <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-150">
+                    <div className="w-14 h-14 bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center overflow-hidden border">
+                      {editProfilePhoto ? (
+                        <img src={editProfilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold">No Photo</span>
+                      )}
+                    </div>
+                    <div className="flex-grow text-left">
+                      <span className="text-[10px] text-slate-655 font-bold block mb-1">Unggah Foto Profil</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePhotoChange}
+                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-755 hover:file:bg-indigo-100 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    value={editProfileName}
+                    onChange={(e) => setEditProfileName(e.target.value)}
+                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
+                  <input
+                    type="text"
+                    value={editProfilePhone}
+                    onChange={(e) => setEditProfilePhone(e.target.value)}
+                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat Rumah</label>
+                  <textarea
+                    value={editProfileAddress}
+                    onChange={(e) => setEditProfileAddress(e.target.value)}
+                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 h-16 resize-none disabled:opacity-50 transition"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setProfileViewMode('readonly')}
+                    disabled={isLoading}
+                    className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-655 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-755 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                  >
+                    {isLoading && <Loader size={12} className="animate-spin" />}
+                    {isLoading ? 'Menyimpan...' : 'Simpan Profil'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {profileViewMode === 'edit-password' && (
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="bg-slate-55 p-3 rounded-xl border border-slate-100/70 flex items-start gap-2 mb-2">
+                  <ShieldCheck size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                  <p className="text-[9.5px] text-slate-500 font-medium leading-relaxed">
+                    Silakan masukkan password lama Anda untuk memverifikasi perubahan password baru.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Lama</label>
+                  <input
+                    type="password"
+                    value={editOldPassword}
+                    onChange={(e) => setEditOldPassword(e.target.value)}
+                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Baru</label>
+                  <input
+                    type="password"
+                    value={editNewPassword}
+                    onChange={(e) => setEditNewPassword(e.target.value)}
+                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
+                    disabled={isLoading}
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Konfirmasi Password Baru</label>
+                  <input
+                    type="password"
+                    value={editConfirmPassword}
+                    onChange={(e) => setEditConfirmPassword(e.target.value)}
+                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
+                    disabled={isLoading}
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileViewMode('readonly');
+                      setEditOldPassword('');
+                      setEditNewPassword('');
+                      setEditConfirmPassword('');
+                      setProfileErrorMsg('');
+                    }}
+                    disabled={isLoading}
+                    className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-655 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                  >
+                    {isLoading && <Loader size={12} className="animate-spin" />}
+                    {isLoading ? 'Menyimpan...' : 'Ubah Password'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Settings Modal */}
