@@ -628,7 +628,7 @@ export default function PelangganDashboard() {
                           {/* Staff Assignment */}
                           {order.assignedEmployeeName ? (
                             <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-3 py-2 rounded-xl text-left">
-                              <div className="w-6.5 h-6.5 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border">
+                              <div className="w-8 h-8 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border">
                                 {users?.find(u => u.id === order.assignedTo)?.photo ? (
                                   <img src={users.find(u => u.id === order.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
                                 ) : (
