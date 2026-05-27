@@ -467,8 +467,8 @@ export default function AdminDashboard() {
         <button
           onClick={() => setActiveTab('JOBS_TRACKER')}
           className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'JOBS_TRACKER'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
+            ? 'text-slate-900 border-slate-900'
+            : 'text-slate-600 border-transparent hover:text-slate-800'
             }`}
         >
           <span className="flex items-center gap-2">
@@ -483,8 +483,8 @@ export default function AdminDashboard() {
             if (categories.length > 0) setNewServiceCategory(categories[0].id);
           }}
           className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'MASTER_DATA'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
+            ? 'text-slate-900 border-slate-900'
+            : 'text-slate-600 border-transparent hover:text-slate-800'
             }`}
         >
           <span className="flex items-center gap-2">
@@ -496,8 +496,8 @@ export default function AdminDashboard() {
         <button
           onClick={() => setActiveTab('USER_MANAGEMENT')}
           className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'USER_MANAGEMENT'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
+            ? 'text-slate-900 border-slate-900'
+            : 'text-slate-600 border-transparent hover:text-slate-800'
             }`}
         >
           <span className="flex items-center gap-2">
@@ -545,8 +545,8 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 filteredOrders.map(order => (
-                  <div 
-                    key={order.id} 
+                  <div
+                    key={order.id}
                     onClick={() => setSelectedOrderDetail(order)}
                     className="bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer rounded-2xl p-4 shadow-xs space-y-3 relative text-left"
                   >
@@ -560,11 +560,11 @@ export default function AdminDashboard() {
                         </h4>
                       </div>
                       <span className={`text-[8.5px] px-2 py-0.6 font-black uppercase rounded tracking-wider border ${order.status === OrderStatus.MENUNGGU ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                          order.status === OrderStatus.DITUGASKAN ? 'bg-cyan-50 border-cyan-200 text-cyan-800' :
-                            order.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-50 border-blue-200 text-blue-800' :
-                              order.status === OrderStatus.PENGERJAAN ? 'bg-purple-50 border-purple-200 text-purple-800' :
-                                order.status === OrderStatus.PAYMENT ? 'bg-rose-50 border-rose-200 text-rose-850' :
-                                  'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        order.status === OrderStatus.DITUGASKAN ? 'bg-cyan-50 border-cyan-200 text-cyan-800' :
+                          order.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-50 border-blue-200 text-blue-800' :
+                            order.status === OrderStatus.PENGERJAAN ? 'bg-purple-50 border-purple-200 text-purple-800' :
+                              order.status === OrderStatus.PAYMENT ? 'bg-rose-50 border-rose-200 text-rose-850' :
+                                'bg-emerald-50 border-emerald-200 text-emerald-800'
                         }`}>
                         {order.status.replace('_', ' ')}
                       </span>
@@ -614,19 +614,19 @@ export default function AdminDashboard() {
                       );
                     })()
                     ) : (
-                      <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
-                        <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrderForAssign(order);
-                          }}
-                          className="bg-amber-500 hover:bg-amber-600 text-white text-[9.5px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Tugaskan Staff
-                        </button>
-                      </div>
+                    <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
+                      <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrderForAssign(order);
+                        }}
+                        className="bg-amber-500 hover:bg-amber-600 text-white text-[9.5px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                      >
+                        Tugaskan Staff
+                      </button>
+                    </div>
                     )}
 
                     {/* Grand total info */}
@@ -938,9 +938,9 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-1.5">
                           <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
                           <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                              u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
-                                u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                                  'bg-slate-100 text-slate-600 border-slate-200'
+                            u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
+                              u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                'bg-slate-100 text-slate-600 border-slate-200'
                             }`}>
                             {u.role}
                           </span>
@@ -1248,7 +1248,7 @@ export default function AdminDashboard() {
       {selectedOrderDetail && (
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white border rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl text-left max-h-[90vh] flex flex-col my-8">
-            
+
             {/* Header */}
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-950 text-white shrink-0">
               <div>
@@ -1256,14 +1256,13 @@ export default function AdminDashboard() {
                 <p className="text-[9.5px] text-slate-400 mt-1 font-mono">{selectedOrderDetail.id}</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-[8.5px] px-2 py-0.6 font-black uppercase rounded tracking-wider border ${
-                  selectedOrderDetail.status === OrderStatus.MENUNGGU ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' :
-                  selectedOrderDetail.status === OrderStatus.DITUGASKAN ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
-                  selectedOrderDetail.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' :
-                  selectedOrderDetail.status === OrderStatus.PENGERJAAN ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' :
-                  selectedOrderDetail.status === OrderStatus.PAYMENT ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
-                  'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                }`}>
+                <span className={`text-[8.5px] px-2 py-0.6 font-black uppercase rounded tracking-wider border ${selectedOrderDetail.status === OrderStatus.MENUNGGU ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' :
+                    selectedOrderDetail.status === OrderStatus.DITUGASKAN ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
+                      selectedOrderDetail.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' :
+                        selectedOrderDetail.status === OrderStatus.PENGERJAAN ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' :
+                          selectedOrderDetail.status === OrderStatus.PAYMENT ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
+                            'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                  }`}>
                   {selectedOrderDetail.status.replace('_', ' ')}
                 </span>
                 <button
@@ -1277,7 +1276,7 @@ export default function AdminDashboard() {
 
             {/* Scrollable Content */}
             <div className="p-6 space-y-6 overflow-y-auto flex-1 text-slate-700">
-              
+
               {/* 1. Informasi Utama */}
               <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-xl space-y-2 text-xs">
                 <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-widest block border-b pb-1.5 mb-2">📋 Rincian Jadwal & Waktu</h5>
@@ -1353,26 +1352,22 @@ export default function AdminDashboard() {
               <div className="space-y-2 text-xs">
                 <h5 className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block border-b pb-1.5">👥 Teknisi Lapangan</h5>
                 <div className="bg-white p-3 rounded-xl border border-slate-100">
-                  {selectedOrderDetail.assignedEmployeeName ? (() => {
-                    const assignedWorker = users?.find(u => u.id === selectedOrderDetail.workerId);
-                    return (
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase overflow-hidden">
-                          {assignedWorker?.photo ? (
-                            <img src={assignedWorker.photo} alt="Teknisi" className="w-full h-full object-cover" />
-                          ) : (
-                            selectedOrderDetail.assignedEmployeeName.charAt(0)
-                          )}
-                        </div>
-                        <div>
-                          <strong className="text-slate-800 text-xs block font-extrabold">{selectedOrderDetail.assignedEmployeeName}</strong>
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">TEKNISI UTAMA PRO</span>
-                        </div>
+                  {selectedOrderDetail.assignedEmployeeName ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase overflow-hidden">
+                        {users?.find(u => u.id === selectedOrderDetail.workerId)?.photo ? (
+                          <img src={users.find(u => u.id === selectedOrderDetail.workerId)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                        ) : (
+                          selectedOrderDetail.assignedEmployeeName.charAt(0)
+                        )}
                       </div>
-                    );
-                  })()
+                      <div>
+                        <strong className="text-slate-800 text-xs block font-extrabold">{selectedOrderDetail.assignedEmployeeName}</strong>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">TEKNISI UTAMA PRO</span>
+                      </div>
+                    </div>
                   ) : (
-                    <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
+                  <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
                   )}
                 </div>
               </div>
@@ -1388,9 +1383,9 @@ export default function AdminDashboard() {
                     </span>
                     {selectedOrderDetail.photoBefore ? (
                       <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center max-h-56 shadow-sm">
-                        <img 
-                          src={selectedOrderDetail.photoBefore} 
-                          alt="Foto Sebelum Pengerjaan" 
+                        <img
+                          src={selectedOrderDetail.photoBefore}
+                          alt="Foto Sebelum Pengerjaan"
                           className="w-full h-full object-contain cursor-zoom-in"
                           onClick={() => {
                             if (typeof window !== 'undefined') window.open(selectedOrderDetail.photoBefore, '_blank');
@@ -1412,9 +1407,9 @@ export default function AdminDashboard() {
                     </span>
                     {selectedOrderDetail.photoAfter ? (
                       <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center max-h-56 shadow-sm">
-                        <img 
-                          src={selectedOrderDetail.photoAfter} 
-                          alt="Foto Sesudah Pengerjaan" 
+                        <img
+                          src={selectedOrderDetail.photoAfter}
+                          alt="Foto Sesudah Pengerjaan"
                           className="w-full h-full object-contain cursor-zoom-in"
                           onClick={() => {
                             if (typeof window !== 'undefined') window.open(selectedOrderDetail.photoAfter, '_blank');

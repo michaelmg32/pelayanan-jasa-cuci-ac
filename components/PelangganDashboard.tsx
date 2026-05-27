@@ -465,8 +465,8 @@ export default function PelangganDashboard() {
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'dashboard'
-                  ? 'text-emerald-600 border-emerald-600'
-                  : 'text-slate-600 border-transparent hover:text-slate-800'
+                ? 'text-emerald-600 border-emerald-600'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
                 }`}
             >
               <span className="flex items-center gap-2">
@@ -478,8 +478,8 @@ export default function PelangganDashboard() {
             <button
               onClick={() => setActiveTab('history')}
               className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'history'
-                  ? 'text-emerald-600 border-emerald-600'
-                  : 'text-slate-600 border-transparent hover:text-slate-800'
+                ? 'text-emerald-600 border-emerald-600'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
                 }`}
             >
               <span className="flex items-center gap-2">
@@ -491,8 +491,8 @@ export default function PelangganDashboard() {
             <button
               onClick={() => setActiveTab('profile')}
               className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'profile'
-                  ? 'text-emerald-600 border-emerald-600'
-                  : 'text-slate-600 border-transparent hover:text-slate-800'
+                ? 'text-emerald-600 border-emerald-600'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
                 }`}
             >
               <span className="flex items-center gap-2">
@@ -648,10 +648,10 @@ export default function PelangganDashboard() {
                             );
                           })()
                           ) : (
-                            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-xl text-[10.5px] font-medium text-amber-800">
-                              <AlertCircle size={14} className="shrink-0" />
-                              <span>Menunggu persetujuan admin & penunjukan teknisi (staff) lapangan.</span>
-                            </div>
+                          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-xl text-[10.5px] font-medium text-amber-800">
+                            <AlertCircle size={14} className="shrink-0" />
+                            <span>Menunggu persetujuan admin & penunjukan teknisi (staff) lapangan.</span>
+                          </div>
                           )}
 
                           {/* Photo Before */}
@@ -728,8 +728,8 @@ export default function PelangganDashboard() {
                                 <button
                                   onClick={() => handlePaymentMethodSelect(order.id, 'CASH')}
                                   className={`p-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider transition cursor-pointer ${selectedPayMethod === 'CASH'
-                                      ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
-                                      : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-200'
+                                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-200'
                                     }`}
                                 >
                                   💵 Bayar Tunai
@@ -737,8 +737,8 @@ export default function PelangganDashboard() {
                                 <button
                                   onClick={() => handlePaymentMethodSelect(order.id, 'TRANSFER')}
                                   className={`p-2.5 rounded-xl border font-bold text-[10px] uppercase tracking-wider transition cursor-pointer ${selectedPayMethod === 'TRANSFER'
-                                      ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
-                                      : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'
+                                    ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'
                                     }`}
                                 >
                                   🏦 Transfer Bank
