@@ -466,9 +466,74 @@ app.put('/api/orders/:id', async (req, res) => {
     status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter, 
     paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost
   } = req.body;
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     
+    let finalPaymentUrl = undefined;
+    let finalPaymentInvoiceId = undefined;
+
+    if (paymentMethod === 'TRANSFER') {
+      try {
+        const [existing] = await connection.query(
+          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, customerName, customerPhone FROM orders WHERE id = ?',
+          [id]
+        );
+        if (existing.length > 0) {
+          const orderData = existing[0];
+          if (orderData.paymentUrl) {
+            finalPaymentUrl = orderData.paymentUrl;
+            finalPaymentInvoiceId = orderData.paymentInvoiceId;
+          } else {
+            const amount = orderData.totalCost || orderData.serviceCost || 0;
+            const customerName = orderData.customerName || 'Pelanggan';
+            let customerPhone = orderData.customerPhone || '';
+            customerPhone = customerPhone.replace(/[^0-9]/g, '');
+            if (customerPhone.startsWith('0')) {
+              customerPhone = '62' + customerPhone.substring(1);
+            }
+
+            const xenditApiKey = process.env.XENDIT_SECRET_KEY;
+            if (xenditApiKey) {
+              const authHeader = 'Basic ' + Buffer.from(xenditApiKey + ':').toString('base64');
+              console.log(`Sending invoice request to Xendit for order ${id} with amount ${amount}...`);
+              const xenditResponse = await fetch('https://api.xendit.co/v2/invoices', {
+                method: 'POST',
+                headers: {
+                  'Authorization': authHeader,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  external_id: id,
+                  amount: amount,
+                  description: `Pembayaran Jasa Cuci AC CoolAir Pro - Order ID: ${id}`,
+                  invoice_duration: 86400, // 24 hours
+                  customer: {
+                    given_names: customerName,
+                    mobile_number: customerPhone || undefined
+                  },
+                  success_redirect_url: 'http://localhost:3000',
+                  failure_redirect_url: 'http://localhost:3000'
+                })
+              });
+
+              if (xenditResponse.ok) {
+                const xenditData = await xenditResponse.json();
+                finalPaymentUrl = xenditData.invoice_url;
+                finalPaymentInvoiceId = xenditData.id;
+                console.log(`Xendit Invoice created: ${finalPaymentUrl}`);
+              } else {
+                const errorData = await xenditResponse.text();
+                console.error('Xendit invoice generation failed:', errorData);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error creating Xendit invoice:', err);
+      }
+    }
+
     // Support both workerId and assignedTo (assignedTo is the frontend name, workerId is the database name)
     const staffId = workerId || assignedTo;
     
@@ -492,6 +557,9 @@ app.put('/api/orders/:id', async (req, res) => {
     if (addonsCost !== undefined) { updateFields.push('addonsCost = ?'); updateValues.push(addonsCost); }
     if (totalCost !== undefined) { updateFields.push('totalCost = ?'); updateValues.push(totalCost); }
     
+    if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
+    if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }
+
     updateFields.push('updatedAt = NOW()');
     updateValues.push(id);
     
@@ -503,7 +571,6 @@ app.put('/api/orders/:id', async (req, res) => {
     }
     
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
-    connection.release();
     
     if (updatedOrder.length > 0) {
       const order = updatedOrder[0];
@@ -519,6 +586,88 @@ app.put('/api/orders/:id', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// ===== XENDIT WEBHOOK CALLBACK =====
+app.post('/api/webhooks/xendit', async (req, res) => {
+  const { status, external_id } = req.body;
+  console.log(`📡 Xendit webhook received:`, req.body);
+  
+  if (status === 'PAID') {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      // Update paymentStatus to PAID, status to SELESAI, and set completedAt to NOW
+      await connection.query(
+        "UPDATE orders SET paymentStatus = 'PAID', status = 'SELESAI', completedAt = NOW() WHERE id = ?",
+        [external_id]
+      );
+      console.log(`💰 Xendit payment received for order: ${external_id}. Order set to SELESAI.`);
+    } catch (err) {
+      console.error('Error updating order on Xendit webhook:', err);
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+  res.json({ status: 'ok' });
+});
+
+// ===== CHECK PAYMENT STATUS DIRECTLY FROM XENDIT (For Localhost Webhook Bypass) =====
+app.get('/api/orders/:id/payment-status', async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [orders] = await connection.query('SELECT paymentInvoiceId, paymentStatus, status FROM orders WHERE id = ?', [id]);
+    
+    if (orders.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    const order = orders[0];
+    
+    // Jika status di DB sudah PAID, langsung kembalikan
+    if (order.paymentStatus === 'PAID') {
+      return res.json({ paymentStatus: 'PAID', status: order.status });
+    }
+    
+    const invoiceId = order.paymentInvoiceId;
+    const xenditApiKey = process.env.XENDIT_SECRET_KEY;
+    
+    if (invoiceId && xenditApiKey) {
+      const authHeader = 'Basic ' + Buffer.from(xenditApiKey + ':').toString('base64');
+      const xenditResponse = await fetch(`https://api.xendit.co/v2/invoices/${invoiceId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader
+        }
+      });
+      
+      if (xenditResponse.ok) {
+        const xenditData = await xenditResponse.json();
+        console.log(`Checking Xendit status for ${invoiceId}: ${xenditData.status}`);
+        
+        if (xenditData.status === 'PAID' || xenditData.status === 'SETTLED') {
+          // Update status pembayaran & pesanan di database
+          await connection.query(
+            "UPDATE orders SET paymentStatus = 'PAID', status = 'SELESAI', completedAt = NOW() WHERE id = ?",
+            [id]
+          );
+          console.log(`💰 Verified: Xendit payment successful for order ${id}. Status set to SELESAI.`);
+          return res.json({ paymentStatus: 'PAID', status: 'SELESAI' });
+        }
+      }
+    }
+    
+    res.json({ paymentStatus: order.paymentStatus, status: order.status });
+  } catch (err) {
+    console.error('Error checking payment status:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
   }
 });
 

@@ -16,8 +16,8 @@ export default function OwnerDashboard() {
   const completedOrders = orders.filter(o => o.status === OrderStatus.SELESAI);
   
   // Calculations
-  const totalBaseRevenue = completedOrders.reduce((sum, o) => sum + (o.serviceCost || 0), 0);
-  const totalAddonsRevenue = completedOrders.reduce((sum, o) => sum + (o.addonsCost || 0), 0);
+  const totalBaseRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.serviceCost) || 0), 0);
+  const totalAddonsRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.addonsCost) || 0), 0);
   const totalRevenue = totalBaseRevenue + totalAddonsRevenue;
 
   // Ratings
@@ -190,7 +190,17 @@ export default function OwnerDashboard() {
               <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 text-[10px]">
                 <div className="flex-1">
                   <div className="font-bold text-slate-800">{order.customerName}</div>
-                  <div className="text-slate-500 mt-0.5">{order.scheduledDate}</div>
+                  <div className="text-slate-500 mt-0.5 flex gap-1.5 items-center flex-wrap">
+                    <span>{order.scheduledDate}</span>
+                    <span>•</span>
+                    <span className={`text-[8.5px] font-black uppercase ${
+                      order.paymentMethod === 'TRANSFER' ? 'text-indigo-600' :
+                      order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
+                    }`}>
+                      {order.paymentMethod === 'TRANSFER' ? '💳 TRANSFER (XENDIT)' :
+                       order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI (BAWAAN)'}
+                    </span>
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="font-mono font-bold text-slate-700">{formatRupiah(order.totalCost || order.serviceCost)}</div>

@@ -112,6 +112,7 @@ export default function MapPicker({ onLocationSelect, onCancel }: MapPickerProps
   };
 
   const handleMoveEnd = (newCenter: any) => {
+    setCenter({ lat: newCenter.lat, lng: newCenter.lng });
     fetchAddress(newCenter.lat, newCenter.lng);
   };
 
