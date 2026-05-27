@@ -626,32 +626,28 @@ export default function PelangganDashboard() {
                           )}
 
                           {/* Staff Assignment */}
-                          {order.assignedEmployeeName ? (() => {
-                            const assignedWorker = users?.find(u => u.id === order.workerId);
-                            return (
-                              <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-3 py-2 rounded-xl text-left">
-                                <div className="w-6.5 h-6.5 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border">
-                                  {assignedWorker?.photo ? (
-                                    <img src={assignedWorker.photo} alt="Teknisi" className="w-full h-full object-cover" />
-                                  ) : (
-                                    order.assignedEmployeeName.charAt(0).toUpperCase()
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <span className="text-[8px] uppercase font-bold tracking-widest text-emerald-600 block">Teknisi Ditunjuk</span>
-                                  <p className="text-[11px] font-extrabold text-slate-800 truncate mt-0.5">{order.assignedEmployeeName}</p>
-                                </div>
-                                <span className="text-[9px] bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded text-emerald-700 font-bold shrink-0 uppercase tracking-wider">
-                                  Menuju Lokasi
-                                </span>
+                          {order.assignedEmployeeName ? (
+                            <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-3 py-2 rounded-xl text-left">
+                              <div className="w-6.5 h-6.5 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border">
+                                {users?.find(u => u.id === order.workerId)?.photo ? (
+                                  <img src={users.find(u => u.id === order.workerId)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                                ) : (
+                                  order.assignedEmployeeName.charAt(0).toUpperCase()
+                                )}
                               </div>
-                            );
-                          })()
+                              <div className="min-w-0 flex-1">
+                                <span className="text-[8px] uppercase font-bold tracking-widest text-emerald-600 block">Teknisi Ditunjuk</span>
+                                <p className="text-[11px] font-extrabold text-slate-800 truncate mt-0.5">{order.assignedEmployeeName}</p>
+                              </div>
+                              <span className="text-[9px] bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded text-emerald-700 font-bold shrink-0 uppercase tracking-wider">
+                                Menuju Lokasi
+                              </span>
+                            </div>
                           ) : (
-                          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-xl text-[10.5px] font-medium text-amber-800">
-                            <AlertCircle size={14} className="shrink-0" />
-                            <span>Menunggu persetujuan admin & penunjukan teknisi (staff) lapangan.</span>
-                          </div>
+                            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-xl text-[10.5px] font-medium text-amber-800">
+                              <AlertCircle size={14} className="shrink-0" />
+                              <span>Menunggu persetujuan admin & penunjukan teknisi (staff) lapangan.</span>
+                            </div>
                           )}
 
                           {/* Photo Before */}

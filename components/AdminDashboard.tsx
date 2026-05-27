@@ -594,25 +594,21 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Staff Allocated info */}
-                    {order.assignedEmployeeName ? (() => {
-                      const assignedWorker = users?.find(u => u.id === order.workerId);
-                      return (
-                        <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl text-[10.5px]">
-                          <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
-                          <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
-                            {assignedWorker?.photo ? (
-                              <img src={assignedWorker.photo} alt="Teknisi" className="w-full h-full object-cover" />
-                            ) : (
-                              order.assignedEmployeeName.charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          <span className="font-extrabold text-slate-800">{order.assignedEmployeeName}</span>
-                          <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-1.5 rounded uppercase font-black tracking-widest ml-auto">
-                            Tersedia
-                          </span>
+                    {order.assignedEmployeeName ? (
+                      <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl text-[10.5px]">
+                        <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
+                        <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
+                          {users?.find(u => u.id === order.workerId)?.photo ? (
+                            <img src={users.find(u => u.id === order.workerId)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                          ) : (
+                            order.assignedEmployeeName.charAt(0).toUpperCase()
+                          )}
                         </div>
-                      );
-                    })()
+                        <span className="font-extrabold text-slate-800">{order.assignedEmployeeName}</span>
+                        <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-1.5 rounded uppercase font-black tracking-widest ml-auto">
+                          Tersedia
+                        </span>
+                      </div>
                     ) : (
                     <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
