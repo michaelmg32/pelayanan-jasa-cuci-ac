@@ -517,8 +517,8 @@ app.put('/api/orders/:id', async (req, res) => {
                     given_names: customerName,
                     mobile_number: customerPhone || undefined
                   },
-                  success_redirect_url: 'http://localhost:3000',
-                  failure_redirect_url: 'http://localhost:3000'
+                  success_redirect_url: process.env.FRONTEND_URL || 'https://sugarac.com',
+                  failure_redirect_url: process.env.FRONTEND_URL || 'https://sugarac.com'
                 })
               });
 

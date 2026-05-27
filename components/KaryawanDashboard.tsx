@@ -46,19 +46,6 @@ export default function KaryawanDashboard() {
   const [selectedAddonId, setSelectedAddonId] = useState('');
   const [addonQuantity, setAddonQuantity] = useState(1);
 
-  // Mock images for simulation
-  const mockBeforeImages = [
-    'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=300&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&auto=format&fit=crop&q=60'
-  ];
-
-  const mockAfterImages = [
-    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=300&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=300&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=300&auto=format&fit=crop&q=60'
-  ];
-
   const [photoBeforeUrl, setPhotoBeforeUrl] = useState('');
   const [photoAfterUrl, setPhotoAfterUrl] = useState('');
   const [completionNotes, setCompletionNotes] = useState('');
@@ -254,8 +241,8 @@ export default function KaryawanDashboard() {
           o.id === orderId ? { ...o, status: OrderStatus.CEK_LAYANAN } : o
         )
       );
-      setPhotoBeforeUrl(mockBeforeImages[0]);
-      setPhotoAfterUrl(mockAfterImages[0]);
+      setPhotoBeforeUrl('');
+      setPhotoAfterUrl('');
     } catch (error) {
       alert('❌ Gagal update status');
     }
@@ -672,21 +659,6 @@ export default function KaryawanDashboard() {
                                 <span className="text-[8px] font-black tracking-widest text-indigo-700 uppercase block">FOTO KONDISI AWAL (BEFORE)</span>
 
                                 <div className="flex flex-col gap-3">
-                                  <div className="space-y-1">
-                                    <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Pilih Preset:</span>
-                                    <div className="flex gap-1.5 flex-wrap">
-                                      {mockBeforeImages.map((img, idx) => (
-                                        <button
-                                          key={idx}
-                                          onClick={() => setPhotoBeforeUrl(img)}
-                                          className={`w-18 h-12 rounded border overflow-hidden ${photoBeforeUrl === img && !photoBeforeUrl.startsWith('data:') ? 'ring-2 ring-indigo-600' : 'border-slate-300'}`}
-                                        >
-                                          <img src={img} alt="before" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-
                                   <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase justify-center cursor-pointer h-10">
                                     <Camera size={14} />
                                     Upload Foto Before
@@ -1128,21 +1100,6 @@ export default function KaryawanDashboard() {
                   <span className="text-[8.5px] font-black uppercase text-purple-600 tracking-wider block">1. Foto Selesai (After)</span>
 
                   <div className="flex flex-col gap-3">
-                    <div className="space-y-1">
-                      <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Pilih Preset:</span>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {mockAfterImages.map((img, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setPhotoAfterUrl(img)}
-                            className={`w-18 h-12 rounded border overflow-hidden ${photoAfterUrl === img && !photoAfterUrl.startsWith('data:') ? 'ring-2 ring-purple-600' : 'border-slate-300'}`}
-                          >
-                            <img src={img} alt="after" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
                     <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase justify-center cursor-pointer h-10">
                       <Camera size={14} />
                       Upload Foto After
