@@ -29,6 +29,7 @@ export interface User {
   lat?: number;
   lng?: number;
   photoUrl?: string;
+  photo?: string;
 }
 
 export interface ACModel {
