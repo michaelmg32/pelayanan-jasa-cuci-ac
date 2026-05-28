@@ -43,6 +43,7 @@ export default function PelangganDashboard() {
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [showConfirmOrderModal, setShowConfirmOrderModal] = useState(false);
   const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null);
+  const [cancelOrderModalId, setCancelOrderModalId] = useState<string | null>(null);
   const [confirmErrorMsg, setConfirmErrorMsg] = useState('');
 
   const [selectedModel, setSelectedModel] = useState('');
@@ -510,17 +511,18 @@ export default function PelangganDashboard() {
   };
 
   // Handle customer cancel order directly when MENUNGGU
-  const handleCancelOrderCustomer = async (orderId: string) => {
-    if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+  const handleCancelOrderCustomerConfirm = async () => {
+    if (!cancelOrderModalId) return;
     try {
       setIsLoading(true);
-      await api.updateOrder(orderId, {
+      await api.updateOrder(cancelOrderModalId, {
         status: OrderStatus.DIBATALKAN,
         cancelReason: 'Dibatalkan oleh Pelanggan (Batal Mandiri)',
       });
       const updatedOrders = await api.fetchOrders();
       setOrders(updatedOrders);
       setIsLoading(false);
+      setCancelOrderModalId(null);
       alert('✓ Pesanan berhasil dibatalkan.');
     } catch (error: any) {
       setIsLoading(false);
@@ -806,7 +808,7 @@ export default function PelangganDashboard() {
                           {/* Customer Cancel Button */}
                           {order.status === OrderStatus.MENUNGGU && (
                             <button
-                              onClick={() => handleCancelOrderCustomer(order.id)}
+                              onClick={() => setCancelOrderModalId(order.id)}
                               disabled={isLoading}
                               className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold py-2 mt-1 rounded-xl uppercase tracking-wider cursor-pointer border border-rose-200 transition"
                             >
@@ -1825,6 +1827,41 @@ export default function PelangganDashboard() {
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* 3. CANCEL CONFIRMATION MODAL */}
+        {cancelOrderModalId && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white border border-slate-200 rounded-[28px] shadow-2xl p-6 max-w-sm w-full text-center flex flex-col items-center animate-scale-in">
+              <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4 shadow-inner">
+                <AlertCircle size={36} className="text-rose-500" />
+              </div>
+
+              <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wider mb-2">Batalkan Pesanan?</h3>
+              <p className="text-xs text-slate-650 font-semibold leading-relaxed mb-6">
+                Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat diurungkan.
+              </p>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setCancelOrderModalId(null)}
+                  disabled={isLoading}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-extrabold text-xs uppercase tracking-widest rounded-2xl transition duration-200 cursor-pointer"
+                >
+                  Kembali
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelOrderCustomerConfirm}
+                  disabled={isLoading}
+                  className="flex-1 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 active:scale-[0.98] text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition duration-200 cursor-pointer flex justify-center items-center gap-2"
+                >
+                  {isLoading ? <Loader size={14} className="animate-spin" /> : 'Ya, Batalkan'}
+                </button>
+              </div>
             </div>
           </div>
         )}
