@@ -479,6 +479,7 @@ export default function PelangganDashboard() {
       if (response === 'ACCEPTED') {
         updatePayload.scheduledDate = proposedDate;
         updatePayload.scheduledTime = proposedTime;
+        updatePayload.status = OrderStatus.DITUGASKAN;
       } else if (response === 'REJECTED') {
         updatePayload.status = OrderStatus.DIBATALKAN;
         updatePayload.cancelReason = 'Dibatalkan oleh Pelanggan (Tolak Perubahan Jadwal)';

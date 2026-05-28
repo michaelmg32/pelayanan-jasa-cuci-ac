@@ -307,6 +307,7 @@ export default function AdminDashboard() {
       const isDateChanged = tempScheduledDate !== selectedOrderForAssign.scheduledDate || tempScheduledTime !== selectedOrderForAssign.scheduledTime;
 
       if (isDateChanged) {
+        updatePayload.status = OrderStatus.MENUNGGU;
         updatePayload.proposedDate = tempScheduledDate;
         updatePayload.proposedTime = tempScheduledTime;
         updatePayload.rescheduleStatus = 'PENDING';
