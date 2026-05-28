@@ -115,6 +115,13 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN cancelReason VARCHAR(255) NULL");
       console.log("✅ Added cancelReason field to 'orders' table in database");
     }
+
+    // Auto-migration: Add workerCancelReason field to 'orders' table
+    const [workerCancelCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'workerCancelReason'");
+    if (workerCancelCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN workerCancelReason VARCHAR(255) NULL");
+      console.log("✅ Added workerCancelReason field to 'orders' table in database");
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -570,7 +577,7 @@ app.put('/api/orders/:id', async (req, res) => {
   const {
     status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter,
     paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost, addonsUsed,
-    scheduledDate, scheduledTime, proposedDate, proposedTime, rescheduleStatus, cancelReason
+    scheduledDate, scheduledTime, proposedDate, proposedTime, rescheduleStatus, cancelReason, workerCancelReason
   } = req.body;
   let connection;
   try {
@@ -744,6 +751,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (proposedTime !== undefined) { updateFields.push('proposedTime = ?'); updateValues.push(proposedTime); }
     if (rescheduleStatus !== undefined) { updateFields.push('rescheduleStatus = ?'); updateValues.push(rescheduleStatus); }
     if (cancelReason !== undefined) { updateFields.push('cancelReason = ?'); updateValues.push(cancelReason); }
+    if (workerCancelReason !== undefined) { updateFields.push('workerCancelReason = ?'); updateValues.push(workerCancelReason); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }

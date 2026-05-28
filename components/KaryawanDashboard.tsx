@@ -83,7 +83,7 @@ export default function KaryawanDashboard() {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  const activeTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status !== OrderStatus.SELESAI);
+  const activeTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status !== OrderStatus.SELESAI && o.status !== OrderStatus.DIBATALKAN && o.status !== OrderStatus.MENUNGGU);
   const completedTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status === OrderStatus.SELESAI);
 
   const formatRupiah = (num: any) => {
@@ -290,6 +290,22 @@ export default function KaryawanDashboard() {
       alert('✓ Detail jenis layanan berhasil disesuaikan!');
     } catch (error) {
       alert('❌ Gagal menyimpan layanan');
+    }
+  };
+
+  const handleRequestCancelWorker = async (orderId: string) => {
+    const reason = window.prompt('Masukkan alasan pembatalan (misal: Alamat palsu, alat rusak, dll):');
+    if (!reason || !reason.trim()) return;
+    try {
+      await api.updateOrder(orderId, { workerCancelReason: reason.trim() });
+      setOrders(prevOrders =>
+        prevOrders.map(o =>
+          o.id === orderId ? { ...o, workerCancelReason: reason.trim() } : o
+        )
+      );
+      alert('✓ Pengajuan pembatalan telah dikirim ke Admin untuk diverifikasi.');
+    } catch (error) {
+      alert('❌ Gagal mengirim pengajuan pembatalan');
     }
   };
 
@@ -563,12 +579,28 @@ export default function KaryawanDashboard() {
                         {/* ACTION BUTTONS PER STATUS */}
                         <div className="pt-2">
                           {task.status === OrderStatus.DITUGASKAN && (
-                            <button
-                              onClick={() => handleConfirmArrived(task.id)}
-                              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 rounded-xl uppercase tracking-wider cursor-pointer"
-                            >
-                              Konfirmasi Tiba di Lokasi & Mulai Cek AC
-                            </button>
+                            <div className="space-y-2">
+                              {task.workerCancelReason ? (
+                                <div className="bg-amber-100 text-amber-800 p-3 rounded-xl text-xs font-bold text-center border border-amber-300">
+                                  ⏳ Menunggu verifikasi admin untuk pembatalan...
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleConfirmArrived(task.id)}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 rounded-xl uppercase tracking-wider cursor-pointer transition"
+                                  >
+                                    Konfirmasi Tiba di Lokasi & Mulai Cek AC
+                                  </button>
+                                  <button
+                                    onClick={() => handleRequestCancelWorker(task.id)}
+                                    className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-[10px] py-2 rounded-xl uppercase tracking-wider cursor-pointer transition"
+                                  >
+                                    Ajukan Pembatalan (Ada Kendala)
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           )}
 
                           {task.status === OrderStatus.CEK_LAYANAN && (

@@ -361,6 +361,51 @@ export default function AdminDashboard() {
     }
   };
 
+  // Admin Verification for Worker Cancel Request
+  const handleApproveCancelRequest = async (orderId: string, reason: string) => {
+    try {
+      setIsLoading(true);
+      await api.updateOrder(orderId, {
+        status: OrderStatus.DIBATALKAN,
+        cancelReason: `Dibatalkan oleh Teknisi: ${reason}`,
+        workerCancelReason: null
+      });
+      const updatedOrder = orders.find(o => o.id === orderId);
+      if (updatedOrder) {
+        updatedOrder.status = OrderStatus.DIBATALKAN;
+        updatedOrder.cancelReason = `Dibatalkan oleh Teknisi: ${reason}`;
+        updatedOrder.workerCancelReason = undefined;
+        setOrders([...orders]);
+      }
+      alert('✅ Pembatalan disetujui');
+    } catch (error) {
+      console.error('Error approving cancel:', error);
+      alert('❌ Gagal menyetujui pembatalan');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRejectCancelRequest = async (orderId: string) => {
+    try {
+      setIsLoading(true);
+      await api.updateOrder(orderId, {
+        workerCancelReason: null
+      });
+      const updatedOrder = orders.find(o => o.id === orderId);
+      if (updatedOrder) {
+        updatedOrder.workerCancelReason = undefined;
+        setOrders([...orders]);
+      }
+      alert('✅ Pengajuan pembatalan ditolak. Teknisi harus melanjutkan pekerjaan.');
+    } catch (error) {
+      console.error('Error rejecting cancel:', error);
+      alert('❌ Gagal menolak pembatalan');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // User Actions
   const handleSaveUserEdit = async (userId: string) => {
     try {
@@ -806,19 +851,51 @@ export default function AdminDashboard() {
 
                     {/* Staff Allocated info */}
                     {order.assignedEmployeeName ? (
-                      <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl text-[10.5px]">
-                        <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
-                        <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
-                          {users?.find(u => u.id === order.assignedTo)?.photo ? (
-                            <img src={users.find(u => u.id === order.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
-                          ) : (
-                            order.assignedEmployeeName.charAt(0).toUpperCase()
-                          )}
+                      <div className="flex flex-col gap-2 bg-slate-100 border border-slate-200 p-3 rounded-xl">
+                        <div className="flex items-center gap-2 text-[10.5px]">
+                          <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
+                          <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
+                            {users?.find(u => u.id === order.assignedTo)?.photo ? (
+                              <img src={users.find(u => u.id === order.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
+                            ) : (
+                              order.assignedEmployeeName.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <span className="font-extrabold text-slate-800">{order.assignedEmployeeName}</span>
+                          <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-1.5 rounded uppercase font-black tracking-widest ml-auto">
+                            Tersedia
+                          </span>
                         </div>
-                        <span className="font-extrabold text-slate-800">{order.assignedEmployeeName}</span>
-                        <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-1.5 rounded uppercase font-black tracking-widest ml-auto">
-                          Tersedia
-                        </span>
+                        {order.workerCancelReason && (
+                          <div className="bg-red-50 border border-red-200 p-2.5 rounded-lg space-y-2">
+                            <div className="text-[10px] text-red-800 font-medium">
+                              <span className="font-black block uppercase tracking-wider mb-0.5">⚠️ Pengajuan Batal dari Teknisi</span>
+                              Alasan: <strong className="font-bold">{order.workerCancelReason}</strong>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRejectCancelRequest(order.id);
+                                }}
+                                className="flex-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-[9px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
+                              >
+                                Tolak
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleApproveCancelRequest(order.id, order.workerCancelReason!);
+                                }}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
+                              >
+                                Setujui Batal
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : order.status !== OrderStatus.DIBATALKAN ? (
                     <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">

@@ -81,6 +81,7 @@ export interface Order {
   proposedTime?: string;
   rescheduleStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   cancelReason?: string; // e.g. "Dibatalkan oleh Admin" or "Dibatalkan Pelanggan (Tolak Jadwal)"
+  workerCancelReason?: string; // e.g. "Alamat tidak ditemukan"
   acDetail: {
     acType: string;       // Model AC (Daikin, Sharp, etc. atau tipe Split, Cassette)
     category: string;     // Kategori Jasa (Cuci AC, Perbaikan AC, dll)

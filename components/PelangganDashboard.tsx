@@ -500,6 +500,26 @@ export default function PelangganDashboard() {
     }
   };
 
+  // Handle customer cancel order directly when MENUNGGU
+  const handleCancelOrderCustomer = async (orderId: string) => {
+    if (!window.confirm('Yakin ingin membatalkan pesanan ini?')) return;
+    try {
+      setIsLoading(true);
+      await api.updateOrder(orderId, {
+        status: OrderStatus.DIBATALKAN,
+        cancelReason: 'Dibatalkan oleh Pelanggan (Batal Mandiri)',
+      });
+      const updatedOrders = await api.fetchOrders();
+      setOrders(updatedOrders);
+      setIsLoading(false);
+      alert('✓ Pesanan berhasil dibatalkan.');
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Cancel order error:', error);
+      alert('❌ Gagal membatalkan pesanan: ' + error.message);
+    }
+  };
+
   // Handle payment method selection
   const handlePaymentMethodSelect = async (orderId: string, method: 'CASH' | 'TRANSFER') => {
     setOrderPaymentMethods(prev => ({ ...prev, [orderId]: method }));
@@ -772,6 +792,17 @@ export default function PelangganDashboard() {
                               <AlertCircle size={14} className="shrink-0" />
                               <span>Menunggu persetujuan admin & penunjukan teknisi (staff) lapangan.</span>
                             </div>
+                          )}
+
+                          {/* Customer Cancel Button */}
+                          {order.status === OrderStatus.MENUNGGU && (
+                            <button
+                              onClick={() => handleCancelOrderCustomer(order.id)}
+                              disabled={isLoading}
+                              className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold py-2 mt-1 rounded-xl uppercase tracking-wider cursor-pointer border border-rose-200 transition"
+                            >
+                              Batalkan Pesanan
+                            </button>
                           )}
 
                           {/* Photo Before */}
