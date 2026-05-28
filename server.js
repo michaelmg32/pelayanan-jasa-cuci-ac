@@ -503,7 +503,33 @@ app.get('/api/orders', async (req, res) => {
       addonsUsed: order.addonsUsed ? JSON.parse(order.addonsUsed) : []
     }));
 
-    res.json(parsedOrders);
+    // Auto-cancel past MENUNGGU orders
+    const now = new Date();
+    const updatedOrders = [];
+    for (let order of parsedOrders) {
+      if (order.status === 'MENUNGGU' && order.scheduledDate && order.scheduledTime) {
+        const orderTime = new Date(`${order.scheduledDate}T${order.scheduledTime}`);
+        if (orderTime < now) {
+          // It's in the past and still waiting, auto cancel it
+          order.status = 'DIBATALKAN';
+          order.cancelReason = 'Dibatalkan Otomatis oleh Sistem (Melewati Batas Waktu)';
+          
+          try {
+            const updateConn = await pool.getConnection();
+            await updateConn.query(
+              'UPDATE orders SET status = ?, cancelReason = ? WHERE id = ?',
+              [order.status, order.cancelReason, order.id]
+            );
+            updateConn.release();
+          } catch (e) {
+            console.error('Error auto-canceling order:', e);
+          }
+        }
+      }
+      updatedOrders.push(order);
+    }
+
+    res.json(updatedOrders);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

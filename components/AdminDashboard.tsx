@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User, Order, OrderStatus, Role, ACModel, ACCategory, ACService, ACAddon } from '@/types';
 import * as api from '@/lib/api';
 import {
@@ -55,8 +55,22 @@ export default function AdminDashboard() {
   } = useApp();
   const alert = showAlert;
 
-  // Extract staff members from users
+  // Extract staff members from users and sort by rating & jobs done
   const staffList = users.filter(u => u.role === Role.STAFF);
+  const sortedStaffList = useMemo(() => {
+    return staffList.map(staff => {
+      const staffOrders = orders.filter(o => o.assignedTo === staff.id && o.status === OrderStatus.SELESAI);
+      const jobsDone = staffOrders.length;
+      const ratedOrders = staffOrders.filter(o => typeof o.rating === 'number');
+      const avgRating = ratedOrders.length > 0 
+        ? ratedOrders.reduce((acc, curr) => acc + (curr.rating as number), 0) / ratedOrders.length 
+        : 0;
+      return { ...staff, jobsDone, avgRating };
+    }).sort((a, b) => {
+      if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
+      return b.jobsDone - a.jobsDone;
+    });
+  }, [staffList, orders]);
   const allUsers = users;
   // Loading state for async operations
   const [isLoading, setIsLoading] = useState(false);
@@ -1680,8 +1694,10 @@ export default function AdminDashboard() {
                   disabled={isLoading}
                 >
                   <option value="">-- Pilih Staff --</option>
-                  {staffList.map(staff => (
-                    <option key={staff.id} value={staff.id}>{staff.name} ({staff.email})</option>
+                  {sortedStaffList.map(staff => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name} (⭐ {staff.avgRating.toFixed(1)} | 🛠️ {staff.jobsDone} Selesai)
+                    </option>
                   ))}
                 </select>
               </div>

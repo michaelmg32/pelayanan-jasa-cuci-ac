@@ -248,6 +248,15 @@ export default function PelangganDashboard() {
       alert('Mohon lengkapi alamat, nomor telepon, dan tanggal pengerjaan.');
       return;
     }
+    
+    // Check if the selected date and time is before the current time
+    const selectedDateTime = new Date(`${date}T${time}`);
+    const now = new Date();
+    if (selectedDateTime < now) {
+      alert('❌ Tanggal dan waktu pesanan tidak boleh berlalu (harus setelah waktu sekarang).');
+      return;
+    }
+
     setConfirmErrorMsg('');
     setShowConfirmOrderModal(true);
   };
