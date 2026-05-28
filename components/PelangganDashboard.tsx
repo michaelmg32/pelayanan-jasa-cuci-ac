@@ -260,8 +260,13 @@ export default function PelangganDashboard() {
       const catObj = categories.find(c => c.id === selectedCategory);
       const categoryName = catObj ? catObj.name : 'Inspeksi & Konsultasi';
 
-      // Generate order ID
-      const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate order ID (Short format: ORD-YYMMDD-XXXX)
+      const today = new Date();
+      const yymmdd = today.getFullYear().toString().slice(2) + 
+                     String(today.getMonth() + 1).padStart(2, '0') + 
+                     String(today.getDate()).padStart(2, '0');
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const orderId = `ORD-${yymmdd}-${rand}`;
 
       // Get service price
       const serviceObj = services.find(s => s.id === selectedService || s.name === selectedService);
@@ -1495,7 +1500,7 @@ export default function PelangganDashboard() {
                   </div>
 
                   {/* Date & Time */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                         6. Tanggal Kunjungan
