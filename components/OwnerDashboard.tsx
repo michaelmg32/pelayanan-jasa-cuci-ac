@@ -216,6 +216,7 @@ export default function OwnerDashboard() {
     [OrderStatus.PENGERJAAN]: orders.filter(o => o.status === OrderStatus.PENGERJAAN).length,
     [OrderStatus.PAYMENT]: orders.filter(o => o.status === OrderStatus.PAYMENT).length,
     [OrderStatus.SELESAI]: orders.filter(o => o.status === OrderStatus.SELESAI).length,
+    [OrderStatus.DIBATALKAN]: orders.filter(o => o.status === OrderStatus.DIBATALKAN).length,
   };
 
   if (!activeUser) return null;
@@ -338,6 +339,7 @@ export default function OwnerDashboard() {
               { label: 'Pengerjaan', key: OrderStatus.PENGERJAAN, color: 'bg-purple-50 text-purple-800 border-purple-200' },
               { label: 'Payment', key: OrderStatus.PAYMENT, color: 'bg-rose-50 text-rose-800 border-rose-200' },
               { label: 'Selesai', key: OrderStatus.SELESAI, color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+              { label: 'Dibatalkan', key: OrderStatus.DIBATALKAN, color: 'bg-red-50 text-red-800 border-red-200' },
             ].map(({ label, key, color }) => (
               <div key={key} className={`border rounded-xl p-3 text-center ${color}`}>
                 <div className="text-xs font-black uppercase">{label}</div>
