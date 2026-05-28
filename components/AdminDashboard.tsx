@@ -303,6 +303,7 @@ export default function AdminDashboard() {
         status: OrderStatus.DITUGASKAN,
       };
 
+      if (!selectedOrderForAssign) return;
       const isDateChanged = tempScheduledDate !== selectedOrderForAssign.scheduledDate || tempScheduledTime !== selectedOrderForAssign.scheduledTime;
 
       if (isDateChanged) {
