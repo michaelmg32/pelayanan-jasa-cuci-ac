@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useApp } from '@/lib/auth-context';
-import { OrderStatus } from '@/types';
+import { OrderStatus, Order } from '@/types';
 import * as api from '@/lib/api';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
