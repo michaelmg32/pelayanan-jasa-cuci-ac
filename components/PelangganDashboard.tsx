@@ -215,8 +215,8 @@ export default function PelangganDashboard() {
 
   // Filter orders
   const myOrders = orders.filter(o => o.customerId === activeUser.id);
-  const activeOrders = myOrders.filter(o => o.status !== OrderStatus.SELESAI || !o.rating || o.rating === null);
-  const completedOrders = myOrders.filter(o => o.status === OrderStatus.SELESAI);
+  const activeOrders = myOrders.filter(o => o.status !== OrderStatus.DIBATALKAN && (o.status !== OrderStatus.SELESAI || !o.rating || o.rating === null));
+  const completedOrders = myOrders.filter(o => o.status === OrderStatus.DIBATALKAN || (o.status === OrderStatus.SELESAI && o.rating !== null && o.rating !== undefined));
 
   // Handle Category Switch
   const handleCategoryChange = (categoryId: string) => {
@@ -468,6 +468,37 @@ export default function PelangganDashboard() {
     }
   };
 
+  // Handle reschedule response
+  const handleRescheduleResponse = async (orderId: string, response: 'ACCEPTED' | 'REJECTED', proposedDate?: string, proposedTime?: string) => {
+    try {
+      setIsLoading(true);
+      const updatePayload: Partial<Order> = {
+        rescheduleStatus: response,
+      };
+
+      if (response === 'ACCEPTED') {
+        updatePayload.scheduledDate = proposedDate;
+        updatePayload.scheduledTime = proposedTime;
+      } else if (response === 'REJECTED') {
+        updatePayload.status = OrderStatus.DIBATALKAN;
+        updatePayload.cancelReason = 'Dibatalkan oleh Pelanggan (Tolak Perubahan Jadwal)';
+      }
+
+      await api.updateOrder(orderId, updatePayload);
+      
+      // Refresh orders
+      const updatedOrders = await api.fetchOrders();
+      setOrders(updatedOrders);
+      
+      setIsLoading(false);
+      alert(response === 'ACCEPTED' ? '✅ Jadwal baru disetujui' : '❌ Pesanan telah dibatalkan');
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Reschedule error:', error);
+      alert('❌ Gagal memproses: ' + error.message);
+    }
+  };
+
   // Handle payment method selection
   const handlePaymentMethodSelect = async (orderId: string, method: 'CASH' | 'TRANSFER') => {
     setOrderPaymentMethods(prev => ({ ...prev, [orderId]: method }));
@@ -679,6 +710,36 @@ export default function PelangganDashboard() {
                               <span className="font-medium text-slate-700 truncate block">{order.address}</span>
                             </div>
                           </div>
+
+                          {/* Reschedule Proposal */}
+                          {order.rescheduleStatus === 'PENDING' && (
+                            <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-left space-y-2">
+                              <div className="flex gap-2 items-start text-amber-800">
+                                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[10px] font-black uppercase tracking-wider block">Admin Mengusulkan Perubahan Jadwal</span>
+                                  <p className="text-[10px] mt-0.5 font-medium leading-relaxed">
+                                    Jadwal baru yang diusulkan: <br/>
+                                    <strong>{order.proposedDate}</strong> pukul <strong>{order.proposedTime}</strong>
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 mt-2 pt-2 border-t border-amber-200/60">
+                                <button
+                                  onClick={() => handleRescheduleResponse(order.id, 'ACCEPTED', order.proposedDate, order.proposedTime)}
+                                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[9.5px] font-black py-2 rounded-lg transition uppercase tracking-wider cursor-pointer shadow-sm"
+                                >
+                                  Setuju
+                                </button>
+                                <button
+                                  onClick={() => handleRescheduleResponse(order.id, 'REJECTED')}
+                                  className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-[9.5px] font-black py-2 rounded-lg transition uppercase tracking-wider cursor-pointer shadow-sm"
+                                >
+                                  Tolak (Batalkan Pesanan)
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Customer Notes */}
                           {order.notes && (
@@ -1041,8 +1102,8 @@ export default function PelangganDashboard() {
                             <span className="text-xs font-black text-emerald-600 font-mono block">
                               {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
                             </span>
-                            <span className="text-[8px] bg-emerald-50 text-emerald-600 font-black uppercase px-1.5 block mt-0.5">
-                              CLOSED
+                            <span className={`text-[8px] font-black uppercase px-1.5 block mt-0.5 ${order.status === OrderStatus.DIBATALKAN ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                              {order.status === OrderStatus.DIBATALKAN ? 'DIBATALKAN' : 'CLOSED'}
                             </span>
                           </div>
                         </div>
@@ -1075,9 +1136,14 @@ export default function PelangganDashboard() {
                           {order.completionNotes && <div className="italic text-slate-600 mt-1">"{order.completionNotes}"</div>}
                         </div>
 
-                        {!order.rating || order.rating === null ? (
+                        {!order.rating && order.status !== OrderStatus.DIBATALKAN ? (
                           <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-center text-[10px] text-amber-700 font-medium">
                             ⏳ Menunggu rating dari Anda di dashboard...
+                          </div>
+                        ) : order.status === OrderStatus.DIBATALKAN ? (
+                          <div className="bg-red-50 border border-red-200 p-2.5 rounded-lg flex flex-col items-start text-left">
+                            <span className="text-[8px] text-red-700 font-black uppercase block">Alasan Pembatalan</span>
+                            <p className="text-[10px] text-red-900 font-bold mt-1">{order.cancelReason || 'Tidak ada alasan.'}</p>
                           </div>
                         ) : (
                           <div className="bg-amber-500/10 border border-amber-500/25 p-2.5 rounded-lg flex items-center justify-between">

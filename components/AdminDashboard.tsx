@@ -301,9 +301,18 @@ export default function AdminDashboard() {
         assignedTo: selectedStaffId,
         assignedEmployeeName: selectedStaff.name,
         status: OrderStatus.DITUGASKAN,
-        scheduledDate: tempScheduledDate,
-        scheduledTime: tempScheduledTime,
       };
+
+      const isDateChanged = tempScheduledDate !== selectedOrderForAssign.scheduledDate || tempScheduledTime !== selectedOrderForAssign.scheduledTime;
+
+      if (isDateChanged) {
+        updatePayload.proposedDate = tempScheduledDate;
+        updatePayload.proposedTime = tempScheduledTime;
+        updatePayload.rescheduleStatus = 'PENDING';
+      } else {
+        updatePayload.scheduledDate = tempScheduledDate;
+        updatePayload.scheduledTime = tempScheduledTime;
+      }
 
       await api.updateOrder(orderId, updatePayload);
 
@@ -321,6 +330,30 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error assigning staff:', error);
       setErrorMsg('Gagal menugaskan teknisi. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Admin Cancel Order
+  const handleCancelOrderAdmin = async (orderId: string) => {
+    try {
+      setIsLoading(true);
+      await api.updateOrder(orderId, {
+        status: OrderStatus.DIBATALKAN,
+        cancelReason: 'Dibatalkan oleh Admin'
+      });
+      
+      const updatedOrder = orders.find(o => o.id === orderId);
+      if (updatedOrder) {
+        updatedOrder.status = OrderStatus.DIBATALKAN;
+        updatedOrder.cancelReason = 'Dibatalkan oleh Admin';
+        setOrders([...orders]);
+      }
+      alert('✅ Pesanan berhasil dibatalkan');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      alert('❌ Gagal membatalkan pesanan');
     } finally {
       setIsLoading(false);
     }
@@ -723,6 +756,33 @@ export default function AdminDashboard() {
                     <div className="text-[11px] text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-medium">
                       <div>👤 Pemesan: <strong className="text-slate-800">{order.customerName}</strong> (<span className="font-mono">{order.customerPhone}</span>)</div>
                       <div>📅 Jadwal Mulai: <strong>{order.scheduledDate}</strong> pukul <strong className="font-mono">{order.scheduledTime}</strong></div>
+                      {order.rescheduleStatus === 'PENDING' && (
+                        <div className="mt-1.5 text-[9.5px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 flex items-start gap-1">
+                          <span className="shrink-0 mt-0.5">⏳</span>
+                          <div>
+                            <strong>Menunggu Persetujuan Pelanggan</strong><br />
+                            Usulan perubahan ke: {order.proposedDate} pkl {order.proposedTime}
+                          </div>
+                        </div>
+                      )}
+                      {order.rescheduleStatus === 'REJECTED' && order.status === OrderStatus.DIBATALKAN && (
+                        <div className="mt-1.5 text-[9.5px] text-red-700 bg-red-50 p-2 rounded-lg border border-red-200 flex items-start gap-1">
+                          <span className="shrink-0 mt-0.5">❌</span>
+                          <div>
+                            <strong>Perubahan Jadwal Ditolak</strong><br />
+                            Pesanan dibatalkan oleh pelanggan.
+                          </div>
+                        </div>
+                      )}
+                      {order.status === OrderStatus.DIBATALKAN && order.cancelReason && order.rescheduleStatus !== 'REJECTED' && (
+                        <div className="mt-1.5 text-[9.5px] text-red-700 bg-red-50 p-2 rounded-lg border border-red-200 flex items-start gap-1">
+                          <span className="shrink-0 mt-0.5">🛑</span>
+                          <div>
+                            <strong>Pesanan Dibatalkan</strong><br />
+                            Alasan: {order.cancelReason}
+                          </div>
+                        </div>
+                      )}
                       <div className="truncate flex items-start gap-1">
                         <span className="shrink-0 mt-0.5">📍</span>
                         <div>
@@ -758,21 +818,35 @@ export default function AdminDashboard() {
                           Tersedia
                         </span>
                       </div>
-                    ) : (
+                    ) : order.status !== OrderStatus.DIBATALKAN ? (
                     <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrderForAssign(order);
-                        }}
-                        className="bg-amber-500 hover:bg-amber-600 text-white text-[9.5px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                      >
-                        Tugaskan Staff
-                      </button>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if(window.confirm('Yakin ingin membatalkan pesanan ini?')) {
+                              handleCancelOrderAdmin(order.id);
+                            }
+                          }}
+                          className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                        >
+                          Batalkan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrderForAssign(order);
+                          }}
+                          className="bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                        >
+                          Tugaskan
+                        </button>
+                      </div>
                     </div>
-                    )}
+                    ) : null}
 
                     {/* Grand total info */}
                     <div className="border-t border-slate-100 pt-2.5 space-y-1.5 text-[10.5px] text-slate-600 font-semibold text-left">

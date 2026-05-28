@@ -101,6 +101,20 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN addonsUsed JSON NULL");
       console.log("✅ Added 'addonsUsed' column to 'orders' table in database");
     }
+
+    // Auto-migration: Add reschedule fields to 'orders' table
+    const [rescheduleCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'rescheduleStatus'");
+    if (rescheduleCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN proposedDate VARCHAR(50) NULL, ADD COLUMN proposedTime VARCHAR(50) NULL, ADD COLUMN rescheduleStatus VARCHAR(50) NULL");
+      console.log("✅ Added reschedule fields to 'orders' table in database");
+    }
+
+    // Auto-migration: Add cancelReason field to 'orders' table
+    const [cancelCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'cancelReason'");
+    if (cancelCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN cancelReason VARCHAR(255) NULL");
+      console.log("✅ Added cancelReason field to 'orders' table in database");
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -555,7 +569,8 @@ app.put('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
   const {
     status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter,
-    paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost, addonsUsed
+    paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost, addonsUsed,
+    scheduledDate, scheduledTime, proposedDate, proposedTime, rescheduleStatus, cancelReason
   } = req.body;
   let connection;
   try {
@@ -723,6 +738,12 @@ app.put('/api/orders/:id', async (req, res) => {
     if (addonsCost !== undefined) { updateFields.push('addonsCost = ?'); updateValues.push(addonsCost); }
     if (totalCost !== undefined) { updateFields.push('totalCost = ?'); updateValues.push(totalCost); }
     if (addonsUsed !== undefined) { updateFields.push('addonsUsed = ?'); updateValues.push(JSON.stringify(addonsUsed)); }
+    if (scheduledDate !== undefined) { updateFields.push('scheduledDate = ?'); updateValues.push(scheduledDate); }
+    if (scheduledTime !== undefined) { updateFields.push('scheduledTime = ?'); updateValues.push(scheduledTime); }
+    if (proposedDate !== undefined) { updateFields.push('proposedDate = ?'); updateValues.push(proposedDate); }
+    if (proposedTime !== undefined) { updateFields.push('proposedTime = ?'); updateValues.push(proposedTime); }
+    if (rescheduleStatus !== undefined) { updateFields.push('rescheduleStatus = ?'); updateValues.push(rescheduleStatus); }
+    if (cancelReason !== undefined) { updateFields.push('cancelReason = ?'); updateValues.push(cancelReason); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }

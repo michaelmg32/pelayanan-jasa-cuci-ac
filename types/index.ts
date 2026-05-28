@@ -17,6 +17,7 @@ export enum OrderStatus {
   PENGERJAAN = 'PENGERJAAN',   // Pengerjaan ac, input addons / perlengkapan & after photo
   PAYMENT = 'PAYMENT',         // Pembayaran cash (di-acc staff) atau transfer (norek bank)
   SELESAI = 'SELESAI',         // Selesai, ratings & feedback
+  DIBATALKAN = 'DIBATALKAN',   // Pesanan dibatalkan (misal karena perubahan jadwal ditolak)
 }
 
 export interface User {
@@ -76,6 +77,10 @@ export interface Order {
   longitude?: number;
   scheduledDate: string;
   scheduledTime: string;
+  proposedDate?: string;
+  proposedTime?: string;
+  rescheduleStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  cancelReason?: string; // e.g. "Dibatalkan oleh Admin" or "Dibatalkan Pelanggan (Tolak Jadwal)"
   acDetail: {
     acType: string;       // Model AC (Daikin, Sharp, etc. atau tipe Split, Cassette)
     category: string;     // Kategori Jasa (Cuci AC, Perbaikan AC, dll)
