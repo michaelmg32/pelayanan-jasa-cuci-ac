@@ -248,7 +248,7 @@ export default function PelangganDashboard() {
       alert('Mohon lengkapi alamat, nomor telepon, dan tanggal pengerjaan.');
       return;
     }
-    
+
     // Check if the selected date and time is before the current time
     const selectedDateTime = new Date(`${date}T${time}`);
     const now = new Date();
@@ -271,9 +271,9 @@ export default function PelangganDashboard() {
 
       // Generate order ID (Short format: ORD-YYMMDD-XXXX)
       const today = new Date();
-      const yymmdd = today.getFullYear().toString().slice(2) + 
-                     String(today.getMonth() + 1).padStart(2, '0') + 
-                     String(today.getDate()).padStart(2, '0');
+      const yymmdd = today.getFullYear().toString().slice(2) +
+        String(today.getMonth() + 1).padStart(2, '0') +
+        String(today.getDate()).padStart(2, '0');
       const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderId = `ORD-${yymmdd}-${rand}`;
 
@@ -495,11 +495,11 @@ export default function PelangganDashboard() {
       }
 
       await api.updateOrder(orderId, updatePayload);
-      
+
       // Refresh orders
       const updatedOrders = await api.fetchOrders();
       setOrders(updatedOrders);
-      
+
       setIsLoading(false);
       alert(response === 'ACCEPTED' ? '✅ Jadwal baru disetujui' : '❌ Pesanan telah dibatalkan');
     } catch (error: any) {
@@ -713,7 +713,7 @@ export default function PelangganDashboard() {
                               </h4>
                               <p className="text-[9.5px] text-slate-400 font-semibold">{order.acDetail?.acType}</p>
                               <p className="text-[8px] text-blue-500 font-mono mt-1">
-                                Status: {order.status} | Rating: {order.rating === null ? 'null' : order.rating === undefined ? 'undefined' : order.rating}
+                                Status: {order.status}{order.rating != null ? ` | Rating: ⭐ ${order.rating}` : ''}
                               </p>
                             </div>
                             <div className="text-right shrink-0">
@@ -749,7 +749,7 @@ export default function PelangganDashboard() {
                                 <div>
                                   <span className="text-[10px] font-black uppercase tracking-wider block">Admin Mengusulkan Perubahan Jadwal</span>
                                   <p className="text-[10px] mt-0.5 font-medium leading-relaxed">
-                                    Jadwal baru yang diusulkan: <br/>
+                                    Jadwal baru yang diusulkan: <br />
                                     <strong>{order.proposedDate}</strong> pukul <strong>{order.proposedTime}</strong>
                                   </p>
                                 </div>
@@ -1155,25 +1155,27 @@ export default function PelangganDashboard() {
                             {order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType}
                           </div>
                           <div>📅 Selesai: {order.scheduledDate}</div>
-                          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                            <span>💳 Pembayaran:</span>
-                            {order.paymentMethod === 'TRANSFER' ? (
-                              <span className="bg-indigo-50 border border-indigo-150 text-indigo-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                TRANSFER (XENDIT)
+                          {order.status !== OrderStatus.DIBATALKAN && (
+                            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                              <span>💳 Pembayaran:</span>
+                              {order.paymentMethod === 'TRANSFER' ? (
+                                <span className="bg-indigo-50 border border-indigo-150 text-indigo-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
+                                  TRANSFER (XENDIT)
+                                </span>
+                              ) : order.paymentMethod === 'CASH' ? (
+                                <span className="bg-emerald-50 border border-emerald-150 text-emerald-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
+                                  TUNAI (CASH)
+                                </span>
+                              ) : (
+                                <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
+                                  💵 TUNAI / MANUAL (BAWAAN)
+                                </span>
+                              )}
+                              <span className="bg-emerald-500 text-white text-[8px] px-1 py-0.5 rounded font-black uppercase tracking-wider">
+                                LUNAS
                               </span>
-                            ) : order.paymentMethod === 'CASH' ? (
-                              <span className="bg-emerald-50 border border-emerald-150 text-emerald-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                TUNAI (CASH)
-                              </span>
-                            ) : (
-                              <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                💵 TUNAI / MANUAL (BAWAAN)
-                              </span>
-                            )}
-                            <span className="bg-emerald-500 text-white text-[8px] px-1 py-0.5 rounded font-black uppercase tracking-wider">
-                              LUNAS
-                            </span>
-                          </div>
+                            </div>
+                          )}
                           {order.completionNotes && <div className="italic text-slate-600 mt-1">"{order.completionNotes}"</div>}
                         </div>
 

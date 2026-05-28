@@ -848,25 +848,27 @@ export default function KaryawanDashboard() {
                         <div className="text-[10px] text-slate-500 font-medium space-y-0.5">
                           <div>🔧 Jasa: {task.acDetail?.quantity} Unit x {task.acDetail?.serviceType === 'none' ? task.acDetail?.category : task.acDetail?.serviceType}</div>
                           <div>📅 Selesai: {task.scheduledDate}</div>
-                          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                            <span>💳 Pembayaran:</span>
-                            {task.paymentMethod === 'TRANSFER' ? (
-                              <span className="bg-indigo-50 border border-indigo-150 text-indigo-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                TRANSFER (XENDIT)
+                          {task.status !== OrderStatus.DIBATALKAN && (
+                            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                              <span>💳 Pembayaran:</span>
+                              {task.paymentMethod === 'TRANSFER' ? (
+                                <span className="bg-indigo-50 border border-indigo-150 text-indigo-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
+                                  TRANSFER (XENDIT)
+                                </span>
+                              ) : task.paymentMethod === 'CASH' ? (
+                                <span className="bg-emerald-50 border border-emerald-150 text-emerald-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
+                                  TUNAI (CASH)
+                                </span>
+                              ) : (
+                                <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
+                                  💵 TUNAI / MANUAL (BAWAAN)
+                                </span>
+                              )}
+                              <span className="bg-emerald-500 text-white text-[8px] px-1 py-0.5 rounded font-black uppercase tracking-wider">
+                                LUNAS
                               </span>
-                            ) : task.paymentMethod === 'CASH' ? (
-                              <span className="bg-emerald-50 border border-emerald-150 text-emerald-700 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                TUNAI (CASH)
-                              </span>
-                            ) : (
-                              <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                💵 TUNAI / MANUAL (BAWAAN)
-                              </span>
-                            )}
-                            <span className="bg-emerald-500 text-white text-[8px] px-1 py-0.5 rounded font-black uppercase tracking-wider">
-                              LUNAS
-                            </span>
-                          </div>
+                            </div>
+                          )}
                           {task.completionNotes && <div className="italic text-slate-600 mt-1">"{task.completionNotes}"</div>}
                         </div>
 
