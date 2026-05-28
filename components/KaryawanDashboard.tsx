@@ -35,6 +35,10 @@ export default function KaryawanDashboard() {
   // Work panel modal
   const [activeWorkingTask, setActiveWorkingTask] = useState<any | null>(null);
 
+  // Cancellation modal
+  const [activeCancelOrderId, setActiveCancelOrderId] = useState<string | null>(null);
+  const [cancelReasonText, setCancelReasonText] = useState('');
+
   // Service editing states (CEK_LAYANAN stage)
   const [editingServiceOrderId, setEditingServiceOrderId] = useState<string | null>(null);
   const [tempCategoryId, setTempCategoryId] = useState<string>('');
@@ -293,17 +297,18 @@ export default function KaryawanDashboard() {
     }
   };
 
-  const handleRequestCancelWorker = async (orderId: string) => {
-    const reason = window.prompt('Masukkan alasan pembatalan (misal: Alamat palsu, alat rusak, dll):');
-    if (!reason || !reason.trim()) return;
+  const handleRequestCancelWorker = async () => {
+    if (!activeCancelOrderId || !cancelReasonText.trim()) return;
     try {
-      await api.updateOrder(orderId, { workerCancelReason: reason.trim() });
+      await api.updateOrder(activeCancelOrderId, { workerCancelReason: cancelReasonText.trim() });
       setOrders(prevOrders =>
         prevOrders.map(o =>
-          o.id === orderId ? { ...o, workerCancelReason: reason.trim() } : o
+          o.id === activeCancelOrderId ? { ...o, workerCancelReason: cancelReasonText.trim() } : o
         )
       );
       alert('✓ Pengajuan pembatalan telah dikirim ke Admin untuk diverifikasi.');
+      setActiveCancelOrderId(null);
+      setCancelReasonText('');
     } catch (error) {
       alert('❌ Gagal mengirim pengajuan pembatalan');
     }
@@ -593,7 +598,10 @@ export default function KaryawanDashboard() {
                                     Konfirmasi Tiba di Lokasi & Mulai Cek AC
                                   </button>
                                   <button
-                                    onClick={() => handleRequestCancelWorker(task.id)}
+                                    onClick={() => {
+                                      setActiveCancelOrderId(task.id);
+                                      setCancelReasonText('');
+                                    }}
                                     className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-[10px] py-2 rounded-xl uppercase tracking-wider cursor-pointer transition"
                                   >
                                     Ajukan Pembatalan (Ada Kendala)
@@ -1294,6 +1302,55 @@ export default function KaryawanDashboard() {
         )}
 
       </div>
+
+      {/* Cancellation Modal */}
+      {activeCancelOrderId && (
+        <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 backdrop-blur-sm">
+          <div className="bg-white border rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl text-left scale-in-center">
+            <div className="p-5 border-b border-slate-100 bg-rose-50/50 flex justify-between items-center">
+              <div>
+                <h4 className="font-black text-sm text-rose-700 uppercase tracking-wide">Ajukan Pembatalan</h4>
+                <p className="text-[10px] text-rose-500 mt-1 font-semibold">Berikan alasan rinci kepada admin</p>
+              </div>
+              <button
+                onClick={() => setActiveCancelOrderId(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200 transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-wider block mb-1.5">Alasan Kendala</label>
+                <textarea
+                  autoFocus
+                  placeholder="Contoh: Alamat tidak ditemukan, pelanggan tidak ada di rumah, alat rusak..."
+                  value={cancelReasonText}
+                  onChange={(e) => setCancelReasonText(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-xs p-3.5 rounded-xl outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 h-28 resize-none font-medium leading-relaxed transition-all text-slate-700"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveCancelOrderId(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-[11px] py-3 rounded-xl uppercase tracking-wider cursor-pointer transition"
+                >
+                  Kembali
+                </button>
+                <button
+                  onClick={handleRequestCancelWorker}
+                  disabled={!cancelReasonText.trim()}
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white font-black text-[11px] py-3 rounded-xl uppercase tracking-wider cursor-pointer shadow-md transition disabled:cursor-not-allowed"
+                >
+                  Kirim Ajuan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Map Picker Modal for Profile */}
       {showProfileMapPicker && (
         <div className="fixed inset-0 z-50 flex flex-col bg-white overflow-hidden animate-in fade-in duration-300">

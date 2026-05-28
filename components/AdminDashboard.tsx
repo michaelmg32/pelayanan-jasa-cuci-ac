@@ -297,10 +297,11 @@ export default function AdminDashboard() {
         return;
       }
 
-      const updatePayload: Partial<Order> = {
+      const updatePayload: any = {
         assignedTo: selectedStaffId,
         assignedEmployeeName: selectedStaff.name,
         status: OrderStatus.DITUGASKAN,
+        workerCancelReason: null // clear any pending cancel request
       };
 
       if (!selectedOrderForAssign) return;
@@ -322,13 +323,19 @@ export default function AdminDashboard() {
       const updatedOrder = orders.find(o => o.id === orderId);
       if (updatedOrder) {
         Object.assign(updatedOrder, updatePayload);
+        updatedOrder.workerCancelReason = undefined; // clear it locally
         setOrders([...orders]);
       }
 
       setErrorMsg('');
       setSelectedStaffId('');
       setSelectedOrderForAssign(null);
-      alert('✅ Teknisi berhasil ditugaskan ke order ini');
+      
+      if (isDateChanged) {
+        alert('✅ Pengajuan perubahan jadwal berhasil dikirim. Menunggu persetujuan pelanggan.');
+      } else {
+        alert('✅ Teknisi berhasil ditugaskan ke order ini');
+      }
     } catch (error) {
       console.error('Error assigning staff:', error);
       setErrorMsg('Gagal menugaskan teknisi. Silakan coba lagi.');
@@ -872,14 +879,14 @@ export default function AdminDashboard() {
                               <span className="font-black block uppercase tracking-wider mb-0.5">⚠️ Pengajuan Batal dari Teknisi</span>
                               Alasan: <strong className="font-bold">{order.workerCancelReason}</strong>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1.5 mt-2">
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRejectCancelRequest(order.id);
                                 }}
-                                className="flex-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-[9px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
+                                className="flex-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-[8.5px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
                               >
                                 Tolak
                               </button>
@@ -887,9 +894,19 @@ export default function AdminDashboard() {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setSelectedOrderForAssign(order);
+                                }}
+                                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-[8.5px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
+                              >
+                                Ganti Teknisi
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleApproveCancelRequest(order.id, order.workerCancelReason!);
                                 }}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-[8.5px] font-black py-1.5 rounded-lg uppercase tracking-wider transition"
                               >
                                 Setujui Batal
                               </button>
