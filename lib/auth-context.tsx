@@ -137,6 +137,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
     initializeData();
   }, []);
 
+  // Realtime auto-refresh polling for orders & users (every 4 seconds)
+  useEffect(() => {
+    if (!dbConnected) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const [fetchedOrders, fetchedUsers] = await Promise.all([
+          api.fetchOrders(),
+          api.fetchUsers(),
+        ]);
+
+        if (fetchedOrders && Array.isArray(fetchedOrders)) {
+          setOrders(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(fetchedOrders)) {
+              return fetchedOrders;
+            }
+            return prev;
+          });
+        }
+
+        if (fetchedUsers && Array.isArray(fetchedUsers)) {
+          setUsers(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(fetchedUsers)) {
+              return fetchedUsers;
+            }
+            return prev;
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error polling real-time updates:', error);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [dbConnected]);
+
+  // Prevent zoom (pinch-to-zoom and double-tap) on mobile devices
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    let lastTouchEnd = 0;
+    const handleTouchEnd = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
   // Dynamic Tab Title and Favicon based on settings
   useEffect(() => {
     if (typeof window !== 'undefined') {

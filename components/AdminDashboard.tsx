@@ -511,6 +511,13 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Security check: Admin cannot edit Owner or Admin
+      if (targetUser.role === Role.OWNER || targetUser.role === Role.ADMIN) {
+        setErrorMsg('Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+        alert('❌ Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+        return;
+      }
+
       const updatePayload = {
         name: targetUser.name, // Send existing name
         email: targetUser.email, // Send existing email (required by backend)
@@ -543,6 +550,10 @@ export default function AdminDashboard() {
   };
 
   const startEditUser = (target: User) => {
+    if (target.role === Role.OWNER || target.role === Role.ADMIN) {
+      alert('❌ Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+      return;
+    }
     setEditingUserId(target.id);
     setEditRole(target.role);
     setEditPhone(target.phone || '');
@@ -1393,13 +1404,15 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => startEditUser(u)}
-                    className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
-                  >
-                    <Edit size={12} /> Edit
-                  </button>
+                  {u.role !== Role.OWNER && u.role !== Role.ADMIN && (
+                    <button
+                      type="button"
+                      onClick={() => startEditUser(u)}
+                      className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
+                    >
+                      <Edit size={12} /> Edit
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
