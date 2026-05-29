@@ -35,7 +35,8 @@ import {
   Mail,
   ShieldCheck,
   Camera,
-  Check
+  Check,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
@@ -72,6 +73,35 @@ export default function AdminDashboard() {
     });
   }, [staffList, orders]);
   const allUsers = users;
+
+  // WhatsApp Invoice Link generator
+  const getWhatsAppInvoiceLink = (order: Order) => {
+    let phone = order.customerPhone || '';
+    phone = phone.replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.substring(1);
+    }
+    
+    const serviceName = `${order.acDetail?.quantity || 0}x ${
+      order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType
+    } (${order.acDetail?.acType || ''})`;
+
+    let addonsText = '';
+    if (order.addonsUsed && order.addonsUsed.length > 0) {
+      addonsText = '\n*Perlengkapan Tambahan:*\n';
+      order.addonsUsed.forEach(ad => {
+        addonsText += `- ${ad.name} (${ad.quantity}x): Rp${Number(ad.price * ad.quantity).toLocaleString('id-ID')}\n`;
+      });
+      addonsText += `*Total Perlengkapan:* Rp${Number(order.addonsCost || 0).toLocaleString('id-ID')}\n`;
+    }
+
+    const grandTotal = Number(order.serviceCost || 0) + Number(order.addonsCost || 0);
+
+    const message = `Halo Kak *${order.customerName}*,\n\nBerikut adalah rincian tagihan/invoice untuk pengerjaan AC Anda oleh *CoolAir Pro*:\n\n*Order ID:* ${order.id}\n*Tanggal Pengerjaan:* ${order.scheduledDate} (${order.scheduledTime})\n*Layanan:* ${serviceName}\n\n*Rincian Biaya:*\n- Jasa Utama: Rp${Number(order.serviceCost || 0).toLocaleString('id-ID')}${addonsText}\n*Grand Total:* *Rp${Number(grandTotal).toLocaleString('id-ID')}*\n\n*Status:* ✅ *LUNAS*\n\nTerima kasih telah mempercayakan CoolAir Pro untuk kenyamanan AC Anda! 🙏❄️`;
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  };
+
   // Loading state for async operations
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -994,6 +1024,21 @@ export default function AdminDashboard() {
                       <span className="text-[10px] uppercase text-slate-400 tracking-wider">Total Jasa:</span>
                       <span className="text-xs font-mono text-indigo-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
                     </div>
+
+                    {order.status === OrderStatus.SELESAI && (
+                      <div className="pt-2 border-t border-slate-100 mt-2">
+                        <a
+                          href={getWhatsAppInvoiceLink(order)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center justify-center gap-1.5 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[9.5px] py-2 rounded-xl uppercase tracking-wider transition duration-200 shadow-sm hover:shadow"
+                        >
+                          <MessageCircle size={12} />
+                          Kirim Invoice (WhatsApp)
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -2080,6 +2125,19 @@ export default function AdminDashboard() {
                       <span className="text-indigo-700 font-mono text-xs">{formatRupiah(Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0))}</span>
                     </div>
                   </div>
+                  {selectedOrderDetail.status === OrderStatus.SELESAI && (
+                    <div className="pt-2">
+                      <a
+                        href={getWhatsAppInvoiceLink(selectedOrderDetail)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
+                      >
+                        <MessageCircle size={14} />
+                        Kirim Invoice via WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 
