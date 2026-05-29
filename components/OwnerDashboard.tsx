@@ -606,6 +606,68 @@ export default function OwnerDashboard() {
             </table>
           </div>
         </div>
+
+        {/* Umpan Balik & Ulasan Pelanggan */}
+        <div className="bg-white border rounded-2xl p-4 shadow-xs">
+          <div className="border-b border-slate-100 pb-3 mb-4">
+            <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Umpan Balik & Ulasan Pelanggan</h3>
+            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Rating dan ulasan dari pelanggan terbaru</p>
+          </div>
+
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+            {completedOrders
+              .filter(o => o.rating !== undefined || (o.ratingNotes && o.ratingNotes.trim()))
+              .slice()
+              .reverse()
+              .map((review) => {
+                const rating = review.rating || 0;
+                return (
+                  <div key={review.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-[10px] text-left">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 font-black flex items-center justify-center text-[9px] uppercase">
+                          {review.customerName ? review.customerName.charAt(0) : 'U'}
+                        </div>
+                        <div>
+                          <span className="font-extrabold text-slate-800">{review.customerName || 'Pelanggan'}</span>
+                          <p className="text-[8px] text-slate-400 font-semibold mt-0.5">
+                            {review.scheduledDate} • Teknisi: <strong className="text-slate-650">{review.assignedEmployeeName || 'Belum ditunjuk'}</strong>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5 text-amber-500 font-bold bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-lg text-[9px]">
+                        <span>{rating}</span>
+                        <span className="text-[8px]">★</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-lg border border-slate-100 space-y-1">
+                      <div className="text-slate-500 font-semibold text-[9px]">
+                        Layanan: {review.acDetail?.quantity}x {review.acDetail?.serviceType === 'none' ? review.acDetail?.category : review.acDetail?.serviceType} ({review.acDetail?.acType})
+                      </div>
+                      {review.ratingNotes && review.ratingNotes.trim() ? (
+                        <p className="text-slate-700 italic font-medium">"{review.ratingNotes}"</p>
+                      ) : (
+                        <p className="text-slate-400 italic">Tidak ada komentar tertulis.</p>
+                      )}
+                    </div>
+
+                    {review.completionNotes && review.completionNotes.trim() && (
+                      <div className="text-[8.5px] text-slate-500 bg-slate-100/50 p-1.5 rounded-md border border-slate-205">
+                        <span className="font-bold text-slate-600">Catatan Pengerjaan Teknisi:</span> {review.completionNotes}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+            {completedOrders.filter(o => o.rating !== undefined || (o.ratingNotes && o.ratingNotes.trim())).length === 0 && (
+              <div className="text-center py-8 text-slate-400 text-[10px]">
+                Belum ada umpan balik dari pelanggan
+              </div>
+            )}
+          </div>
+        </div>
       </>)}
 
         {activeTab === 'profile' && (
