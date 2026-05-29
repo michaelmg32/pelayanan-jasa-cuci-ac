@@ -1172,7 +1172,7 @@ export default function PelangganDashboard() {
                                 </span>
                               ) : (
                                 <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                  💵 TUNAI / MANUAL (BAWAAN)
+                                  💵 TUNAI
                                 </span>
                               )}
                               <span className="bg-emerald-500 text-white text-[8px] px-1 py-0.5 rounded font-black uppercase tracking-wider">

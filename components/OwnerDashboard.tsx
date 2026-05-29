@@ -506,7 +506,7 @@ export default function OwnerDashboard() {
                       order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
                     }`}>
                       {order.paymentMethod === 'TRANSFER' ? '💳 TRANSFER (XENDIT)' :
-                       order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI (BAWAAN)'}
+                       order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI'}
                     </span>
                   </div>
                 </div>

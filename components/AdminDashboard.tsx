@@ -1049,7 +1049,7 @@ export default function AdminDashboard() {
                           </span>
                         ) : (
                           <span className="bg-slate-100 border border-slate-200 text-slate-650 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                            💵 TUNAI / MANUAL (BAWAAN)
+                            💵 TUNAI
                           </span>
                         )}
                       </div>
@@ -2167,7 +2167,7 @@ export default function AdminDashboard() {
                         </span>
                       ) : (
                         <span className="bg-slate-100 border border-slate-200 text-slate-650 text-[8.5px] px-2 py-0.5 rounded font-black uppercase block w-fit mt-1">
-                          💵 TUNAI / MANUAL (BAWAAN)
+                          💵 TUNAI
                         </span>
                       )}
                     </div>
