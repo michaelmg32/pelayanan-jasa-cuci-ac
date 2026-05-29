@@ -301,7 +301,7 @@ export default function PelangganDashboard() {
           quantity,
         },
         notes: notes.trim(),
-        serviceCost: serviceCost,
+        serviceCost: totalCost,
         addonsCost: 0,
         totalCost: totalCost,
         totalPrice: totalCost,

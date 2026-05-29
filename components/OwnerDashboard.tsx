@@ -223,6 +223,29 @@ export default function OwnerDashboard() {
     return sum + orderAddonsCost;
   }, 0);
 
+  const totalMargin = completedOrders.reduce((sum, o) => {
+    if (o.margin !== undefined && o.margin !== null) {
+      return sum + Number(o.margin);
+    }
+    let addonsUsedParsed: any[] = [];
+    if (o.addonsUsed) {
+      if (typeof o.addonsUsed === 'string') {
+        try {
+          addonsUsedParsed = JSON.parse(o.addonsUsed);
+        } catch (e) {}
+      } else if (Array.isArray(o.addonsUsed)) {
+        addonsUsedParsed = o.addonsUsed;
+      }
+    }
+    const orderAddonsCost = addonsUsedParsed.reduce((subSum, ad) => {
+      const hpp = Number(ad.hpp) || 0;
+      const qty = Number(ad.quantity) || 0;
+      return subSum + (hpp * qty);
+    }, 0);
+    const calculatedMargin = (Number(o.serviceCost) || 0) + ((Number(o.addonsCost) || 0) - orderAddonsCost);
+    return sum + calculatedMargin;
+  }, 0);
+
   // Ratings
   const ratedOrders = completedOrders.filter(o => o.rating !== undefined);
   const averageRating = ratedOrders.length > 0 
@@ -406,7 +429,7 @@ export default function OwnerDashboard() {
 
               <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
                 <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
-                <span className="text-sm font-mono">{formatRupiah(totalRevenue - totalAddonsCost)}</span>
+                <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
               </div>
             </div>
           </div>

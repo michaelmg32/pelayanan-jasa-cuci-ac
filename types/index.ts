@@ -101,6 +101,7 @@ export interface Order {
   serviceCost: number; // Harga dasar layanan
   addonsCost: number;  // Total harga perlengkapan tambahan
   totalCost: number;   // serviceCost + addonsCost
+  margin?: number;
   addonsUsed?: {
     id?: string;
     name: string;

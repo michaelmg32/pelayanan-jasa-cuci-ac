@@ -2204,6 +2204,12 @@ export default function AdminDashboard() {
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
                       <span className="text-indigo-700 font-mono text-xs">{formatRupiah(Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0))}</span>
                     </div>
+                    {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
+                      <div className="flex justify-between font-bold text-emerald-750 bg-emerald-50 border border-emerald-100 p-2 rounded-lg mt-2">
+                        <span className="text-[10.5px] uppercase">Margin Keuntungan:</span>
+                        <span className="font-mono text-[11.5px]">{formatRupiah(selectedOrderDetail.margin)}</span>
+                      </div>
+                    )}
                   </div>
                   {selectedOrderDetail.status === OrderStatus.SELESAI && (
                     <div className="pt-3 border-t border-slate-100 mt-2 space-y-2">

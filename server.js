@@ -136,6 +136,37 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE ac_addons ADD COLUMN hpp DECIMAL(10, 2) DEFAULT 0");
       console.log("✅ Added hpp column to 'ac_addons' table in database");
     }
+
+    // Auto-migration: Add margin column to 'orders' table
+    const [marginCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'margin'");
+    if (marginCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN margin DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added margin column to 'orders' table in database");
+    }
+
+    // Backfill margin for existing orders where margin is 0 or NULL
+    const [ordersWithoutMargin] = await connection.query("SELECT id, serviceCost, addonsCost, addonsUsed FROM orders WHERE margin = 0 OR margin IS NULL");
+    if (ordersWithoutMargin.length > 0) {
+      console.log(`⏳ Backfilling margin for ${ordersWithoutMargin.length} orders...`);
+      for (const order of ordersWithoutMargin) {
+        const serviceCostValue = Number(order.serviceCost) || 0;
+        const addonsCostValue = Number(order.addonsCost) || 0;
+        let totalAddonsHpp = 0;
+        if (order.addonsUsed) {
+          try {
+            const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+            if (Array.isArray(addonsUsedParsed)) {
+              totalAddonsHpp = addonsUsedParsed.reduce((sum, ad) => sum + (Number(ad.hpp || 0) * Number(ad.quantity || 0)), 0);
+            }
+          } catch (e) {
+            // Silence parsing errors for legacy order rows
+          }
+        }
+        const margin = serviceCostValue + (addonsCostValue - totalAddonsHpp);
+        await connection.query("UPDATE orders SET margin = ? WHERE id = ?", [margin, order.id]);
+      }
+      console.log(`✅ Backfilled margin for ${ordersWithoutMargin.length} orders successfully.`);
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -549,6 +580,33 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
+const recalculateOrderMargin = async (connection, orderId) => {
+  try {
+    const [rows] = await connection.query('SELECT serviceCost, addonsCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
+    if (rows.length > 0) {
+      const order = rows[0];
+      const serviceCostValue = Number(order.serviceCost) || 0;
+      const addonsCostValue = Number(order.addonsCost) || 0;
+      let totalAddonsHpp = 0;
+      if (order.addonsUsed) {
+        try {
+          const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+          if (Array.isArray(addonsUsedParsed)) {
+            totalAddonsHpp = addonsUsedParsed.reduce((sum, ad) => sum + (Number(ad.hpp || 0) * Number(ad.quantity || 0)), 0);
+          }
+        } catch (e) {
+          console.error('Error parsing addonsUsed for margin recalculation:', e);
+        }
+      }
+      const margin = serviceCostValue + (addonsCostValue - totalAddonsHpp);
+      await connection.query('UPDATE orders SET margin = ? WHERE id = ?', [margin, orderId]);
+      console.log(`📊 Recalculated margin for order ${orderId}: ${margin} (Service: ${serviceCostValue}, Addons Jual: ${addonsCostValue}, Addons HPP: ${totalAddonsHpp})`);
+    }
+  } catch (err) {
+    console.error(`❌ Failed to recalculate margin for order ${orderId}:`, err);
+  }
+};
+
 app.post('/api/orders', async (req, res) => {
   const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -576,6 +634,7 @@ app.post('/api/orders', async (req, res) => {
         photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
       ]
     );
+    await recalculateOrderMargin(connection, id);
     connection.release();
     res.status(201).json({
       id,
@@ -807,6 +866,8 @@ app.put('/api/orders/:id', async (req, res) => {
         updateValues
       );
     }
+
+    await recalculateOrderMargin(connection, id);
 
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
 

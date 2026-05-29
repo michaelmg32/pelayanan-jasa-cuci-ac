@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS orders (
   notes TEXT,
   serviceCost DECIMAL(10, 2) DEFAULT 0,
   addonsCost DECIMAL(10, 2) DEFAULT 0,
+  margin DECIMAL(10, 2) DEFAULT 0,
   totalPrice DECIMAL(10, 2),
   totalCost DECIMAL(10, 2),
   photoBefore LONGTEXT,
