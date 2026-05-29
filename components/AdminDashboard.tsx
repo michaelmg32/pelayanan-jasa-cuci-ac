@@ -1067,7 +1067,11 @@ export default function AdminDashboard() {
                             e.stopPropagation();
                             handleSendInvoice(order);
                           }}
-                          className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto"
+                          className={`flex items-center justify-center gap-1.5 font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto ${
+                            order.invoiceSent
+                              ? 'bg-slate-200 hover:bg-slate-350 text-slate-550 border border-slate-300'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          }`}
                         >
                           <MessageCircle size={12} />
                           Kirim Invoice
@@ -2177,7 +2181,11 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => handleSendInvoice(selectedOrderDetail)}
-                        className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
+                        className={`flex items-center justify-center gap-2 w-full font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md cursor-pointer ${
+                          selectedOrderDetail.invoiceSent
+                            ? 'bg-slate-150 hover:bg-slate-200 text-slate-550 border border-slate-250 shadow-slate-200/10'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/10'
+                        }`}
                       >
                         <MessageCircle size={14} />
                         Kirim Invoice via WhatsApp
