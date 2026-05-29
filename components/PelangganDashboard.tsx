@@ -305,6 +305,8 @@ export default function PelangganDashboard() {
         addonsCost: 0,
         totalCost: totalCost,
         totalPrice: totalCost,
+        finalPrice: totalCost,
+        quantity: quantity,
         latitude: lat,
         longitude: lng,
       });

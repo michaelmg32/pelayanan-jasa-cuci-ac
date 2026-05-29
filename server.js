@@ -144,28 +144,71 @@ const initializeDatabaseSettings = async () => {
       console.log("✅ Added margin column to 'orders' table in database");
     }
 
-    // Backfill margin for existing orders where margin is 0 or NULL
-    const [ordersWithoutMargin] = await connection.query("SELECT id, serviceCost, addonsCost, addonsUsed FROM orders WHERE margin = 0 OR margin IS NULL");
-    if (ordersWithoutMargin.length > 0) {
-      console.log(`⏳ Backfilling margin for ${ordersWithoutMargin.length} orders...`);
-      for (const order of ordersWithoutMargin) {
-        const serviceCostValue = Number(order.serviceCost) || 0;
-        const addonsCostValue = Number(order.addonsCost) || 0;
+    // Auto-migration: Add quantity column to 'orders' table
+    const [qtyCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'quantity'");
+    if (qtyCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN quantity INT DEFAULT 1");
+      console.log("✅ Added quantity column to 'orders' table in database");
+    }
+
+    // Auto-migration: Add hpp_orders column to 'orders' table
+    const [hppOrdersCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'hpp_orders'");
+    if (hppOrdersCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN hpp_orders DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added hpp_orders column to 'orders' table in database");
+    }
+
+    // Auto-migration: Add finalPrice column to 'orders' table
+    const [finalPriceCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'finalPrice'");
+    if (finalPriceCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN finalPrice DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added finalPrice column to 'orders' table in database");
+    }
+
+    // Backfill calculations for existing orders (quantity, hpp_orders, finalPrice, margin)
+    const [existingOrders] = await connection.query("SELECT id, acDetail, serviceCost, addonsUsed FROM orders");
+    if (existingOrders.length > 0) {
+      console.log(`⏳ Migrating/Backfilling ${existingOrders.length} orders for the new margin system...`);
+      for (const order of existingOrders) {
+        let quantity = 1;
+        if (order.acDetail) {
+          try {
+            const acDetailParsed = typeof order.acDetail === 'string' ? JSON.parse(order.acDetail) : order.acDetail;
+            if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
+              quantity = acDetailParsed.quantity;
+            }
+          } catch (e) {}
+        }
+
+        let totalAddonsSales = 0;
         let totalAddonsHpp = 0;
         if (order.addonsUsed) {
           try {
             const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
             if (Array.isArray(addonsUsedParsed)) {
-              totalAddonsHpp = addonsUsedParsed.reduce((sum, ad) => sum + (Number(ad.hpp || 0) * Number(ad.quantity || 0)), 0);
+              addonsUsedParsed.forEach(ad => {
+                const price = Number(ad.price) || 0;
+                const hpp = Number(ad.hpp) || 0;
+                const qty = Number(ad.quantity) || 0;
+                totalAddonsSales += price * qty;
+                totalAddonsHpp += hpp * qty;
+              });
             }
-          } catch (e) {
-            // Silence parsing errors for legacy order rows
-          }
+          } catch (e) {}
         }
-        const margin = serviceCostValue + (addonsCostValue - totalAddonsHpp);
-        await connection.query("UPDATE orders SET margin = ? WHERE id = ?", [margin, order.id]);
+
+        const serviceCostTotal = Number(order.serviceCost) || 0;
+        const totalCost = serviceCostTotal;
+        const finalPrice = totalCost + totalAddonsSales;
+        const hpp_orders = totalAddonsHpp;
+        const margin = finalPrice - hpp_orders;
+
+        await connection.query(
+          "UPDATE orders SET quantity = ?, totalCost = ?, finalPrice = ?, hpp_orders = ?, margin = ?, addonsCost = ? WHERE id = ?",
+          [quantity, totalCost, finalPrice, hpp_orders, margin, totalAddonsSales, order.id]
+        );
       }
-      console.log(`✅ Backfilled margin for ${ordersWithoutMargin.length} orders successfully.`);
+      console.log(`✅ Backfilled financial columns for ${existingOrders.length} orders successfully.`);
     }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
@@ -582,25 +625,51 @@ app.get('/api/orders', async (req, res) => {
 
 const recalculateOrderMargin = async (connection, orderId) => {
   try {
-    const [rows] = await connection.query('SELECT serviceCost, addonsCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
+    const [rows] = await connection.query('SELECT acDetail, serviceCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
     if (rows.length > 0) {
       const order = rows[0];
-      const serviceCostValue = Number(order.serviceCost) || 0;
-      const addonsCostValue = Number(order.addonsCost) || 0;
+      
+      let quantity = 1;
+      if (order.acDetail) {
+        try {
+          const acDetailParsed = typeof order.acDetail === 'string' ? JSON.parse(order.acDetail) : order.acDetail;
+          if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
+            quantity = acDetailParsed.quantity;
+          }
+        } catch (e) {
+          console.error('Error parsing acDetail for quantity recalculation:', e);
+        }
+      }
+
+      let totalAddonsSales = 0;
       let totalAddonsHpp = 0;
       if (order.addonsUsed) {
         try {
           const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
           if (Array.isArray(addonsUsedParsed)) {
-            totalAddonsHpp = addonsUsedParsed.reduce((sum, ad) => sum + (Number(ad.hpp || 0) * Number(ad.quantity || 0)), 0);
+            addonsUsedParsed.forEach(ad => {
+              const price = Number(ad.price) || 0;
+              const hpp = Number(ad.hpp) || 0;
+              const qty = Number(ad.quantity) || 0;
+              totalAddonsSales += price * qty;
+              totalAddonsHpp += hpp * qty;
+            });
           }
         } catch (e) {
           console.error('Error parsing addonsUsed for margin recalculation:', e);
         }
       }
-      const margin = serviceCostValue + (addonsCostValue - totalAddonsHpp);
-      await connection.query('UPDATE orders SET margin = ? WHERE id = ?', [margin, orderId]);
-      console.log(`📊 Recalculated margin for order ${orderId}: ${margin} (Service: ${serviceCostValue}, Addons Jual: ${addonsCostValue}, Addons HPP: ${totalAddonsHpp})`);
+
+      const totalCost = Number(order.serviceCost) || 0;
+      const finalPrice = totalCost + totalAddonsSales;
+      const hpp_orders = totalAddonsHpp;
+      const margin = finalPrice - hpp_orders;
+
+      await connection.query(
+        'UPDATE orders SET quantity = ?, totalCost = ?, finalPrice = ?, hpp_orders = ?, margin = ?, addonsCost = ? WHERE id = ?',
+        [quantity, totalCost, finalPrice, hpp_orders, margin, totalAddonsSales, orderId]
+      );
+      console.log(`📊 Margin Recalculated for ${orderId}: qty=${quantity}, totalCost=${totalCost}, finalPrice=${finalPrice}, hpp_orders=${hpp_orders}, margin=${margin}`);
     }
   } catch (err) {
     console.error(`❌ Failed to recalculate margin for order ${orderId}:`, err);

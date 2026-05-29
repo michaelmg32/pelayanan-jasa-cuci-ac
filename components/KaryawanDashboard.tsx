@@ -274,7 +274,9 @@ export default function KaryawanDashboard() {
           quantity: tempQuantity
         },
         serviceCost: newServiceCost,
-        totalCost: newServiceCost + (currentOrder.addonsCost || 0)
+        totalCost: newServiceCost,
+        finalPrice: newServiceCost + (currentOrder.addonsCost || 0),
+        quantity: tempQuantity
       });
 
       setOrders(prevOrders =>
@@ -284,7 +286,9 @@ export default function KaryawanDashboard() {
               ...o,
               acDetail: { ...o.acDetail, category: categoryName, serviceType: serviceTypeName, quantity: tempQuantity },
               serviceCost: newServiceCost,
-              totalCost: newServiceCost + (o.addonsCost || 0)
+              totalCost: newServiceCost,
+              finalPrice: newServiceCost + (o.addonsCost || 0),
+              quantity: tempQuantity
             }
             : o
         )
@@ -365,7 +369,9 @@ export default function KaryawanDashboard() {
     try {
       const addonsCost = addonsUsed.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
       const currentOrder = orders.find(o => o.id === orderId);
-      const totalCost = (currentOrder?.serviceCost || 0) + addonsCost;
+      const serviceCost = currentOrder?.serviceCost || 0;
+      const totalCost = serviceCost;
+      const finalPrice = serviceCost + addonsCost;
 
       await api.updateOrder(orderId, {
         status: OrderStatus.PAYMENT,
@@ -373,6 +379,7 @@ export default function KaryawanDashboard() {
         addonsCost,
         completionNotes: completionNotes.trim(),
         totalCost,
+        finalPrice,
         paymentStatus: 'WAITING_APPROVAL',
         addonsUsed: addonsUsed
       });
@@ -387,6 +394,7 @@ export default function KaryawanDashboard() {
               addonsCost,
               completionNotes: completionNotes.trim(),
               totalCost,
+              finalPrice,
               addonsUsed: addonsUsed
             }
             : o

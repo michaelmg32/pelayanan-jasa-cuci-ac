@@ -198,53 +198,11 @@ export default function OwnerDashboard() {
   const completedOrders = orders.filter(o => o.status === OrderStatus.SELESAI);
   
   // Calculations
-  const totalBaseRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.serviceCost) || 0), 0);
+  const totalBaseRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.totalCost || o.serviceCost) || 0), 0);
   const totalAddonsRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.addonsCost) || 0), 0);
-  const totalRevenue = totalBaseRevenue + totalAddonsRevenue;
-
-  const totalAddonsCost = completedOrders.reduce((sum, o) => {
-    let addonsUsedParsed: any[] = [];
-    if (o.addonsUsed) {
-      if (typeof o.addonsUsed === 'string') {
-        try {
-          addonsUsedParsed = JSON.parse(o.addonsUsed);
-        } catch (e) {
-          console.error('Error parsing addonsUsed for owner profit:', e);
-        }
-      } else if (Array.isArray(o.addonsUsed)) {
-        addonsUsedParsed = o.addonsUsed;
-      }
-    }
-    const orderAddonsCost = addonsUsedParsed.reduce((subSum, ad) => {
-      const hpp = Number(ad.hpp) || 0;
-      const qty = Number(ad.quantity) || 0;
-      return subSum + (hpp * qty);
-    }, 0);
-    return sum + orderAddonsCost;
-  }, 0);
-
-  const totalMargin = completedOrders.reduce((sum, o) => {
-    if (o.margin !== undefined && o.margin !== null) {
-      return sum + Number(o.margin);
-    }
-    let addonsUsedParsed: any[] = [];
-    if (o.addonsUsed) {
-      if (typeof o.addonsUsed === 'string') {
-        try {
-          addonsUsedParsed = JSON.parse(o.addonsUsed);
-        } catch (e) {}
-      } else if (Array.isArray(o.addonsUsed)) {
-        addonsUsedParsed = o.addonsUsed;
-      }
-    }
-    const orderAddonsCost = addonsUsedParsed.reduce((subSum, ad) => {
-      const hpp = Number(ad.hpp) || 0;
-      const qty = Number(ad.quantity) || 0;
-      return subSum + (hpp * qty);
-    }, 0);
-    const calculatedMargin = (Number(o.serviceCost) || 0) + ((Number(o.addonsCost) || 0) - orderAddonsCost);
-    return sum + calculatedMargin;
-  }, 0);
+  const totalRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.finalPrice || (Number(o.totalCost || o.serviceCost || 0) + Number(o.addonsCost || 0))) || 0), 0);
+  const totalAddonsCost = completedOrders.reduce((sum, o) => sum + (Number(o.hpp_orders) || 0), 0);
+  const totalMargin = completedOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
 
   // Ratings
   const ratedOrders = completedOrders.filter(o => o.rating !== undefined);

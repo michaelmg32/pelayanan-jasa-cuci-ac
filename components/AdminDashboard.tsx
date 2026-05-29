@@ -98,6 +98,7 @@ export default function AdminDashboard() {
       }
     }
 
+    let totalAddonsSales = 0;
     let addonsText = '';
     if (addonsUsedParsed && addonsUsedParsed.length > 0) {
       addonsText = '\n*Perlengkapan Tambahan:*\n';
@@ -105,12 +106,13 @@ export default function AdminDashboard() {
         const unitPrice = Number(ad.price || 0);
         const qty = Number(ad.quantity || 0);
         const subTotal = unitPrice * qty;
+        totalAddonsSales += subTotal;
         addonsText += `- ${ad.name} (${qty}x @ Rp${unitPrice.toLocaleString('id-ID')}): Rp${subTotal.toLocaleString('id-ID')}\n`;
       });
-      addonsText += `*Total Perlengkapan:* Rp${Number(order.addonsCost || 0).toLocaleString('id-ID')}\n`;
+      addonsText += `*Total Perlengkapan:* Rp${totalAddonsSales.toLocaleString('id-ID')}\n`;
     }
 
-    const grandTotal = Number(order.serviceCost || 0) + Number(order.addonsCost || 0);
+    const grandTotal = order.finalPrice || (Number(order.serviceCost || 0) + totalAddonsSales);
 
     const message = `Halo Kak *${order.customerName}*,\n\nBerikut adalah rincian tagihan/invoice untuk pengerjaan AC Anda oleh *CoolAir Pro*:\n\n*Order ID:* ${order.id}\n*Tanggal Pengerjaan:* ${order.scheduledDate} (${order.scheduledTime})\n*Layanan:* ${serviceName}\n\n*Rincian Biaya:*\n- Jasa Utama: Rp${Number(order.serviceCost || 0).toLocaleString('id-ID')}${addonsText}\n*Grand Total:* *Rp${Number(grandTotal).toLocaleString('id-ID')}*\n\n*Status:* ✅ *LUNAS*\n\nTerima kasih telah mempercayakan CoolAir Pro untuk kenyamanan AC Anda! 🙏❄️`;
 
@@ -1067,7 +1069,7 @@ export default function AdminDashboard() {
 
                     <div className="flex justify-between items-center pt-2 border-t border-slate-100 font-black">
                       <span className="text-[10px] uppercase text-slate-400 tracking-wider">Total Jasa:</span>
-                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
+                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(order.finalPrice || (Number(order.serviceCost || 0) + Number(order.addonsCost || 0)))}</span>
                     </div>
 
                     {order.status === OrderStatus.SELESAI && (
@@ -2202,7 +2204,7 @@ export default function AdminDashboard() {
                     )}
                     <div className="flex justify-between font-black text-slate-800 border-t pt-2 mt-1">
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
-                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0))}</span>
+                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.finalPrice || (Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0)))}</span>
                     </div>
                     {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
                       <div className="flex justify-between font-bold text-emerald-750 bg-emerald-50 border border-emerald-100 p-2 rounded-lg mt-2">

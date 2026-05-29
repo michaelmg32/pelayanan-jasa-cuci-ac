@@ -102,6 +102,9 @@ export interface Order {
   addonsCost: number;  // Total harga perlengkapan tambahan
   totalCost: number;   // serviceCost + addonsCost
   margin?: number;
+  quantity?: number;
+  hpp_orders?: number;
+  finalPrice?: number;
   addonsUsed?: {
     id?: string;
     name: string;
