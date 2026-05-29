@@ -28,6 +28,17 @@ export default function OwnerDashboard() {
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile'>('dashboard');
 
+  const getLocalDateString = (d: Date = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayDateStr = getLocalDateString();
+  const [filterStartDate, setFilterStartDate] = useState(todayDateStr);
+  const [filterEndDate, setFilterEndDate] = useState(todayDateStr);
+
   // Owner Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
   const [editProfileName, setEditProfileName] = useState(activeUser?.name || '');
@@ -197,12 +208,18 @@ export default function OwnerDashboard() {
   // Filter completed orders for revenue
   const completedOrders = orders.filter(o => o.status === OrderStatus.SELESAI);
   
+  // Filter cash flow orders by date range (only for this container)
+  const cashFlowOrders = completedOrders.filter(o => {
+    if (!o.scheduledDate) return false;
+    return o.scheduledDate >= filterStartDate && o.scheduledDate <= filterEndDate;
+  });
+
   // Calculations
-  const totalBaseRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.totalCost || o.serviceCost) || 0), 0);
-  const totalAddonsRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.addonsCost) || 0), 0);
-  const totalRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.finalPrice || (Number(o.totalCost || o.serviceCost || 0) + Number(o.addonsCost || 0))) || 0), 0);
-  const totalAddonsCost = completedOrders.reduce((sum, o) => sum + (Number(o.hpp_orders) || 0), 0);
-  const totalMargin = completedOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
+  const totalBaseRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.totalCost || o.serviceCost) || 0), 0);
+  const totalAddonsRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.addonsCost) || 0), 0);
+  const totalRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.finalPrice || (Number(o.totalCost || o.serviceCost || 0) + Number(o.addonsCost || 0))) || 0), 0);
+  const totalAddonsCost = cashFlowOrders.reduce((sum, o) => sum + (Number(o.hpp_orders) || 0), 0);
+  const totalMargin = cashFlowOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
 
   // Ratings
   const ratedOrders = completedOrders.filter(o => o.rating !== undefined);
@@ -351,15 +368,31 @@ export default function OwnerDashboard() {
           </div>
         </div>
 
-        {/* Revenue Breakdown */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white border rounded-2xl p-4 shadow-xs">
-            <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Aliran Kas</h3>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
+              <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+                />
+                <span>s/d</span>
+                <input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+                />
+              </div>
+            </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
                 <div>
                   <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
-                  <p className="text-[10px] text-blue-700 font-semibold mt-1">{completedOrders.length} Pekerjaan Selesai</p>
+                  <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
                 </div>
                 <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
               </div>
