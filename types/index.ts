@@ -56,6 +56,7 @@ export interface ACAddon {
   id: string;
   name: string;
   price: number;
+  hpp?: number;
 }
 
 export interface SelectedAddon {
@@ -63,6 +64,7 @@ export interface SelectedAddon {
   name: string;
   price: number;
   quantity: number;
+  hpp?: number;
 }
 
 export interface Order {
@@ -100,9 +102,11 @@ export interface Order {
   addonsCost: number;  // Total harga perlengkapan tambahan
   totalCost: number;   // serviceCost + addonsCost
   addonsUsed?: {
+    id?: string;
     name: string;
     price: number;
     quantity: number;
+    hpp?: number;
   }[];
   
   rating?: number; // 1-5 bintang

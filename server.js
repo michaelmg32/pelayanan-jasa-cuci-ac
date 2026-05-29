@@ -129,6 +129,13 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN invoiceSent BOOLEAN DEFAULT FALSE");
       console.log("✅ Added invoiceSent field to 'orders' table in database");
     }
+
+    // Auto-migration: Add hpp column to 'ac_addons' table
+    const [addonHppCols] = await connection.query("SHOW COLUMNS FROM ac_addons LIKE 'hpp'");
+    if (addonHppCols.length === 0) {
+      await connection.query("ALTER TABLE ac_addons ADD COLUMN hpp DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added hpp column to 'ac_addons' table in database");
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -1050,15 +1057,15 @@ app.get('/api/addons', async (req, res) => {
 });
 
 app.post('/api/addons', async (req, res) => {
-  const { id, name, description, price } = req.body;
+  const { id, name, description, price, hpp } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'INSERT INTO ac_addons (id, name, description, price) VALUES (?, ?, ?, ?)',
-      [id, name, description, price]
+      'INSERT INTO ac_addons (id, name, description, price, hpp) VALUES (?, ?, ?, ?, ?)',
+      [id, name, description, price, hpp || 0]
     );
     connection.release();
-    res.status(201).json({ id, name, description, price });
+    res.status(201).json({ id, name, description, price, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1066,16 +1073,16 @@ app.post('/api/addons', async (req, res) => {
 
 app.put('/api/addons/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, price } = req.body;
+  const { name, description, price, hpp } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'UPDATE ac_addons SET name = ?, description = ?, price = ? WHERE id = ?',
-      [name, description, price, id]
+      'UPDATE ac_addons SET name = ?, description = ?, price = ?, hpp = ? WHERE id = ?',
+      [name, description, price, hpp || 0, id]
     );
     const [addon] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [id]);
     connection.release();
-    res.json(addon[0] || { id, name, description, price });
+    res.json(addon[0] || { id, name, description, price, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

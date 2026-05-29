@@ -46,7 +46,7 @@ export default function KaryawanDashboard() {
   const [tempQuantity, setTempQuantity] = useState<number>(1);
 
   // Addons states (PENGERJAAN stage)
-  const [addonsUsed, setAddonsUsed] = useState<{ id: string; name: string; price: number; quantity: number }[]>([]);
+  const [addonsUsed, setAddonsUsed] = useState<{ id: string; name: string; price: number; quantity: number; hpp?: number }[]>([]);
   const [selectedAddonId, setSelectedAddonId] = useState('');
   const [addonQuantity, setAddonQuantity] = useState(1);
 
@@ -448,7 +448,7 @@ export default function KaryawanDashboard() {
       if (exists) {
         setAddonsUsed(prev => prev.map(x => x.id === match.id ? { ...x, quantity: x.quantity + addonQuantity } : x));
       } else {
-        setAddonsUsed(prev => [...prev, { id: match.id, name: match.name, price: match.price, quantity: addonQuantity }]);
+        setAddonsUsed(prev => [...prev, { id: match.id, name: match.name, price: match.price, quantity: addonQuantity, hpp: match.hpp || 0 }]);
       }
       setSelectedAddonId('');
       setAddonQuantity(1);

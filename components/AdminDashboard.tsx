@@ -329,12 +329,14 @@ export default function AdminDashboard() {
 
   const [newAddonName, setNewAddonName] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState(0);
+  const [newAddonHpp, setNewAddonHpp] = useState(0);
 
   // Edit inline states for master data
   const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
   const [editMasterField1, setEditMasterField1] = useState('');
   const [editMasterField2, setEditMasterField2] = useState<number | boolean>(0);
   const [editMasterField3, setEditMasterField3] = useState('');
+  const [editMasterField4, setEditMasterField4] = useState<number>(0);
 
   // Helper formats
   const formatRupiah = (num: any) => {
@@ -680,11 +682,13 @@ export default function AdminDashboard() {
       setIsLoading(true);
       const newAddon = await api.createAddon({
         name: newAddonName,
-        price: newAddonPrice
+        price: newAddonPrice,
+        hpp: newAddonHpp
       });
       setAddons([...addons, newAddon]);
       setNewAddonName('');
       setNewAddonPrice(0);
+      setNewAddonHpp(0);
       setErrorMsg('');
       alert('✅ Item persediaan berhasil ditambahkan');
     } catch (error) {
@@ -730,8 +734,8 @@ export default function AdminDashboard() {
         const updated = services.map(s => s.id === id ? { ...s, name: editMasterField1, price: editMasterField2 as number, categoryId: editMasterField3 } : s);
         setServices(updated);
       } else if (activeMasterSubTab === 'ADDONS') {
-        await api.updateAddon(id, { name: editMasterField1, price: editMasterField2 });
-        const updated = addons.map(a => a.id === id ? { ...a, name: editMasterField1, price: editMasterField2 as number } : a);
+        await api.updateAddon(id, { name: editMasterField1, price: editMasterField2, hpp: editMasterField4 });
+        const updated = addons.map(a => a.id === id ? { ...a, name: editMasterField1, price: editMasterField2 as number, hpp: editMasterField4 } : a);
         setAddons(updated);
       }
 
@@ -746,11 +750,12 @@ export default function AdminDashboard() {
     }
   };
 
-  const startEditMaster = (id: string, f1: string, f2: number | boolean, f3 = '') => {
+  const startEditMaster = (id: string, f1: string, f2: number | boolean, f3 = '', f4 = 0) => {
     setEditingMasterId(id);
     setEditMasterField1(f1);
     setEditMasterField2(f2);
     setEditMasterField3(f3);
+    setEditMasterField4(f4);
   };
 
   if (!activeUser) return null;
@@ -1290,10 +1295,18 @@ export default function AdminDashboard() {
                   />
                   <input
                     type="number"
+                    value={newAddonHpp || ''}
+                    onChange={(e) => setNewAddonHpp(parseInt(e.target.value) || 0)}
+                    className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
+                    placeholder="Harga Modal (HPP)"
+                    required
+                  />
+                  <input
+                    type="number"
                     value={newAddonPrice || ''}
                     onChange={(e) => setNewAddonPrice(parseInt(e.target.value) || 0)}
                     className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
-                    placeholder="Harga Satuan"
+                    placeholder="Harga Jual"
                     required
                   />
                   <button
@@ -1309,7 +1322,8 @@ export default function AdminDashboard() {
                       <tr>
                         <th className="p-3">Nama Suku Cadang</th>
                         <th className="p-3 font-mono">ID</th>
-                        <th className="p-3">Harga Satuan</th>
+                        <th className="p-3">Harga Modal (HPP)</th>
+                        <th className="p-3">Harga Jual</th>
                         <th className="p-3 text-right">Aksi</th>
                       </tr>
                     </thead>
@@ -1318,9 +1332,10 @@ export default function AdminDashboard() {
                         <tr key={a.id} className="hover:bg-slate-50/50">
                           <td className="p-3 font-extrabold text-slate-800">{a.name}</td>
                           <td className="p-3 font-mono text-slate-400 font-bold">{a.id}</td>
+                          <td className="p-3 font-mono text-amber-700 font-bold">{formatRupiah(a.hpp || 0)}</td>
                           <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
-                            <button onClick={() => startEditMaster(a.id, a.name, a.price)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
+                            <button onClick={() => startEditMaster(a.id, a.name, a.price, '', a.hpp || 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
                             <button onClick={() => handleDeleteAddon(a.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100"><Trash2 size={13} /></button>
                           </td>
                         </tr>
@@ -1711,15 +1726,27 @@ export default function AdminDashboard() {
               )}
 
               {activeMasterSubTab === 'ADDONS' && (
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Satuan</label>
-                  <input
-                    type="number"
-                    value={typeof editMasterField2 === 'number' ? editMasterField2 : ''}
-                    onChange={(e) => setEditMasterField2(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
-                    disabled={isLoading}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Modal (HPP)</label>
+                    <input
+                      type="number"
+                      value={editMasterField4}
+                      onChange={(e) => setEditMasterField4(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Jual</label>
+                    <input
+                      type="number"
+                      value={typeof editMasterField2 === 'number' ? editMasterField2 : ''}
+                      onChange={(e) => setEditMasterField2(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
               )}
 

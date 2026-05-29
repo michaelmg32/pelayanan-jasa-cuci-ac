@@ -202,6 +202,27 @@ export default function OwnerDashboard() {
   const totalAddonsRevenue = completedOrders.reduce((sum, o) => sum + (Number(o.addonsCost) || 0), 0);
   const totalRevenue = totalBaseRevenue + totalAddonsRevenue;
 
+  const totalAddonsCost = completedOrders.reduce((sum, o) => {
+    let addonsUsedParsed: any[] = [];
+    if (o.addonsUsed) {
+      if (typeof o.addonsUsed === 'string') {
+        try {
+          addonsUsedParsed = JSON.parse(o.addonsUsed);
+        } catch (e) {
+          console.error('Error parsing addonsUsed for owner profit:', e);
+        }
+      } else if (Array.isArray(o.addonsUsed)) {
+        addonsUsedParsed = o.addonsUsed;
+      }
+    }
+    const orderAddonsCost = addonsUsedParsed.reduce((subSum, ad) => {
+      const hpp = Number(ad.hpp) || 0;
+      const qty = Number(ad.quantity) || 0;
+      return subSum + (hpp * qty);
+    }, 0);
+    return sum + orderAddonsCost;
+  }, 0);
+
   // Ratings
   const ratedOrders = completedOrders.filter(o => o.rating !== undefined);
   const averageRating = ratedOrders.length > 0 
@@ -364,15 +385,28 @@ export default function OwnerDashboard() {
 
               <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
                 <div>
-                  <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon</span>
-                  <p className="text-[10px] text-green-700 font-semibold mt-1">Perlengkapan Tambahan</p>
+                  <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
+                  <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
                 </div>
                 <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
               </div>
 
+              <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <div>
+                  <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
+                  <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
+                </div>
+                <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
+              </div>
+
               <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
-                <span className="text-[9px] uppercase text-indigo-600">Total Omzet</span>
+                <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
                 <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
+                <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
+                <span className="text-sm font-mono">{formatRupiah(totalRevenue - totalAddonsCost)}</span>
               </div>
             </div>
           </div>
