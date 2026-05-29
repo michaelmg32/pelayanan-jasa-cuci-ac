@@ -116,4 +116,5 @@ export interface Order {
   bankName?: string; // Norek detail
   paymentInvoiceId?: string; // Xendit Invoice ID
   paymentUrl?: string; // Xendit Payment URL
+  invoiceSent?: boolean;
 }

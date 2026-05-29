@@ -122,6 +122,13 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN workerCancelReason VARCHAR(255) NULL");
       console.log("✅ Added workerCancelReason field to 'orders' table in database");
     }
+
+    // Auto-migration: Add invoiceSent field to 'orders' table
+    const [invoiceSentCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'invoiceSent'");
+    if (invoiceSentCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN invoiceSent BOOLEAN DEFAULT FALSE");
+      console.log("✅ Added invoiceSent field to 'orders' table in database");
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -778,6 +785,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (rescheduleStatus !== undefined) { updateFields.push('rescheduleStatus = ?'); updateValues.push(rescheduleStatus); }
     if (cancelReason !== undefined) { updateFields.push('cancelReason = ?'); updateValues.push(cancelReason); }
     if (workerCancelReason !== undefined) { updateFields.push('workerCancelReason = ?'); updateValues.push(workerCancelReason); }
+    if (invoiceSent !== undefined) { updateFields.push('invoiceSent = ?'); updateValues.push(invoiceSent ? 1 : 0); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }

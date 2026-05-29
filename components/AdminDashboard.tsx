@@ -102,6 +102,31 @@ export default function AdminDashboard() {
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   };
 
+  const handleSendInvoice = async (order: Order) => {
+    // Open wa.me link in new tab
+    window.open(getWhatsAppInvoiceLink(order), '_blank');
+
+    if (!order.invoiceSent) {
+      try {
+        await api.updateOrder(order.id, { invoiceSent: true });
+        
+        // Update local state
+        setOrders(prevOrders =>
+          prevOrders.map(o => o.id === order.id ? { ...o, invoiceSent: true } : o)
+        );
+
+        // Update selectedOrderDetail modal state if opened
+        if (selectedOrderDetail && selectedOrderDetail.id === order.id) {
+          setSelectedOrderDetail(prev => prev ? { ...prev, invoiceSent: true } : null);
+        }
+        
+        alert('✓ Status invoice berhasil diperbarui menjadi Terkirim!');
+      } catch (err) {
+        console.error('Error updating invoice status:', err);
+      }
+    }
+  };
+
   // Loading state for async operations
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -1026,17 +1051,27 @@ export default function AdminDashboard() {
                     </div>
 
                     {order.status === OrderStatus.SELESAI && (
-                      <div className="pt-2 border-t border-slate-100 mt-2">
-                        <a
-                          href={getWhatsAppInvoiceLink(order)}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-center gap-1.5 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[9.5px] py-2 rounded-xl uppercase tracking-wider transition duration-200 shadow-sm hover:shadow"
+                      <div className="pt-2 border-t border-slate-100 mt-2 flex items-center justify-between gap-2 flex-wrap">
+                        {order.invoiceSent ? (
+                          <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 px-2 py-0.5 rounded">
+                            ✓ Invoice Terkirim
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-250 px-2 py-0.5 rounded animate-pulse">
+                            ⏳ Belum Dikirim
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendInvoice(order);
+                          }}
+                          className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto"
                         >
                           <MessageCircle size={12} />
-                          Kirim Invoice (WhatsApp)
-                        </a>
+                          Kirim Invoice
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2126,16 +2161,27 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   {selectedOrderDetail.status === OrderStatus.SELESAI && (
-                    <div className="pt-2">
-                      <a
-                        href={getWhatsAppInvoiceLink(selectedOrderDetail)}
-                        target="_blank"
-                        rel="noreferrer"
+                    <div className="pt-3 border-t border-slate-100 mt-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">Status Invoice:</span>
+                        {selectedOrderDetail.invoiceSent ? (
+                          <span className="bg-emerald-50 border border-emerald-250 text-emerald-800 text-[8.5px] px-2.5 py-0.5 rounded font-black uppercase">
+                            ✓ Terkirim
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 border border-amber-200 text-amber-700 text-[8.5px] px-2.5 py-0.5 rounded font-black uppercase animate-pulse">
+                            ⏳ Belum Dikirim
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSendInvoice(selectedOrderDetail)}
                         className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
                       >
                         <MessageCircle size={14} />
                         Kirim Invoice via WhatsApp
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
