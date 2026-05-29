@@ -518,6 +518,13 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Security check: Admin cannot assign Owner role
+      if (editRole === Role.OWNER) {
+        setErrorMsg('Anda tidak memiliki wewenang untuk memberikan role Owner.');
+        alert('❌ Anda tidak memiliki wewenang untuk memberikan role Owner.');
+        return;
+      }
+
       const updatePayload = {
         name: targetUser.name, // Send existing name
         email: targetUser.email, // Send existing email (required by backend)
@@ -1917,7 +1924,6 @@ export default function AdminDashboard() {
                   <option value={Role.USER}>Pelanggan</option>
                   <option value={Role.STAFF}>Staff/Teknisi</option>
                   <option value={Role.ADMIN}>Admin</option>
-                  <option value={Role.OWNER}>Owner</option>
                 </select>
               </div>
 

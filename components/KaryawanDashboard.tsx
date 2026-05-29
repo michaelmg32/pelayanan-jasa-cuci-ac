@@ -20,17 +20,20 @@ import {
   MapPin,
   ShieldCheck,
   Check,
+  MoreVertical,
+  LogOut,
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
 export default function KaryawanDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert, appSettings } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Work panel modal
   const [activeWorkingTask, setActiveWorkingTask] = useState<any | null>(null);
@@ -82,6 +85,22 @@ export default function KaryawanDashboard() {
       setEditPhoto(activeUser.photo || '');
     }
   }, [activeUser]);
+
+  // Click-outside listener to close the three-dots menu dropdown
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleOutsideClick = () => {
+      setShowMoreMenu(false);
+    };
+    // Use timeout to prevent immediate closing during trigger click event propagation
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showMoreMenu]);
 
   if (!activeUser) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -471,47 +490,73 @@ export default function KaryawanDashboard() {
     <>
       <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative min-h-0 h-full">
 
-        {/* TAB NAVIGATION - TOP */}
-        <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shrink-0">
-          <div className="flex items-center justify-start gap-1 px-4 py-0">
+        {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
+        <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+          <div className="flex items-center gap-2">
+            {appSettings?.business_logo ? (
+              <img src={appSettings.business_logo} alt="Logo" className="w-6 h-6 rounded-lg object-cover" />
+            ) : (
+              <span className="text-sm font-black tracking-wider text-emerald-400">🟢 {appSettings?.business_name || 'CoolAir Pro'}</span>
+            )}
+            <span className="text-xs font-black uppercase tracking-wider text-slate-350">| Portal Karyawan</span>
+          </div>
+
+          <div className="relative">
             <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'dashboard'
-                  ? 'text-emerald-600 border-emerald-600'
-                  : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMoreMenu(prev => !prev);
+              }}
+              className="p-1.5 hover:bg-slate-800 rounded-lg transition cursor-pointer text-slate-300 hover:text-white"
             >
-              <span className="flex items-center gap-2">
-                <Home size={16} />
-                <span>Penugasan</span>
-              </span>
+              <MoreVertical size={18} />
             </button>
 
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'history'
-                  ? 'text-emerald-600 border-emerald-600'
-                  : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <Clock size={16} />
-                <span>Histori</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'profile'
-                  ? 'text-emerald-600 border-emerald-600'
-                  : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <UserIcon size={16} />
-                <span>Profil</span>
-              </span>
-            </button>
+            {showMoreMenu && (
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
+                <button
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'dashboard' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
+                >
+                  <Home size={14} className={activeTab === 'dashboard' ? 'text-emerald-600' : 'text-slate-400'} />
+                  <span>Penugasan</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('history');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'history' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
+                >
+                  <Clock size={14} className={activeTab === 'history' ? 'text-emerald-600' : 'text-slate-400'} />
+                  <span>Histori</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('profile');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'profile' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
+                >
+                  <UserIcon size={14} className={activeTab === 'profile' ? 'text-emerald-600' : 'text-slate-400'} />
+                  <span>Profil</span>
+                </button>
+                <hr className="my-1 border-slate-100" />
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    logout();
+                  }}
+                  className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <LogOut size={14} />
+                  <span>Keluar</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -909,12 +954,6 @@ export default function KaryawanDashboard() {
                   <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
                     Informasi Personel
                   </span>
-                  <button
-                    onClick={() => logout()}
-                    className="bg-rose-500/20 border border-rose-500/50 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-500 transition"
-                  >
-                    Keluar
-                  </button>
                 </div>
                 <div className="flex items-center gap-3 mt-4">
                   <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl shadow-lg overflow-hidden border">
@@ -982,11 +1021,6 @@ export default function KaryawanDashboard() {
                         <div>
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Rumah</p>
                           <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
-                          {activeUser.lat && activeUser.lng && (
-                            <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-1">
-                              📍 {activeUser.lat.toFixed(5)}, {activeUser.lng.toFixed(5)}
-                            </p>
-                          )}
                         </div>
                         <MapPin size={18} className="text-slate-300" />
                       </div>

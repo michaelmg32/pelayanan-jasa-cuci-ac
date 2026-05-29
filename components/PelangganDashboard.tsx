@@ -435,8 +435,8 @@ export default function PelangganDashboard() {
       setLng(parseFloat(randLng.toFixed(5)));
 
       const cleanAddress = activeUser.address
-        ? `${activeUser.address} (GPS: ${randLat.toFixed(4)}, ${randLng.toFixed(4)})`
-        : `Jl. Kemang Raya No. ${Math.floor(Math.random() * 80) + 1}, Jakarta Selatan (GPS: ${randLat.toFixed(4)}, ${randLng.toFixed(4)})`;
+        ? activeUser.address
+        : `Jl. Kemang Raya No. ${Math.floor(Math.random() * 80) + 1}, Jakarta Selatan`;
 
       setAddress(cleanAddress);
       setIsDetectingLocation(false);
@@ -1307,11 +1307,6 @@ export default function PelangganDashboard() {
                         <div>
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Default</p>
                           <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
-                          {activeUser.lat && activeUser.lng && (
-                            <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-1">
-                              📍 {activeUser.lat.toFixed(5)}, {activeUser.lng.toFixed(5)}
-                            </p>
-                          )}
                         </div>
                         <MapPin size={18} className="text-slate-300" />
                       </div>
