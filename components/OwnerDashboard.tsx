@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function OwnerDashboard() {
-  const { activeUser, setActiveUser, orders, logout, appSettings, updateAppSettings } = useApp();
+  const { activeUser, setActiveUser, orders, users, logout, appSettings, updateAppSettings } = useApp();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile'>('dashboard');
 
@@ -41,6 +41,7 @@ export default function OwnerDashboard() {
 
   // Owner Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
+  const [staffSortKey, setStaffSortKey] = useState<'rating' | 'jobs' | 'margin'>('rating');
   const [editProfileName, setEditProfileName] = useState(activeUser?.name || '');
   const [editProfilePhone, setEditProfilePhone] = useState(activeUser?.phone || '');
   const [editProfileAddress, setEditProfileAddress] = useState(activeUser?.address || '');
@@ -220,6 +221,42 @@ export default function OwnerDashboard() {
   const totalRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.finalPrice || (Number(o.totalCost || o.serviceCost || 0) + Number(o.addonsCost || 0))) || 0), 0);
   const totalAddonsCost = cashFlowOrders.reduce((sum, o) => sum + (Number(o.hpp_orders) || 0), 0);
   const totalMargin = cashFlowOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
+
+  // Staff (Employee) Performance Stats
+  const staffList = (users || []).filter(u => u.role === 'STAFF');
+  const staffStats = staffList.map(staff => {
+    const staffOrders = orders.filter(o => o.assignedTo === staff.id && o.status === OrderStatus.SELESAI);
+    const jobsDone = staffOrders.length;
+    
+    // Average Rating
+    const ratedOrders = staffOrders.filter(o => typeof o.rating === 'number');
+    const avgRating = ratedOrders.length > 0
+      ? parseFloat((ratedOrders.reduce((sum, o) => sum + (o.rating || 0), 0) / ratedOrders.length).toFixed(1))
+      : 0;
+
+    // Total Margin Contribution
+    const totalMarginContrib = staffOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
+
+    return {
+      ...staff,
+      jobsDone,
+      avgRating,
+      totalMarginContrib
+    };
+  });
+
+  const sortedStaffStats = [...staffStats].sort((a, b) => {
+    if (staffSortKey === 'rating') {
+      if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
+      return b.jobsDone - a.jobsDone;
+    } else if (staffSortKey === 'jobs') {
+      if (b.jobsDone !== a.jobsDone) return b.jobsDone - a.jobsDone;
+      return b.avgRating - a.avgRating;
+    } else if (staffSortKey === 'margin') {
+      return b.totalMarginContrib - a.totalMarginContrib;
+    }
+    return 0;
+  });
 
   // Ratings
   const ratedOrders = completedOrders.filter(o => o.rating !== undefined);
@@ -492,7 +529,84 @@ export default function OwnerDashboard() {
             )}
           </div>
         </div>
-        </>)}
+
+        {/* Statistik Karyawan */}
+        <div className="bg-white border rounded-2xl p-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Statistik Kinerja Karyawan</h3>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Analisis kontribusi dan rating teknisi</p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-[9.5px] font-bold text-slate-400 uppercase whitespace-nowrap">Urutkan:</span>
+              <select
+                value={staffSortKey}
+                onChange={(e) => setStaffSortKey(e.target.value as any)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-bold cursor-pointer w-full sm:w-auto"
+              >
+                <option value="rating">⭐️ Rata-Rata Bintang</option>
+                <option value="jobs">💼 Total Pekerjaan Selesai</option>
+                <option value="margin">💰 Kontribusi Margin Keuntungan</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="border border-slate-100 rounded-xl overflow-x-auto">
+            <table className="w-full text-[10px] text-left min-w-[500px]">
+              <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[8px] border-b border-slate-100">
+                <tr>
+                  <th className="p-3">Nama Teknisi</th>
+                  <th className="p-3 text-center">Pekerjaan Selesai</th>
+                  <th className="p-3 text-center">Rata-Rata Rating</th>
+                  <th className="p-3 text-right">Kontribusi Margin</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {sortedStaffStats.map((staff) => (
+                  <tr key={staff.id} className="hover:bg-slate-50/50">
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        {staff.photo ? (
+                          <img src={staff.photo} alt={staff.name} className="w-6 h-6 rounded-lg object-cover border" />
+                        ) : (
+                          <div className="w-6 h-6 rounded-lg bg-indigo-150 text-indigo-700 font-bold flex items-center justify-center text-[9px] uppercase">
+                            {staff.name.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-extrabold text-slate-800">{staff.name}</div>
+                          <div className="text-[8.5px] text-slate-400 font-medium mt-0.5">{staff.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3 text-center font-bold text-slate-700">{staff.jobsDone} Pekerjaan</td>
+                    <td className="p-3 text-center">
+                      {staff.jobsDone > 0 ? (
+                        <div className="flex items-center justify-center gap-1 font-bold text-amber-600">
+                          <span>{staff.avgRating}</span>
+                          <span className="text-[8px]">★</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-350 font-bold">-</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-right font-mono font-black text-emerald-700">
+                      {formatRupiah(staff.totalMarginContrib)}
+                    </td>
+                  </tr>
+                ))}
+                {sortedStaffStats.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center py-8 text-slate-400 font-semibold">
+                      Tidak ada data karyawan
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>)}
 
         {activeTab === 'profile' && (
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-2xl mx-auto shadow-sm">
