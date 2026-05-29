@@ -90,7 +90,10 @@ export default function AdminDashboard() {
     if (order.addonsUsed && order.addonsUsed.length > 0) {
       addonsText = '\n*Perlengkapan Tambahan:*\n';
       order.addonsUsed.forEach(ad => {
-        addonsText += `- ${ad.name} (${ad.quantity}x): Rp${Number(ad.price * ad.quantity).toLocaleString('id-ID')}\n`;
+        const unitPrice = Number(ad.price || 0);
+        const qty = Number(ad.quantity || 0);
+        const subTotal = unitPrice * qty;
+        addonsText += `- ${ad.name} (${qty}x @ Rp${unitPrice.toLocaleString('id-ID')}): Rp${subTotal.toLocaleString('id-ID')}\n`;
       });
       addonsText += `*Total Perlengkapan:* Rp${Number(order.addonsCost || 0).toLocaleString('id-ID')}\n`;
     }
