@@ -63,8 +63,8 @@ export default function AdminDashboard() {
       const staffOrders = orders.filter(o => o.assignedTo === staff.id && o.status === OrderStatus.SELESAI);
       const jobsDone = staffOrders.length;
       const ratedOrders = staffOrders.filter(o => typeof o.rating === 'number');
-      const avgRating = ratedOrders.length > 0 
-        ? ratedOrders.reduce((acc, curr) => acc + (curr.rating as number), 0) / ratedOrders.length 
+      const avgRating = ratedOrders.length > 0
+        ? ratedOrders.reduce((acc, curr) => acc + (curr.rating as number), 0) / ratedOrders.length
         : 0;
       return { ...staff, jobsDone, avgRating };
     }).sort((a, b) => {
@@ -81,15 +81,27 @@ export default function AdminDashboard() {
     if (phone.startsWith('0')) {
       phone = '62' + phone.substring(1);
     }
-    
-    const serviceName = `${order.acDetail?.quantity || 0}x ${
-      order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType
-    } (${order.acDetail?.acType || ''})`;
+
+    const serviceName = `${order.acDetail?.quantity || 0}x ${order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType
+      } (${order.acDetail?.acType || ''})`;
+
+    let addonsUsedParsed: any[] = [];
+    if (order.addonsUsed) {
+      if (typeof order.addonsUsed === 'string') {
+        try {
+          addonsUsedParsed = JSON.parse(order.addonsUsed);
+        } catch (e) {
+          console.error('Error parsing addonsUsed:', e);
+        }
+      } else if (Array.isArray(order.addonsUsed)) {
+        addonsUsedParsed = order.addonsUsed;
+      }
+    }
 
     let addonsText = '';
-    if (order.addonsUsed && order.addonsUsed.length > 0) {
+    if (addonsUsedParsed && addonsUsedParsed.length > 0) {
       addonsText = '\n*Perlengkapan Tambahan:*\n';
-      order.addonsUsed.forEach(ad => {
+      addonsUsedParsed.forEach(ad => {
         const unitPrice = Number(ad.price || 0);
         const qty = Number(ad.quantity || 0);
         const subTotal = unitPrice * qty;
@@ -112,7 +124,7 @@ export default function AdminDashboard() {
     if (!order.invoiceSent) {
       try {
         await api.updateOrder(order.id, { invoiceSent: true });
-        
+
         // Update local state
         setOrders(prevOrders =>
           prevOrders.map(o => o.id === order.id ? { ...o, invoiceSent: true } : o)
@@ -122,7 +134,7 @@ export default function AdminDashboard() {
         if (selectedOrderDetail && selectedOrderDetail.id === order.id) {
           setSelectedOrderDetail(prev => prev ? { ...prev, invoiceSent: true } : null);
         }
-        
+
         alert('✓ Status invoice berhasil diperbarui menjadi Terkirim!');
       } catch (err) {
         console.error('Error updating invoice status:', err);
@@ -402,7 +414,7 @@ export default function AdminDashboard() {
       setErrorMsg('');
       setSelectedStaffId('');
       setSelectedOrderForAssign(null);
-      
+
       if (isDateChanged) {
         alert('✅ Pengajuan perubahan jadwal berhasil dikirim. Menunggu persetujuan pelanggan.');
       } else {
@@ -424,7 +436,7 @@ export default function AdminDashboard() {
         status: OrderStatus.DIBATALKAN,
         cancelReason: 'Dibatalkan oleh Admin'
       });
-      
+
       const updatedOrder = orders.find(o => o.id === orderId);
       if (updatedOrder) {
         updatedOrder.status = OrderStatus.DIBATALKAN;
@@ -775,7 +787,7 @@ export default function AdminDashboard() {
         >
           <span className="flex items-center gap-2">
             <ClipboardList size={15} />
-            <span>Pantauan Jasa ({orders.length})</span>
+            <span>Pantauan Jasa</span>
           </span>
         </button>
 
@@ -987,33 +999,33 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     ) : order.status !== OrderStatus.DIBATALKAN ? (
-                    <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
-                      <div className="flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if(window.confirm('Yakin ingin membatalkan pesanan ini?')) {
-                              handleCancelOrderAdmin(order.id);
-                            }
-                          }}
-                          className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Batalkan
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrderForAssign(order);
-                          }}
-                          className="bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Tugaskan
-                        </button>
+                      <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
+                        <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Yakin ingin membatalkan pesanan ini?')) {
+                                handleCancelOrderAdmin(order.id);
+                              }
+                            }}
+                            className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                          >
+                            Batalkan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOrderForAssign(order);
+                            }}
+                            className="bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                          >
+                            Tugaskan
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     ) : null}
 
                     {/* Grand total info */}
@@ -1070,11 +1082,10 @@ export default function AdminDashboard() {
                             e.stopPropagation();
                             handleSendInvoice(order);
                           }}
-                          className={`flex items-center justify-center gap-1.5 font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto ${
-                            order.invoiceSent
+                          className={`flex items-center justify-center gap-1.5 font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto ${order.invoiceSent
                               ? 'bg-slate-200 hover:bg-slate-350 text-slate-550 border border-slate-300'
                               : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          }`}
+                            }`}
                         >
                           <MessageCircle size={12} />
                           Kirim Invoice
@@ -1912,11 +1923,11 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <span className={`text-[8.5px] px-2 py-0.6 font-black uppercase rounded tracking-wider border ${selectedOrderDetail.status === OrderStatus.MENUNGGU ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' :
-                    selectedOrderDetail.status === OrderStatus.DITUGASKAN ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
-                      selectedOrderDetail.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' :
-                        selectedOrderDetail.status === OrderStatus.PENGERJAAN ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' :
-                          selectedOrderDetail.status === OrderStatus.PAYMENT ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
-                            'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                  selectedOrderDetail.status === OrderStatus.DITUGASKAN ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
+                    selectedOrderDetail.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' :
+                      selectedOrderDetail.status === OrderStatus.PENGERJAAN ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' :
+                        selectedOrderDetail.status === OrderStatus.PAYMENT ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
+                          'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
                   }`}>
                   {selectedOrderDetail.status.replace('_', ' ')}
                 </span>
@@ -2022,7 +2033,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ) : (
-                  <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
+                    <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
                   )}
                 </div>
               </div>
@@ -2184,11 +2195,10 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => handleSendInvoice(selectedOrderDetail)}
-                        className={`flex items-center justify-center gap-2 w-full font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md cursor-pointer ${
-                          selectedOrderDetail.invoiceSent
+                        className={`flex items-center justify-center gap-2 w-full font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md cursor-pointer ${selectedOrderDetail.invoiceSent
                             ? 'bg-slate-150 hover:bg-slate-200 text-slate-550 border border-slate-250 shadow-slate-200/10'
                             : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/10'
-                        }`}
+                          }`}
                       >
                         <MessageCircle size={14} />
                         Kirim Invoice via WhatsApp
