@@ -336,6 +336,19 @@ export default function AdminDashboard() {
   const [editPhone, setEditPhone] = useState('');
   const [editAddress, setEditAddress] = useState('');
 
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
   // Master Data Editing State
   const [activeMasterSubTab, setActiveMasterSubTab] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS'>('MODELS');
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
@@ -609,20 +622,25 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteModel = async (id: string) => {
-    if (window.confirm('Hapus model AC ini? (Tidak dapat dibatalkan)')) {
-      try {
-        setIsLoading(true);
-        await api.deleteModel(id);
-        setModels(models.filter(m => m.id !== id));
-        setErrorMsg('');
-        alert('✅ Model AC berhasil dihapus');
-      } catch (error) {
-        console.error('Error deleting model:', error);
-        setErrorMsg('Gagal menghapus model');
-      } finally {
-        setIsLoading(false);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Model AC',
+      message: 'Hapus model AC ini? (Tidak dapat dibatalkan)',
+      onConfirm: async () => {
+        try {
+          setIsLoading(true);
+          await api.deleteModel(id);
+          setModels(models.filter(m => m.id !== id));
+          setErrorMsg('');
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Error deleting model:', error);
+          setErrorMsg('Gagal menghapus model');
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
+    });
   };
 
   // Master Data handlers - CREATE/UPDATE CATEGORIES
@@ -650,20 +668,25 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (window.confirm('Hapus kategori ini? (Tidak dapat dibatalkan)')) {
-      try {
-        setIsLoading(true);
-        await api.deleteCategory(id);
-        setCategories(categories.filter(c => c.id !== id));
-        setErrorMsg('');
-        alert('✅ Kategori AC berhasil dihapus');
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        setErrorMsg('Gagal menghapus kategori');
-      } finally {
-        setIsLoading(false);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Kategori',
+      message: 'Hapus kategori ini? (Tidak dapat dibatalkan)',
+      onConfirm: async () => {
+        try {
+          setIsLoading(true);
+          await api.deleteCategory(id);
+          setCategories(categories.filter(c => c.id !== id));
+          setErrorMsg('');
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Error deleting category:', error);
+          setErrorMsg('Gagal menghapus kategori');
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
+    });
   };
 
   // Master Data handlers - CREATE/UPDATE SERVICES
@@ -695,20 +718,25 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteService = async (id: string) => {
-    if (window.confirm('Hapus jenis pelayanan ini? (Tidak dapat dibatalkan)')) {
-      try {
-        setIsLoading(true);
-        await api.deleteService(id);
-        setServices(services.filter(s => s.id !== id));
-        setErrorMsg('');
-        alert('✅ Jenis pelayanan berhasil dihapus');
-      } catch (error) {
-        console.error('Error deleting service:', error);
-        setErrorMsg('Gagal menghapus layanan');
-      } finally {
-        setIsLoading(false);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Layanan',
+      message: 'Hapus jenis pelayanan ini? (Tidak dapat dibatalkan)',
+      onConfirm: async () => {
+        try {
+          setIsLoading(true);
+          await api.deleteService(id);
+          setServices(services.filter(s => s.id !== id));
+          setErrorMsg('');
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Error deleting service:', error);
+          setErrorMsg('Gagal menghapus layanan');
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
+    });
   };
 
   // Master Data handlers - CREATE/UPDATE ADDONS
@@ -741,20 +769,25 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteAddon = async (id: string) => {
-    if (window.confirm('Hapus item persediaan/sparepart ini? (Tidak dapat dibatalkan)')) {
-      try {
-        setIsLoading(true);
-        await api.deleteAddon(id);
-        setAddons(addons.filter(a => a.id !== id));
-        setErrorMsg('');
-        alert('✅ Item persediaan berhasil dihapus');
-      } catch (error) {
-        console.error('Error deleting addon:', error);
-        setErrorMsg('Gagal menghapus addon');
-      } finally {
-        setIsLoading(false);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hapus Addon',
+      message: 'Hapus item persediaan/sparepart ini? (Tidak dapat dibatalkan)',
+      onConfirm: async () => {
+        try {
+          setIsLoading(true);
+          await api.deleteAddon(id);
+          setAddons(addons.filter(a => a.id !== id));
+          setErrorMsg('');
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Error deleting addon:', error);
+          setErrorMsg('Gagal menghapus addon');
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
+    });
   };
 
   const handleSaveMasterEdit = async (id: string) => {
@@ -1092,9 +1125,15 @@ export default function AdminDashboard() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (window.confirm('Yakin ingin membatalkan pesanan ini?')) {
-                                handleCancelOrderAdmin(order.id);
-                              }
+                              setConfirmDialog({
+                                isOpen: true,
+                                title: 'Batalkan Pesanan',
+                                message: 'Yakin ingin membatalkan pesanan ini?',
+                                onConfirm: () => {
+                                  handleCancelOrderAdmin(order.id);
+                                  setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                }
+                              });
                             }}
                             className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
                           >
@@ -1233,7 +1272,6 @@ export default function AdminDashboard() {
                   <table className="w-full text-xs text-left">
                     <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
                       <tr>
-                        <th className="p-3">ID</th>
                         <th className="p-3">Nama Model</th>
                         <th className="p-3 text-right">Aksi</th>
                       </tr>
@@ -1241,7 +1279,6 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-slate-100">
                       {models.map(m => (
                         <tr key={m.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-slate-400">{m.id}</td>
                           <td className="p-3 font-bold text-slate-800">{m.name}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
                             <button onClick={() => startEditMaster('MODELS', m.id, m.name, 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
@@ -1279,7 +1316,6 @@ export default function AdminDashboard() {
                   <table className="w-full text-xs text-left">
                     <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
                       <tr>
-                        <th className="p-3">ID</th>
                         <th className="p-3">Kategori AC</th>
                         <th className="p-3 text-right">Aksi</th>
                       </tr>
@@ -1294,7 +1330,6 @@ export default function AdminDashboard() {
                               setNewServiceCategory(expandedCategoryId === c.id ? '' : c.id);
                             }}
                           >
-                            <td className="p-3 font-mono font-bold text-slate-400">{c.id}</td>
                             <td className="p-3 font-extrabold text-slate-800 flex items-center gap-2">
                               {c.name}
                               <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">
@@ -1310,7 +1345,7 @@ export default function AdminDashboard() {
                           </tr>
                           {expandedCategoryId === c.id && (
                             <tr className="bg-slate-50/80">
-                              <td colSpan={3} className="p-4 border-t border-slate-200">
+                              <td colSpan={2} className="p-4 border-t border-slate-200">
                                 <div className="space-y-4">
                                   <form onSubmit={handleAddService} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
                                     <span className="text-[9px] font-black uppercase text-indigo-600 block tracking-widest">TAMBAH LAYANAN UNTUK {c.name.toUpperCase()}</span>
@@ -1421,7 +1456,6 @@ export default function AdminDashboard() {
                     <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
                       <tr>
                         <th className="p-3">Nama Suku Cadang</th>
-                        <th className="p-3 font-mono">ID</th>
                         <th className="p-3">Harga Modal (HPP)</th>
                         <th className="p-3">Harga Jual</th>
                         <th className="p-3 text-right">Aksi</th>
@@ -1431,7 +1465,6 @@ export default function AdminDashboard() {
                       {addons.map(a => (
                         <tr key={a.id} className="hover:bg-slate-50/50">
                           <td className="p-3 font-extrabold text-slate-800">{a.name}</td>
-                          <td className="p-3 font-mono text-slate-400 font-bold">{a.id}</td>
                           <td className="p-3 font-mono text-amber-700 font-bold">{formatRupiah(a.hpp || 0)}</td>
                           <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
@@ -2354,6 +2387,38 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ===================== CONFIRMATION MODAL ===================== */}
+      {confirmDialog.isOpen && (
+        <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-red-600 text-white">
+              <h4 className="font-black text-xs uppercase tracking-wide flex items-center gap-2"><AlertCircle size={14} /> {confirmDialog.title}</h4>
+              <button onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))} className="p-1 rounded-full text-red-200 hover:bg-red-700 transition cursor-pointer">
+                <X size={15} />
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-slate-600 text-xs font-semibold">{confirmDialog.message}</p>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={confirmDialog.onConfirm}
+                className="px-4 py-2 text-[10px] font-black uppercase text-white bg-red-500 hover:bg-red-600 rounded-xl transition shadow-md shadow-red-500/20 cursor-pointer flex items-center gap-1"
+                disabled={isLoading}
+              >
+                <Trash2 size={13} /> {confirmDialog.title.includes('Batalkan') ? 'Batalkan' : 'Ya, Hapus'}
+              </button>
+            </div>
           </div>
         </div>
       )}

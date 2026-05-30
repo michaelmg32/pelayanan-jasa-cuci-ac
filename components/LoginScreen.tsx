@@ -314,7 +314,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
               <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Nama Lengkap</label>
               <input
                 type="text"
-                placeholder="Michael Gungun"
+                placeholder="Masukkan Nama Lengkap"
                 value={regName}
                 onChange={(e) => setRegName(e.target.value)}
                 className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
@@ -326,7 +326,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
               <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail</label>
               <input
                 type="email"
-                placeholder="michael@gmail.com"
+                placeholder="Masukkan Email"
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
                 className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
@@ -338,7 +338,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
               <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">No. Whatsapp</label>
               <input
                 type="tel"
-                placeholder="081299998888"
+                placeholder="Masukkan No. Whatsapp"
                 value={regPhone}
                 onChange={(e) => setRegPhone(e.target.value)}
                 className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
@@ -349,7 +349,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             <div className="space-y-1.5">
               <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Alamat Lengkap</label>
               <textarea
-                placeholder="Jl. Kemang Raya No. 45, Jakarta Selatan"
+                placeholder="Masukkan Alamat Lengkap"
                 value={regAddress}
                 onChange={(e) => setRegAddress(e.target.value)}
                 className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200 h-16 resize-none"
