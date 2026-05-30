@@ -67,107 +67,6 @@ app.get('/api/test-connection', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// Test and Trigger 3-Month Reminders manually
-app.get('/api/test-reminders', async (req, res) => {
-  console.log('🔍 Manual trigger for 3-month reminders started via API...');
-  let connection;
-  const logs = [];
-  try {
-    connection = await pool.getConnection();
-
-    // Find all completed orders where status is 'SELESAI' and completedAt is >= 90 days ago
-    const [eligibleOrders] = await connection.query(
-      `SELECT * FROM orders 
-       WHERE status = 'SELESAI' 
-         AND reminderSent = 0 
-         AND completedAt <= DATE_SUB(NOW(), INTERVAL 90 DAY)`
-    );
-
-    logs.push(`Found ${eligibleOrders.length} potentially eligible completed orders in database (status = 'SELESAI', reminderSent = 0, completedAt >= 90 days ago).`);
-
-    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
-    const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
-    const fonnteApiKey = process.env.FONNTE_API_KEY || 'obJEoZWPQy74AcesKRtx';
-    const frontendUrl = process.env.FRONTEND_URL || 'https://sugarac.com';
-
-    const processed = [];
-
-    for (const order of eligibleOrders) {
-      // Check if this customer has any NEWER active order
-      const [newerOrders] = await connection.query(
-        'SELECT id, createdAt, status FROM orders WHERE customerId = ? AND createdAt > ? AND status != "DIBATALKAN"',
-        [order.customerId, order.completedAt]
-      );
-
-      if (newerOrders.length > 0) {
-        logs.push(`Order ID ${order.id}: Skipped customer '${order.customerName}' (${order.customerId}) because they have newer active orders: [${newerOrders.map(o => `ID ${o.id} at ${o.createdAt} status ${o.status}`).join(', ')}]. Setting reminderSent = 1.`);
-        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
-        processed.push({ id: order.id, customer: order.customerName, status: 'skipped_newer_order', newerOrders });
-        continue;
-      }
-
-      let phone = order.customerPhone || '';
-      phone = phone.replace(/[^0-9]/g, '');
-      if (phone.startsWith('0')) {
-        phone = '62' + phone.substring(1);
-      }
-
-      if (!phone) {
-        logs.push(`Order ID ${order.id}: Skipped customer '${order.customerName}' because phone number is empty. Setting reminderSent = 1.`);
-        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
-        processed.push({ id: order.id, customer: order.customerName, status: 'skipped_no_phone' });
-        continue;
-      }
-
-      let acDetail = null;
-      try {
-        acDetail = order.acDetail ? JSON.parse(order.acDetail) : null;
-      } catch (e) {}
-
-      const message = `Halo Kak *${order.customerName}*,\n\nSudah sekitar *3 bulan* sejak pencucian/layanan AC Anda terakhir kali oleh *${businessName}* pada tanggal *${new Date(order.completedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}*.\n\nUntuk menjaga performa AC tetap dingin, menghemat listrik, dan menjaga kualitas udara keluarga Anda tetap bersih, disarankan untuk melakukan pencucian AC rutin setiap 3 bulan. ❄️🌬️\n\nYuk, jadwalkan pencucian AC Anda sekarang agar AC Anda tetap prima dan dingin!\n👉 Pesan langsung lewat aplikasi kami: ${frontendUrl}/login\n\nTerima kasih dan semoga sehat selalu! 🙏❄️`;
-
-      logs.push(`Order ID ${order.id}: Sending Fonnte reminder to ${phone}...`);
-      
-      const response = await fetch('https://api.fonnte.com/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': fonnteApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          target: phone,
-          message: message
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        logs.push(`Order ID ${order.id}: Fonnte success: ${JSON.stringify(result)}`);
-        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
-        processed.push({ id: order.id, customer: order.customerName, phone, status: 'sent_success', result });
-      } else {
-        const errText = await response.text();
-        logs.push(`Order ID ${order.id}: Fonnte failure: ${errText}`);
-        processed.push({ id: order.id, customer: order.customerName, phone, status: 'sent_failed', error: errText });
-      }
-    }
-
-    res.json({
-      success: true,
-      logs: logs,
-      processed: processed
-    });
-
-  } catch (err) {
-    console.error('❌ Error testing reminders:', err);
-    res.status(500).json({ success: false, error: err.message, logs: logs });
-  } finally {
-    if (connection) connection.release();
-  }
-});
-
-
 // Initialize database settings table
 const initializeDatabaseSettings = async () => {
   let connection;
@@ -263,13 +162,6 @@ const initializeDatabaseSettings = async () => {
     if (finalPriceCols.length === 0) {
       await connection.query("ALTER TABLE orders ADD COLUMN finalPrice DECIMAL(10, 2) DEFAULT 0");
       console.log("✅ Added finalPrice column to 'orders' table in database");
-    }
-
-    // Auto-migration: Add reminderSent column to 'orders' table
-    const [reminderCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'reminderSent'");
-    if (reminderCols.length === 0) {
-      await connection.query("ALTER TABLE orders ADD COLUMN reminderSent TINYINT DEFAULT 0");
-      console.log("✅ Added reminderSent column to 'orders' table in database");
     }
 
     // Backfill calculations for existing orders (quantity, hpp_orders, finalPrice, margin)
@@ -1012,126 +904,6 @@ const sendWorkerNotification = async (orderId, workerId) => {
   }
 };
 
-const checkAndSend3MonthReminders = async () => {
-  console.log('🔍 Starting daily check for 3-month AC service reminders...');
-  let connection;
-  try {
-    connection = await pool.getConnection();
-
-    // Find all completed orders where:
-    // - status is 'SELESAI'
-    // - completedAt is at least 90 days ago (3 months)
-    // - reminderSent is 0
-    const [eligibleOrders] = await connection.query(
-      `SELECT * FROM orders 
-       WHERE status = 'SELESAI' 
-         AND reminderSent = 0 
-         AND completedAt <= DATE_SUB(NOW(), INTERVAL 90 DAY)`
-    );
-
-    if (eligibleOrders.length === 0) {
-      console.log('ℹ️ No eligible orders found for 3-month reminders.');
-      return;
-    }
-
-    console.log(`🔍 Found ${eligibleOrders.length} potential orders for reminders. Validating customer history...`);
-
-    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
-    const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
-    const fonnteApiKey = process.env.FONNTE_API_KEY || 'obJEoZWPQy74AcesKRtx';
-    const frontendUrl = process.env.FRONTEND_URL || 'https://sugarac.com';
-
-    for (const order of eligibleOrders) {
-      // Check if this customer has any NEWER active order created after this order's completedAt
-      const [newerOrders] = await connection.query(
-        'SELECT id FROM orders WHERE customerId = ? AND createdAt > ? AND status != "DIBATALKAN"',
-        [order.customerId, order.completedAt]
-      );
-
-      // If the customer has already booked a newer job since this one completed, skip the reminder
-      if (newerOrders.length > 0) {
-        console.log(`ℹ️ Customer ${order.customerName} (${order.customerId}) has newer orders since the 90-day mark. Marking reminder as skipped.`);
-        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
-        continue;
-      }
-
-      // Send WhatsApp reminder
-      let phone = order.customerPhone || '';
-      phone = phone.replace(/[^0-9]/g, '');
-      if (phone.startsWith('0')) {
-        phone = '62' + phone.substring(1);
-      }
-
-      if (!phone) {
-        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
-        continue;
-      }
-
-      let acDetail = null;
-      try {
-        acDetail = order.acDetail ? JSON.parse(order.acDetail) : null;
-      } catch (e) {}
-
-      const acType = acDetail && acDetail.acType ? ` AC ${acDetail.acType}` : '';
-
-      const message = `Halo Kak *${order.customerName}*,\n\nSudah sekitar *3 bulan* sejak pencucian/layanan AC Anda terakhir kali oleh *${businessName}* pada tanggal *${new Date(order.completedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}*.\n\nUntuk menjaga performa AC tetap dingin, menghemat listrik, dan menjaga kualitas udara keluarga Anda tetap bersih, disarankan untuk melakukan pencucian AC rutin setiap 3 bulan. ❄️🌬️\n\nYuk, jadwalkan pencucian AC Anda sekarang agar AC Anda tetap prima dan dingin!\n👉 Pesan langsung lewat aplikasi kami: ${frontendUrl}/login\n\nTerima kasih dan semoga sehat selalu! 🙏❄️`;
-
-      console.log(`[Fonnte Reminder] Sending 3-month reminder to ${phone} for order ${order.id}...`);
-
-      const response = await fetch('https://api.fonnte.com/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': fonnteApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          target: phone,
-          message: message
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`[Fonnte Reminder] Success for order ${order.id}:`, result);
-        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
-      } else {
-        const errText = await response.text();
-        console.error(`[Fonnte Reminder] Failed for order ${order.id}:`, errText);
-      }
-    }
-  } catch (err) {
-    console.error('❌ Error checking and sending 3-month reminders:', err);
-  } finally {
-    if (connection) connection.release();
-  }
-};
-
-const startReminderScheduler = () => {
-  // Run check 10 seconds after server startup
-  setTimeout(() => {
-    checkAndSend3MonthReminders().catch(err => console.error('Error running startup reminders:', err));
-  }, 10000);
-
-  // Calculate time until tomorrow at 9:00 AM to run the daily sweep
-  const runSweep = () => {
-    checkAndSend3MonthReminders().catch(err => console.error('Error running daily reminders:', err));
-  };
-
-  const now = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(now.getDate() + 1);
-  tomorrow.setHours(9, 0, 0, 0); // 9:00 AM tomorrow
-  const msToNextRun = tomorrow.getTime() - now.getTime();
-
-  console.log(`⏰ AC Wash Reminder Scheduler started. Next daily sweep scheduled in ${(msToNextRun / 3600000).toFixed(2)} hours (at 09:00 AM).`);
-
-  setTimeout(() => {
-    runSweep();
-    // After the first run at 9:00 AM, set interval to run every 24 hours
-    setInterval(runSweep, 24 * 60 * 60 * 1000);
-  }, msToNextRun);
-};
-
 app.post('/api/orders', async (req, res) => {
   const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -1780,7 +1552,6 @@ nextApp.prepare().then(() => {
 
   app.listen(PORT, () => {
     console.log(`🚀 Server (API + Next.js) running on http://localhost:${PORT}`);
-    startReminderScheduler();
     console.log(`📚 API Documentation:`);
     console.log(`   GET  /api/test-connection    - Test database connection`);
     console.log(`   GET  /api/users              - Get all users`);
