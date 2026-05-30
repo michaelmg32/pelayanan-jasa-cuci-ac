@@ -698,12 +698,6 @@ export default function PelangganDashboard() {
                     <h2 className="text-base font-extrabold text-white mt-1.5 truncate">Halo Kak, {activeUser.name}!</h2>
                     <p className="text-[10px] text-blue-105/85 truncate max-w-[200px] mt-0.5">{activeUser.email}</p>
                   </div>
-                  <button
-                    onClick={() => logout()}
-                    className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold cursor-pointer transition"
-                  >
-                    Keluar
-                  </button>
                 </div>
 
                 {/* Action booking widget */}
@@ -1160,18 +1154,18 @@ export default function PelangganDashboard() {
           {/* ==================== TAB 2: HISTORY ==================== */}
           {activeTab === 'history' && (
             <div>
-              <div className="bg-slate-900 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
-                <span className="text-[8px] text-blue-300 bg-white/5 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0">
+                <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-1 rounded-full font-black uppercase tracking-widest">
                   Arsip
                 </span>
-                <h2 className="text-base font-black mt-2">Histori Pekerjaan Selesai</h2>
-                <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-slate-800">
+                <h2 className="text-base font-extrabold text-white mt-2">Histori Pekerjaan Selesai</h2>
+                <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-white/10">
                   <div>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Total Pesanan</span>
-                    <span className="text-sm font-black text-blue-400 mt-0.5 block">{completedOrders.length}</span>
+                    <span className="text-[8px] text-blue-100/70 font-bold uppercase tracking-wider block">Total Pesanan</span>
+                    <span className="text-sm font-black text-white mt-0.5 block">{completedOrders.length}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Total Pengeluaran</span>
+                    <span className="text-[8px] text-blue-100/70 font-bold uppercase tracking-wider block">Total Pengeluaran</span>
                     <span className="text-sm font-black text-emerald-400 mt-0.5 block">
                       {formatRupiah(
                         completedOrders.reduce((sum, o) => sum + Number(o.serviceCost || 0) + Number(o.addonsCost || 0), 0)
@@ -1277,12 +1271,12 @@ export default function PelangganDashboard() {
           {/* ==================== TAB 3: PROFILE ==================== */}
           {activeTab === 'profile' && (
             <div>
-              <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 md:px-8 lg:px-12 py-5 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
-                <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0">
+                <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
                   Informasi Pengguna
                 </span>
                 <div className="flex items-center gap-3 mt-3">
-                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl overflow-hidden border">
+                  <div className="w-12 h-12 bg-white text-indigo-700 font-black text-sm flex items-center justify-center rounded-xl overflow-hidden border">
                     {activeUser.photo ? (
                       <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -1290,8 +1284,8 @@ export default function PelangganDashboard() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
-                    <p className="text-[10px] text-slate-400 mt-1">{activeUser.email}</p>
+                    <h3 className="text-sm font-extrabold text-white">{activeUser.name}</h3>
+                    <p className="text-[10px] text-blue-100/80 mt-1">{activeUser.email}</p>
                   </div>
                 </div>
               </div>
@@ -1302,12 +1296,6 @@ export default function PelangganDashboard() {
                     {profileViewMode === 'readonly' ? 'Informasi Akun' :
                       profileViewMode === 'edit-profile' ? 'Perbarui Profil' : 'Ubah Password'}
                   </h3>
-                  <button
-                    onClick={() => logout()}
-                    className="bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-black uppercase px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-100 transition"
-                  >
-                    Keluar
-                  </button>
                 </div>
 
                 {saveSuccess && (
