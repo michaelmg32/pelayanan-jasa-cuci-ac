@@ -329,15 +329,15 @@ export default function OwnerDashboard() {
           </button>
 
           {showMoreMenu && (
-            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-850 text-left text-xs font-bold">
+            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
               <button
                 onClick={() => {
                   setActiveTab('dashboard');
                   setShowMoreMenu(false);
                 }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'dashboard' ? 'text-indigo-650 bg-indigo-50/20' : ''}`}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'dashboard' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
               >
-                <TrendingUp size={14} className={activeTab === 'dashboard' ? 'text-indigo-650' : 'text-slate-400'} />
+                <TrendingUp size={14} className={activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-400'} />
                 <span>Dashboard Analisis</span>
               </button>
               <button
@@ -345,7 +345,7 @@ export default function OwnerDashboard() {
                   setShowMoreMenu(false);
                   handleOpenSettings();
                 }}
-                className="w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer"
+                className="w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700"
               >
                 <Settings size={14} className="text-slate-400" />
                 <span>Pengaturan Bisnis</span>
@@ -355,9 +355,9 @@ export default function OwnerDashboard() {
                   setActiveTab('profile');
                   setShowMoreMenu(false);
                 }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'profile' ? 'text-indigo-650 bg-indigo-50/20' : ''}`}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'profile' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
               >
-                <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-650' : 'text-slate-400'} />
+                <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'} />
                 <span>Profil Saya</span>
               </button>
               <hr className="my-1 border-slate-100" />
@@ -366,7 +366,7 @@ export default function OwnerDashboard() {
                   setShowMoreMenu(false);
                   logout();
                 }}
-                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer"
+                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
               >
                 <LogOut size={14} />
                 <span>Keluar</span>
@@ -382,60 +382,60 @@ export default function OwnerDashboard() {
           <>
 
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
-                  <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
-                    <input
-                      type="date"
-                      value={filterStartDate}
-                      onChange={(e) => setFilterStartDate(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-                    />
-                    <span>s/d</span>
-                    <input
-                      type="date"
-                      value={filterEndDate}
-                      onChange={(e) => setFilterEndDate(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
-                    <div>
-                      <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
-                      <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
-                    </div>
-                    <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
-                    <div>
-                      <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
-                      <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
-                    </div>
-                    <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
-                    <div>
-                      <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
-                      <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
-                    </div>
-                    <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
-                    <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
-                    <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
-                    <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
-                    <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
-                  </div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
+                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+                  />
+                  <span>s/d</span>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+                  />
                 </div>
               </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+                  <div>
+                    <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
+                    <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
+                  </div>
+                  <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
+                  <div>
+                    <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
+                    <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
+                  </div>
+                  <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <div>
+                    <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
+                    <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
+                  </div>
+                  <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
+                  <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
+                  <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
+                  <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
+                  <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
+                </div>
+              </div>
+            </div>
 
             {/* Recent Orders */}
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
@@ -449,7 +449,7 @@ export default function OwnerDashboard() {
                         <span>{order.scheduledDate}</span>
                         <span>•</span>
                         <span className={`text-[8.5px] font-black uppercase ${order.paymentMethod === 'TRANSFER' ? 'text-indigo-600' :
-                            order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
+                          order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
                           }`}>
                           {order.paymentMethod === 'TRANSFER' ? '💳 TRANSFER (XENDIT)' :
                             order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI'}
@@ -459,8 +459,8 @@ export default function OwnerDashboard() {
                     <div className="text-right">
                       <div className="font-mono font-bold text-slate-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</div>
                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded inline-block mt-1 ${order.status === OrderStatus.SELESAI ? 'bg-emerald-100 text-emerald-800' :
-                          order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
-                            'bg-blue-100 text-blue-800'
+                        order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
+                          'bg-blue-100 text-blue-800'
                         }`}>
                         {order.status.replace('_', ' ')}
                       </span>
