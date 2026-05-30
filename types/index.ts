@@ -56,6 +56,7 @@ export interface ACAddon {
   id: string;
   name: string;
   price: number;
+  hpp?: number;
 }
 
 export interface SelectedAddon {
@@ -63,6 +64,7 @@ export interface SelectedAddon {
   name: string;
   price: number;
   quantity: number;
+  hpp?: number;
 }
 
 export interface Order {
@@ -99,10 +101,16 @@ export interface Order {
   serviceCost: number; // Harga dasar layanan
   addonsCost: number;  // Total harga perlengkapan tambahan
   totalCost: number;   // serviceCost + addonsCost
+  margin?: number;
+  quantity?: number;
+  hpp_orders?: number;
+  finalPrice?: number;
   addonsUsed?: {
+    id?: string;
     name: string;
     price: number;
     quantity: number;
+    hpp?: number;
   }[];
   
   rating?: number; // 1-5 bintang
@@ -116,4 +124,5 @@ export interface Order {
   bankName?: string; // Norek detail
   paymentInvoiceId?: string; // Xendit Invoice ID
   paymentUrl?: string; // Xendit Payment URL
+  invoiceSent?: boolean;
 }

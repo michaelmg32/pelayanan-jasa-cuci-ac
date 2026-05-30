@@ -35,7 +35,9 @@ import {
   Mail,
   ShieldCheck,
   Camera,
-  Check
+  Check,
+  MessageCircle,
+  MoreVertical
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
@@ -51,7 +53,8 @@ export default function AdminDashboard() {
     services, setServices,
     addons, setAddons,
     logout,
-    showAlert
+    showAlert,
+    appSettings
   } = useApp();
   const alert = showAlert;
 
@@ -62,8 +65,8 @@ export default function AdminDashboard() {
       const staffOrders = orders.filter(o => o.assignedTo === staff.id && o.status === OrderStatus.SELESAI);
       const jobsDone = staffOrders.length;
       const ratedOrders = staffOrders.filter(o => typeof o.rating === 'number');
-      const avgRating = ratedOrders.length > 0 
-        ? ratedOrders.reduce((acc, curr) => acc + (curr.rating as number), 0) / ratedOrders.length 
+      const avgRating = ratedOrders.length > 0
+        ? ratedOrders.reduce((acc, curr) => acc + (curr.rating as number), 0) / ratedOrders.length
         : 0;
       return { ...staff, jobsDone, avgRating };
     }).sort((a, b) => {
@@ -72,11 +75,83 @@ export default function AdminDashboard() {
     });
   }, [staffList, orders]);
   const allUsers = users;
+
+  // WhatsApp Invoice Link generator
+  const getWhatsAppInvoiceLink = (order: Order) => {
+    let phone = order.customerPhone || '';
+    phone = phone.replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.substring(1);
+    }
+
+    const serviceName = `${order.acDetail?.quantity || 0}x ${order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType
+      } (${order.acDetail?.acType || ''})`;
+
+    let addonsUsedParsed: any[] = [];
+    if (order.addonsUsed) {
+      if (typeof order.addonsUsed === 'string') {
+        try {
+          addonsUsedParsed = JSON.parse(order.addonsUsed);
+        } catch (e) {
+          console.error('Error parsing addonsUsed:', e);
+        }
+      } else if (Array.isArray(order.addonsUsed)) {
+        addonsUsedParsed = order.addonsUsed;
+      }
+    }
+
+    let totalAddonsSales = 0;
+    let addonsText = '';
+    if (addonsUsedParsed && addonsUsedParsed.length > 0) {
+      addonsText = '\n*Perlengkapan Tambahan:*\n';
+      addonsUsedParsed.forEach(ad => {
+        const unitPrice = Number(ad.price || 0);
+        const qty = Number(ad.quantity || 0);
+        const subTotal = unitPrice * qty;
+        totalAddonsSales += subTotal;
+        addonsText += `- ${ad.name} (${qty}x @ Rp${unitPrice.toLocaleString('id-ID')}): Rp${subTotal.toLocaleString('id-ID')}\n`;
+      });
+      addonsText += `*Total Perlengkapan:* Rp${totalAddonsSales.toLocaleString('id-ID')}\n`;
+    }
+
+    const grandTotal = order.finalPrice || (Number(order.serviceCost || 0) + totalAddonsSales);
+
+    const message = `Halo Kak *${order.customerName}*,\n\nBerikut adalah rincian tagihan/invoice untuk pengerjaan AC Anda oleh *CoolAir Pro*:\n\n*Order ID:* ${order.id}\n*Tanggal Pengerjaan:* ${order.scheduledDate} (${order.scheduledTime})\n*Layanan:* ${serviceName}\n\n*Rincian Biaya:*\n- Jasa Utama: Rp${Number(order.serviceCost || 0).toLocaleString('id-ID')}${addonsText}\n*Grand Total:* *Rp${Number(grandTotal).toLocaleString('id-ID')}*\n\n*Status:* ✅ *LUNAS*\n\nTerima kasih telah mempercayakan CoolAir Pro untuk kenyamanan AC Anda! 🙏❄️`;
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  };
+
+  const handleSendInvoice = async (order: Order) => {
+    // Open wa.me link in new tab
+    window.open(getWhatsAppInvoiceLink(order), '_blank');
+
+    if (!order.invoiceSent) {
+      try {
+        await api.updateOrder(order.id, { invoiceSent: true });
+
+        // Update local state
+        setOrders(prevOrders =>
+          prevOrders.map(o => o.id === order.id ? { ...o, invoiceSent: true } : o)
+        );
+
+        // Update selectedOrderDetail modal state if opened
+        if (selectedOrderDetail && selectedOrderDetail.id === order.id) {
+          setSelectedOrderDetail(prev => prev ? { ...prev, invoiceSent: true } : null);
+        }
+
+        alert('✓ Status invoice berhasil diperbarui menjadi Terkirim!');
+      } catch (err) {
+        console.error('Error updating invoice status:', err);
+      }
+    }
+  };
+
   // Loading state for async operations
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<TabType>('JOBS_TRACKER');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Admin Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
@@ -99,6 +174,22 @@ export default function AdminDashboard() {
       setEditProfilePhoto(activeUser.photo || '');
     }
   }, [activeUser]);
+
+  // Click-outside listener to close the three-dots menu dropdown
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleOutsideClick = () => {
+      setShowMoreMenu(false);
+    };
+    // Use timeout to prevent immediate closing during trigger click event propagation
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showMoreMenu]);
 
   // Client-side image compression
   const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
@@ -259,12 +350,14 @@ export default function AdminDashboard() {
 
   const [newAddonName, setNewAddonName] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState(0);
+  const [newAddonHpp, setNewAddonHpp] = useState(0);
 
   // Edit inline states for master data
   const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
   const [editMasterField1, setEditMasterField1] = useState('');
   const [editMasterField2, setEditMasterField2] = useState<number | boolean>(0);
   const [editMasterField3, setEditMasterField3] = useState('');
+  const [editMasterField4, setEditMasterField4] = useState<number>(0);
 
   // Helper formats
   const formatRupiah = (num: any) => {
@@ -344,7 +437,7 @@ export default function AdminDashboard() {
       setErrorMsg('');
       setSelectedStaffId('');
       setSelectedOrderForAssign(null);
-      
+
       if (isDateChanged) {
         alert('✅ Pengajuan perubahan jadwal berhasil dikirim. Menunggu persetujuan pelanggan.');
       } else {
@@ -366,7 +459,7 @@ export default function AdminDashboard() {
         status: OrderStatus.DIBATALKAN,
         cancelReason: 'Dibatalkan oleh Admin'
       });
-      
+
       const updatedOrder = orders.find(o => o.id === orderId);
       if (updatedOrder) {
         updatedOrder.status = OrderStatus.DIBATALKAN;
@@ -437,6 +530,20 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Security check: Admin cannot edit Owner or Admin
+      if (targetUser.role === Role.OWNER || targetUser.role === Role.ADMIN) {
+        setErrorMsg('Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+        alert('❌ Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+        return;
+      }
+
+      // Security check: Admin cannot assign Owner role
+      if (editRole === Role.OWNER) {
+        setErrorMsg('Anda tidak memiliki wewenang untuk memberikan role Owner.');
+        alert('❌ Anda tidak memiliki wewenang untuk memberikan role Owner.');
+        return;
+      }
+
       const updatePayload = {
         name: targetUser.name, // Send existing name
         email: targetUser.email, // Send existing email (required by backend)
@@ -469,6 +576,10 @@ export default function AdminDashboard() {
   };
 
   const startEditUser = (target: User) => {
+    if (target.role === Role.OWNER || target.role === Role.ADMIN) {
+      alert('❌ Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+      return;
+    }
     setEditingUserId(target.id);
     setEditRole(target.role);
     setEditPhone(target.phone || '');
@@ -610,11 +721,13 @@ export default function AdminDashboard() {
       setIsLoading(true);
       const newAddon = await api.createAddon({
         name: newAddonName,
-        price: newAddonPrice
+        price: newAddonPrice,
+        hpp: newAddonHpp
       });
       setAddons([...addons, newAddon]);
       setNewAddonName('');
       setNewAddonPrice(0);
+      setNewAddonHpp(0);
       setErrorMsg('');
       alert('✅ Item persediaan berhasil ditambahkan');
     } catch (error) {
@@ -660,8 +773,8 @@ export default function AdminDashboard() {
         const updated = services.map(s => s.id === id ? { ...s, name: editMasterField1, price: editMasterField2 as number, categoryId: editMasterField3 } : s);
         setServices(updated);
       } else if (activeMasterSubTab === 'ADDONS') {
-        await api.updateAddon(id, { name: editMasterField1, price: editMasterField2 });
-        const updated = addons.map(a => a.id === id ? { ...a, name: editMasterField1, price: editMasterField2 as number } : a);
+        await api.updateAddon(id, { name: editMasterField1, price: editMasterField2, hpp: editMasterField4 });
+        const updated = addons.map(a => a.id === id ? { ...a, name: editMasterField1, price: editMasterField2 as number, hpp: editMasterField4 } : a);
         setAddons(updated);
       }
 
@@ -676,93 +789,133 @@ export default function AdminDashboard() {
     }
   };
 
-  const startEditMaster = (id: string, f1: string, f2: number | boolean, f3 = '') => {
+  const startEditMaster = (id: string, f1: string, f2: number | boolean, f3 = '', f4 = 0) => {
     setEditingMasterId(id);
     setEditMasterField1(f1);
     setEditMasterField2(f2);
     setEditMasterField3(f3);
+    setEditMasterField4(f4);
   };
 
   if (!activeUser) return null;
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
-
-      {/* ===================== CONTROL HEADER ===================== */}
-      <div className="bg-slate-900 px-5 py-4 shrink-0 shadow-md text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <span className="text-[8px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded uppercase tracking-wider">
-            Portal Administrator
-          </span>
-          <h2 className="text-base font-black mt-1 leading-none text-white">Dashboard Manajemen & Operasional</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Operator aktif: <strong className="text-white">{activeUser.name}</strong> ({activeUser.email})</p>
+      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
+      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
+        {/* Logo, Business Name & Slogan */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
+            {appSettings?.business_logo ? (
+              <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </div>
+          <div className="text-left">
+            <h1 className="text-sm font-black leading-none">{appSettings?.business_name || 'Sugar AC'}</h1>
+            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={logout}
-          className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition shrink-0 cursor-pointer"
-        >
-          Keluar Sesi
-        </button>
+
+        {/* Three-dots menu button */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMoreMenu(prev => !prev);
+            }}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
+          >
+            <MoreVertical size={18} />
+          </button>
+
+          {showMoreMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveTab('JOBS_TRACKER');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab !== 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <ClipboardList size={14} className={activeTab !== 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Dashboard</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('PROFIL');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <UserIcon size={14} className={activeTab === 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Profile</span>
+              </button>
+              <hr className="my-1 border-slate-100" />
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  logout();
+                }}
+                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
+              >
+                <LogOut size={14} />
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ===================== CONTROL TABS SYSTEM ===================== */}
-      <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto flex-nowrap">
-        <button
-          onClick={() => setActiveTab('JOBS_TRACKER')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'JOBS_TRACKER'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <ClipboardList size={15} />
-            <span>Pantauan Jasa ({orders.length})</span>
-          </span>
-        </button>
+      {activeTab !== 'PROFIL' && (
+        <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto flex-nowrap">
+          <button
+            onClick={() => setActiveTab('JOBS_TRACKER')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'JOBS_TRACKER'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <ClipboardList size={15} />
+              <span>Pantauan Jasa</span>
+            </span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveTab('MASTER_DATA');
-            if (categories.length > 0) setNewServiceCategory(categories[0].id);
-          }}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'MASTER_DATA'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <Wrench size={15} />
-            <span>Edit Master Data</span>
-          </span>
-        </button>
+          <button
+            onClick={() => {
+              setActiveTab('MASTER_DATA');
+              if (categories.length > 0) setNewServiceCategory(categories[0].id);
+            }}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'MASTER_DATA'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <Wrench size={15} />
+              <span>Edit Master Data</span>
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('USER_MANAGEMENT')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'USER_MANAGEMENT'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <UserCog size={15} />
-            <span>Edit Pengguna ({allUsers.length})</span>
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('PROFIL')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'PROFIL'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <UserIcon size={15} />
-            <span>Profil</span>
-          </span>
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveTab('USER_MANAGEMENT')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'USER_MANAGEMENT'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <UserCog size={15} />
+              <span>Edit Pengguna ({allUsers.length})</span>
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* ===================== TAB BODY (SCROLLABLE Area) ===================== */}
       <div className="flex-1 overflow-y-auto p-4 min-h-0 space-y-4">
@@ -929,33 +1082,33 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     ) : order.status !== OrderStatus.DIBATALKAN ? (
-                    <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
-                      <div className="flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if(window.confirm('Yakin ingin membatalkan pesanan ini?')) {
-                              handleCancelOrderAdmin(order.id);
-                            }
-                          }}
-                          className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Batalkan
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrderForAssign(order);
-                          }}
-                          className="bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Tugaskan
-                        </button>
+                      <div className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-xl flex items-center justify-between">
+                        <span className="text-[10.5px] font-bold text-amber-800">⚠️ Belum dialokasi teknisi</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Yakin ingin membatalkan pesanan ini?')) {
+                                handleCancelOrderAdmin(order.id);
+                              }
+                            }}
+                            className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                          >
+                            Batalkan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOrderForAssign(order);
+                            }}
+                            className="bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                          >
+                            Tugaskan
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     ) : null}
 
                     {/* Grand total info */}
@@ -972,7 +1125,7 @@ export default function AdminDashboard() {
                           </span>
                         ) : (
                           <span className="bg-slate-100 border border-slate-200 text-slate-650 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                            💵 TUNAI / MANUAL (BAWAAN)
+                            💵 TUNAI
                           </span>
                         )}
                       </div>
@@ -992,8 +1145,36 @@ export default function AdminDashboard() {
 
                     <div className="flex justify-between items-center pt-2 border-t border-slate-100 font-black">
                       <span className="text-[10px] uppercase text-slate-400 tracking-wider">Total Jasa:</span>
-                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
+                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(order.finalPrice || (Number(order.serviceCost || 0) + Number(order.addonsCost || 0)))}</span>
                     </div>
+
+                    {order.status === OrderStatus.SELESAI && (
+                      <div className="pt-2 border-t border-slate-100 mt-2 flex items-center justify-between gap-2 flex-wrap">
+                        {order.invoiceSent ? (
+                          <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 px-2 py-0.5 rounded">
+                            ✓ Invoice Terkirim
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-250 px-2 py-0.5 rounded animate-pulse">
+                            ⏳ Belum Dikirim
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendInvoice(order);
+                          }}
+                          className={`flex items-center justify-center gap-1.5 font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto ${order.invoiceSent
+                              ? 'bg-slate-200 hover:bg-slate-350 text-slate-550 border border-slate-300'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            }`}
+                        >
+                          <MessageCircle size={12} />
+                          Kirim Invoice
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -1192,10 +1373,18 @@ export default function AdminDashboard() {
                   />
                   <input
                     type="number"
+                    value={newAddonHpp || ''}
+                    onChange={(e) => setNewAddonHpp(parseInt(e.target.value) || 0)}
+                    className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
+                    placeholder="Harga Modal (HPP)"
+                    required
+                  />
+                  <input
+                    type="number"
                     value={newAddonPrice || ''}
                     onChange={(e) => setNewAddonPrice(parseInt(e.target.value) || 0)}
                     className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
-                    placeholder="Harga Satuan"
+                    placeholder="Harga Jual"
                     required
                   />
                   <button
@@ -1211,7 +1400,8 @@ export default function AdminDashboard() {
                       <tr>
                         <th className="p-3">Nama Suku Cadang</th>
                         <th className="p-3 font-mono">ID</th>
-                        <th className="p-3">Harga Satuan</th>
+                        <th className="p-3">Harga Modal (HPP)</th>
+                        <th className="p-3">Harga Jual</th>
                         <th className="p-3 text-right">Aksi</th>
                       </tr>
                     </thead>
@@ -1220,9 +1410,10 @@ export default function AdminDashboard() {
                         <tr key={a.id} className="hover:bg-slate-50/50">
                           <td className="p-3 font-extrabold text-slate-800">{a.name}</td>
                           <td className="p-3 font-mono text-slate-400 font-bold">{a.id}</td>
+                          <td className="p-3 font-mono text-amber-700 font-bold">{formatRupiah(a.hpp || 0)}</td>
                           <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
-                            <button onClick={() => startEditMaster(a.id, a.name, a.price)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
+                            <button onClick={() => startEditMaster(a.id, a.name, a.price, '', a.hpp || 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
                             <button onClick={() => handleDeleteAddon(a.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100"><Trash2 size={13} /></button>
                           </td>
                         </tr>
@@ -1278,13 +1469,15 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => startEditUser(u)}
-                    className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
-                  >
-                    <Edit size={12} /> Edit
-                  </button>
+                  {u.role !== Role.OWNER && u.role !== Role.ADMIN && (
+                    <button
+                      type="button"
+                      onClick={() => startEditUser(u)}
+                      className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
+                    >
+                      <Edit size={12} /> Edit
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -1613,15 +1806,27 @@ export default function AdminDashboard() {
               )}
 
               {activeMasterSubTab === 'ADDONS' && (
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Satuan</label>
-                  <input
-                    type="number"
-                    value={typeof editMasterField2 === 'number' ? editMasterField2 : ''}
-                    onChange={(e) => setEditMasterField2(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
-                    disabled={isLoading}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Modal (HPP)</label>
+                    <input
+                      type="number"
+                      value={editMasterField4}
+                      onChange={(e) => setEditMasterField4(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Jual</label>
+                    <input
+                      type="number"
+                      value={typeof editMasterField2 === 'number' ? editMasterField2 : ''}
+                      onChange={(e) => setEditMasterField2(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1777,7 +1982,6 @@ export default function AdminDashboard() {
                   <option value={Role.USER}>Pelanggan</option>
                   <option value={Role.STAFF}>Staff/Teknisi</option>
                   <option value={Role.ADMIN}>Admin</option>
-                  <option value={Role.OWNER}>Owner</option>
                 </select>
               </div>
 
@@ -1825,11 +2029,11 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <span className={`text-[8.5px] px-2 py-0.6 font-black uppercase rounded tracking-wider border ${selectedOrderDetail.status === OrderStatus.MENUNGGU ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' :
-                    selectedOrderDetail.status === OrderStatus.DITUGASKAN ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
-                      selectedOrderDetail.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' :
-                        selectedOrderDetail.status === OrderStatus.PENGERJAAN ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' :
-                          selectedOrderDetail.status === OrderStatus.PAYMENT ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
-                            'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                  selectedOrderDetail.status === OrderStatus.DITUGASKAN ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' :
+                    selectedOrderDetail.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' :
+                      selectedOrderDetail.status === OrderStatus.PENGERJAAN ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' :
+                        selectedOrderDetail.status === OrderStatus.PAYMENT ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
+                          'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
                   }`}>
                   {selectedOrderDetail.status.replace('_', ' ')}
                 </span>
@@ -1935,7 +2139,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ) : (
-                  <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
+                    <p className="text-amber-700 font-bold italic block text-[10px]">⚠️ Belum ada staff didelegasikan ke tugas ini.</p>
                   )}
                 </div>
               </div>
@@ -2040,7 +2244,7 @@ export default function AdminDashboard() {
                         </span>
                       ) : (
                         <span className="bg-slate-100 border border-slate-200 text-slate-650 text-[8.5px] px-2 py-0.5 rounded font-black uppercase block w-fit mt-1">
-                          💵 TUNAI / MANUAL (BAWAAN)
+                          💵 TUNAI
                         </span>
                       )}
                     </div>
@@ -2077,9 +2281,42 @@ export default function AdminDashboard() {
                     )}
                     <div className="flex justify-between font-black text-slate-800 border-t pt-2 mt-1">
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
-                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0))}</span>
+                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.finalPrice || (Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0)))}</span>
                     </div>
+                    {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
+                      <div className="flex justify-between font-bold text-emerald-750 bg-emerald-50 border border-emerald-100 p-2 rounded-lg mt-2">
+                        <span className="text-[10.5px] uppercase">Margin Keuntungan:</span>
+                        <span className="font-mono text-[11.5px]">{formatRupiah(selectedOrderDetail.margin)}</span>
+                      </div>
+                    )}
                   </div>
+                  {selectedOrderDetail.status === OrderStatus.SELESAI && (
+                    <div className="pt-3 border-t border-slate-100 mt-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">Status Invoice:</span>
+                        {selectedOrderDetail.invoiceSent ? (
+                          <span className="bg-emerald-50 border border-emerald-250 text-emerald-800 text-[8.5px] px-2.5 py-0.5 rounded font-black uppercase">
+                            ✓ Terkirim
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 border border-amber-200 text-amber-700 text-[8.5px] px-2.5 py-0.5 rounded font-black uppercase animate-pulse">
+                            ⏳ Belum Dikirim
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSendInvoice(selectedOrderDetail)}
+                        className={`flex items-center justify-center gap-2 w-full font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md cursor-pointer ${selectedOrderDetail.invoiceSent
+                            ? 'bg-slate-150 hover:bg-slate-200 text-slate-550 border border-slate-250 shadow-slate-200/10'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/10'
+                          }`}
+                      >
+                        <MessageCircle size={14} />
+                        Kirim Invoice via WhatsApp
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

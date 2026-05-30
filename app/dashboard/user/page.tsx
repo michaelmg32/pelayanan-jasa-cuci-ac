@@ -24,7 +24,7 @@ export default function PelangganPage() {
   }
 
   return (
-    <MobileFrame activeUser={activeUser} onLogout={logout}>
+    <MobileFrame activeUser={activeUser} onLogout={logout} hideHeader={true}>
       <PelangganDashboard />
     </MobileFrame>
   );

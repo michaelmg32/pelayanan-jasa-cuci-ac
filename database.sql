@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS ac_addons (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   price DECIMAL(10, 2) NOT NULL,
+  hpp DECIMAL(10, 2) DEFAULT 0,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -79,6 +80,10 @@ CREATE TABLE IF NOT EXISTS orders (
   notes TEXT,
   serviceCost DECIMAL(10, 2) DEFAULT 0,
   addonsCost DECIMAL(10, 2) DEFAULT 0,
+  margin DECIMAL(10, 2) DEFAULT 0,
+  quantity INT DEFAULT 1,
+  hpp_orders DECIMAL(10, 2) DEFAULT 0,
+  finalPrice DECIMAL(10, 2) DEFAULT 0,
   totalPrice DECIMAL(10, 2),
   totalCost DECIMAL(10, 2),
   photoBefore LONGTEXT,
@@ -126,11 +131,11 @@ INSERT INTO ac_services (id, categoryId, name, description, basePrice, price, du
 ('svc-3', 'cat-2', 'Perbaikan Kompresor', 'Perbaikan kompresor AC', 500000, 500000, 180),
 ('svc-4', 'cat-3', 'Service Bulanan', 'Service rutin bulanan', 100000, 100000, 45);
 
-INSERT INTO ac_addons (id, name, description, price) VALUES
-('addon-1', 'Desinfektan', 'Disinfektasi khusus AC', 50000),
-('addon-2', 'Refill Freon', 'Penambahan freon AC', 300000),
-('addon-3', 'Pembersihan Indoor Coil', 'Pembersihan coil indoor khusus', 75000),
-('addon-4', 'Penggantian Filter', 'Ganti filter udara AC baru', 100000);
+INSERT INTO ac_addons (id, name, description, price, hpp) VALUES
+('addon-1', 'Desinfektan', 'Disinfektasi khusus AC', 50000, 20000),
+('addon-2', 'Refill Freon', 'Penambahan freon AC', 300000, 150000),
+('addon-3', 'Pembersihan Indoor Coil', 'Pembersihan coil indoor khusus', 75000, 30000),
+('addon-4', 'Penggantian Filter', 'Ganti filter udara AC baru', 100000, 45000);
 
 -- Settings Table
 CREATE TABLE IF NOT EXISTS settings (

@@ -24,7 +24,7 @@ export default function KaryawanPage() {
   }
 
   return (
-    <MobileFrame activeUser={activeUser} onLogout={logout}>
+    <MobileFrame activeUser={activeUser} onLogout={logout} hideHeader={true}>
       <KaryawanDashboard />
     </MobileFrame>
   );

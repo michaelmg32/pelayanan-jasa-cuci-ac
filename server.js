@@ -122,6 +122,94 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN workerCancelReason VARCHAR(255) NULL");
       console.log("✅ Added workerCancelReason field to 'orders' table in database");
     }
+
+    // Auto-migration: Add invoiceSent field to 'orders' table
+    const [invoiceSentCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'invoiceSent'");
+    if (invoiceSentCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN invoiceSent BOOLEAN DEFAULT FALSE");
+      console.log("✅ Added invoiceSent field to 'orders' table in database");
+    }
+
+    // Auto-migration: Add hpp column to 'ac_addons' table
+    const [addonHppCols] = await connection.query("SHOW COLUMNS FROM ac_addons LIKE 'hpp'");
+    if (addonHppCols.length === 0) {
+      await connection.query("ALTER TABLE ac_addons ADD COLUMN hpp DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added hpp column to 'ac_addons' table in database");
+    }
+
+    // Auto-migration: Add margin column to 'orders' table
+    const [marginCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'margin'");
+    if (marginCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN margin DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added margin column to 'orders' table in database");
+    }
+
+    // Auto-migration: Add quantity column to 'orders' table
+    const [qtyCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'quantity'");
+    if (qtyCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN quantity INT DEFAULT 1");
+      console.log("✅ Added quantity column to 'orders' table in database");
+    }
+
+    // Auto-migration: Add hpp_orders column to 'orders' table
+    const [hppOrdersCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'hpp_orders'");
+    if (hppOrdersCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN hpp_orders DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added hpp_orders column to 'orders' table in database");
+    }
+
+    // Auto-migration: Add finalPrice column to 'orders' table
+    const [finalPriceCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'finalPrice'");
+    if (finalPriceCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN finalPrice DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added finalPrice column to 'orders' table in database");
+    }
+
+    // Backfill calculations for existing orders (quantity, hpp_orders, finalPrice, margin)
+    const [existingOrders] = await connection.query("SELECT id, acDetail, serviceCost, addonsUsed FROM orders");
+    if (existingOrders.length > 0) {
+      console.log(`⏳ Migrating/Backfilling ${existingOrders.length} orders for the new margin system...`);
+      for (const order of existingOrders) {
+        let quantity = 1;
+        if (order.acDetail) {
+          try {
+            const acDetailParsed = typeof order.acDetail === 'string' ? JSON.parse(order.acDetail) : order.acDetail;
+            if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
+              quantity = acDetailParsed.quantity;
+            }
+          } catch (e) {}
+        }
+
+        let totalAddonsSales = 0;
+        let totalAddonsHpp = 0;
+        if (order.addonsUsed) {
+          try {
+            const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+            if (Array.isArray(addonsUsedParsed)) {
+              addonsUsedParsed.forEach(ad => {
+                const price = Number(ad.price) || 0;
+                const hpp = Number(ad.hpp) || 0;
+                const qty = Number(ad.quantity) || 0;
+                totalAddonsSales += price * qty;
+                totalAddonsHpp += hpp * qty;
+              });
+            }
+          } catch (e) {}
+        }
+
+        const serviceCostTotal = Number(order.serviceCost) || 0;
+        const totalCost = serviceCostTotal;
+        const finalPrice = totalCost + totalAddonsSales;
+        const hpp_orders = totalAddonsHpp;
+        const margin = finalPrice - hpp_orders;
+
+        await connection.query(
+          "UPDATE orders SET quantity = ?, totalCost = ?, finalPrice = ?, hpp_orders = ?, margin = ?, addonsCost = ? WHERE id = ?",
+          [quantity, totalCost, finalPrice, hpp_orders, margin, totalAddonsSales, order.id]
+        );
+      }
+      console.log(`✅ Backfilled financial columns for ${existingOrders.length} orders successfully.`);
+    }
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -535,6 +623,59 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
+const recalculateOrderMargin = async (connection, orderId) => {
+  try {
+    const [rows] = await connection.query('SELECT acDetail, serviceCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
+    if (rows.length > 0) {
+      const order = rows[0];
+      
+      let quantity = 1;
+      if (order.acDetail) {
+        try {
+          const acDetailParsed = typeof order.acDetail === 'string' ? JSON.parse(order.acDetail) : order.acDetail;
+          if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
+            quantity = acDetailParsed.quantity;
+          }
+        } catch (e) {
+          console.error('Error parsing acDetail for quantity recalculation:', e);
+        }
+      }
+
+      let totalAddonsSales = 0;
+      let totalAddonsHpp = 0;
+      if (order.addonsUsed) {
+        try {
+          const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+          if (Array.isArray(addonsUsedParsed)) {
+            addonsUsedParsed.forEach(ad => {
+              const price = Number(ad.price) || 0;
+              const hpp = Number(ad.hpp) || 0;
+              const qty = Number(ad.quantity) || 0;
+              totalAddonsSales += price * qty;
+              totalAddonsHpp += hpp * qty;
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing addonsUsed for margin recalculation:', e);
+        }
+      }
+
+      const totalCost = Number(order.serviceCost) || 0;
+      const finalPrice = totalCost + totalAddonsSales;
+      const hpp_orders = totalAddonsHpp;
+      const margin = finalPrice - hpp_orders;
+
+      await connection.query(
+        'UPDATE orders SET quantity = ?, totalCost = ?, finalPrice = ?, hpp_orders = ?, margin = ?, addonsCost = ? WHERE id = ?',
+        [quantity, totalCost, finalPrice, hpp_orders, margin, totalAddonsSales, orderId]
+      );
+      console.log(`📊 Margin Recalculated for ${orderId}: qty=${quantity}, totalCost=${totalCost}, finalPrice=${finalPrice}, hpp_orders=${hpp_orders}, margin=${margin}`);
+    }
+  } catch (err) {
+    console.error(`❌ Failed to recalculate margin for order ${orderId}:`, err);
+  }
+};
+
 app.post('/api/orders', async (req, res) => {
   const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -562,6 +703,7 @@ app.post('/api/orders', async (req, res) => {
         photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
       ]
     );
+    await recalculateOrderMargin(connection, id);
     connection.release();
     res.status(201).json({
       id,
@@ -603,7 +745,8 @@ app.put('/api/orders/:id', async (req, res) => {
   const {
     status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter,
     paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost, addonsUsed,
-    scheduledDate, scheduledTime, proposedDate, proposedTime, rescheduleStatus, cancelReason, workerCancelReason
+    scheduledDate, scheduledTime, proposedDate, proposedTime, rescheduleStatus, cancelReason, workerCancelReason,
+    invoiceSent
   } = req.body;
   let connection;
   try {
@@ -778,6 +921,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (rescheduleStatus !== undefined) { updateFields.push('rescheduleStatus = ?'); updateValues.push(rescheduleStatus); }
     if (cancelReason !== undefined) { updateFields.push('cancelReason = ?'); updateValues.push(cancelReason); }
     if (workerCancelReason !== undefined) { updateFields.push('workerCancelReason = ?'); updateValues.push(workerCancelReason); }
+    if (invoiceSent !== undefined) { updateFields.push('invoiceSent = ?'); updateValues.push(invoiceSent ? 1 : 0); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }
@@ -791,6 +935,8 @@ app.put('/api/orders/:id', async (req, res) => {
         updateValues
       );
     }
+
+    await recalculateOrderMargin(connection, id);
 
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
 
@@ -1041,15 +1187,15 @@ app.get('/api/addons', async (req, res) => {
 });
 
 app.post('/api/addons', async (req, res) => {
-  const { id, name, description, price } = req.body;
+  const { id, name, description, price, hpp } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'INSERT INTO ac_addons (id, name, description, price) VALUES (?, ?, ?, ?)',
-      [id, name, description, price]
+      'INSERT INTO ac_addons (id, name, description, price, hpp) VALUES (?, ?, ?, ?, ?)',
+      [id, name, description, price, hpp || 0]
     );
     connection.release();
-    res.status(201).json({ id, name, description, price });
+    res.status(201).json({ id, name, description, price, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1057,16 +1203,16 @@ app.post('/api/addons', async (req, res) => {
 
 app.put('/api/addons/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, price } = req.body;
+  const { name, description, price, hpp } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'UPDATE ac_addons SET name = ?, description = ?, price = ? WHERE id = ?',
-      [name, description, price, id]
+      'UPDATE ac_addons SET name = ?, description = ?, price = ?, hpp = ? WHERE id = ?',
+      [name, description, price, hpp || 0, id]
     );
     const [addon] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [id]);
     connection.release();
-    res.json(addon[0] || { id, name, description, price });
+    res.json(addon[0] || { id, name, description, price, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -40,7 +40,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setErrorMsg('Email tidak boleh kosong.');
       return;
     }
-    
+
     if (!password.trim()) {
       setErrorMsg('Kata sandi tidak boleh kosong.');
       return;
@@ -64,7 +64,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       console.log('LoginScreen - Response status:', response.status);
       const data = await response.json();
       console.log('LoginScreen - Parsed data:', data);
-      
+
       if (!response.ok) {
         setErrorMsg(data.error || 'Login gagal. Silakan coba lagi.');
         return;
@@ -72,7 +72,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
       // Authentication handled via Context API and MySQL sessions
       setErrorMsg('');
-      
+
       if (data.user) {
         if (data.token) {
           document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
@@ -118,7 +118,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         setErrorMsg(data.error || 'Registrasi gagal. Silakan coba lagi.');
         return;
@@ -126,9 +126,9 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
       // Authentication handled via Context API and MySQL sessions
       setErrorMsg('');
-      
+
       const newUser = data.user;
-      
+
       if (data.user) {
         if (data.token) {
           document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
@@ -147,12 +147,12 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
     try {
       setIsLoading(true);
       setErrorMsg('');
-      
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
       if (!credentialResponse.credential) {
         throw new Error('Google credential token is missing.');
       }
-      
+
       const response = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -160,14 +160,14 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         setErrorMsg(data.error || 'Login Google gagal. Silakan coba lagi.');
         return;
       }
 
       setErrorMsg('');
-      
+
       if (data.user) {
         if (data.token) {
           document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
@@ -191,7 +191,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   return (
     <div className="w-full min-h-[calc(100vh-76px)] flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100/70 to-blue-50/30 p-4 sm:p-6 md:p-8 font-sans">
       <div className="w-full max-w-[460px] bg-white border border-slate-200/80 rounded-3xl shadow-xl shadow-slate-200/40 p-6 sm:p-8 flex flex-col transition duration-300 hover:shadow-2xl hover:shadow-blue-500/5">
-        
+
         {/* Brand Logo & Tagline */}
         <div className="flex flex-col items-center justify-center mb-6 shrink-0">
           <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 mb-3 transform hover:rotate-6 transition duration-300 cursor-pointer overflow-hidden">
@@ -210,9 +210,8 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
           <button
             type="button"
             onClick={() => { setIsRegisterMode(false); setErrorMsg(''); }}
-            className={`flex-1 text-center font-bold text-xs pb-3 transition duration-200 relative ${
-              !isRegisterMode ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`flex-1 text-center font-bold text-xs pb-3 transition duration-200 relative ${!isRegisterMode ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
             Masuk Akun
             {!isRegisterMode && (
@@ -222,9 +221,8 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
           <button
             type="button"
             onClick={() => { setIsRegisterMode(true); setErrorMsg(''); }}
-            className={`flex-1 text-center font-bold text-xs pb-3 transition duration-200 relative ${
-              isRegisterMode ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`flex-1 text-center font-bold text-xs pb-3 transition duration-200 relative ${isRegisterMode ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+              }`}
           >
             Daftar Pelanggan
             {isRegisterMode && (
@@ -260,7 +258,6 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             <div className="space-y-1.5">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Kata Sandi</label>
-                <span className="text-[10px] text-slate-400 font-medium">Bebas</span>
               </div>
               <div className="relative group">
                 <Key size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
@@ -291,7 +288,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 </>
               )}
             </button>
-            
+
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-slate-200"></div>
               <span className="flex-shrink-0 mx-3 text-slate-400 text-[10px] uppercase font-bold tracking-widest">Atau</span>

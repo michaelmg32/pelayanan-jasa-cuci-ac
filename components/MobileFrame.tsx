@@ -14,6 +14,7 @@ interface MobileFrameProps {
   children: React.ReactNode;
   activeUser: User | null;
   onLogout: () => void;
+  hideHeader?: boolean;
 }
 
 // Production Mode - Clean Professional Layout
@@ -21,13 +22,15 @@ export default function MobileFrame({
   children,
   activeUser,
   onLogout,
+  hideHeader = false,
 }: MobileFrameProps) {
   const { appSettings } = useApp();
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 flex flex-col font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
       {/* Header */}
-      <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+      {!hideHeader && (
+        <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
@@ -79,6 +82,7 @@ export default function MobileFrame({
           </div>
         </div>
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">

@@ -103,10 +103,10 @@ export default function MapPicker({ onLocationSelect, onCancel }: MapPickerProps
       if (data && data.display_name) {
         setAddress(data.display_name);
       } else {
-        setAddress(`Koordinat: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        setAddress("Lokasi Peta");
       }
     } catch (error) {
-      setAddress(`Koordinat: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      setAddress("Lokasi Peta");
     }
     setLoading(false);
   };

@@ -30,14 +30,16 @@ import {
   AlertCircle,
   Loader,
   ArrowUp,
+  MoreVertical,
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, models, categories, services, addons, logout, showAlert, users } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, models, categories, services, addons, logout, showAlert, users, appSettings } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Booking Form State
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
@@ -168,6 +170,22 @@ export default function PelangganDashboard() {
       setEditPhoto(activeUser.photo || '');
     }
   }, [activeUser]);
+
+  // Click-outside listener to close the three-dots menu dropdown
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleOutsideClick = () => {
+      setShowMoreMenu(false);
+    };
+    // Use timeout to prevent immediate closing during trigger click event propagation
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showMoreMenu]);
 
   // Poll payment status for active transfer orders in PAYMENT stage
   useEffect(() => {
@@ -301,10 +319,12 @@ export default function PelangganDashboard() {
           quantity,
         },
         notes: notes.trim(),
-        serviceCost: serviceCost,
+        serviceCost: totalCost,
         addonsCost: 0,
         totalCost: totalCost,
         totalPrice: totalCost,
+        finalPrice: totalCost,
+        quantity: quantity,
         latitude: lat,
         longitude: lng,
       });
@@ -433,8 +453,8 @@ export default function PelangganDashboard() {
       setLng(parseFloat(randLng.toFixed(5)));
 
       const cleanAddress = activeUser.address
-        ? `${activeUser.address} (GPS: ${randLat.toFixed(4)}, ${randLng.toFixed(4)})`
-        : `Jl. Kemang Raya No. ${Math.floor(Math.random() * 80) + 1}, Jakarta Selatan (GPS: ${randLat.toFixed(4)}, ${randLng.toFixed(4)})`;
+        ? activeUser.address
+        : `Jl. Kemang Raya No. ${Math.floor(Math.random() * 80) + 1}, Jakarta Selatan`;
 
       setAddress(cleanAddress);
       setIsDetectingLocation(false);
@@ -584,47 +604,82 @@ export default function PelangganDashboard() {
   return (
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative min-h-0 h-full">
       <div className="w-full h-full flex flex-col relative">
-        {/* TAB NAVIGATION - TOP */}
-        <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shrink-0">
-          <div className="flex items-center justify-start gap-1 px-4 md:px-8 lg:px-12 py-0">
+        {/* GLOBAL INDIGO HEADER BAR WITH THREE-DOTS MENU */}
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+          {/* Logo, Business Name & Slogan */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
+              {appSettings?.business_logo ? (
+                <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              )}
+            </div>
+            <div className="text-left">
+              <h1 className="text-sm font-black leading-none">{appSettings?.business_name || 'Sugar AC'}</h1>
+              <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional</p>
+            </div>
+          </div>
+
+          {/* Three-dots menu button */}
+          <div className="relative">
             <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'dashboard'
-                ? 'text-emerald-600 border-emerald-600'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMoreMenu(prev => !prev);
+              }}
+              className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
             >
-              <span className="flex items-center gap-2">
-                <Home size={16} />
-                <span>Servis</span>
-              </span>
+              <MoreVertical size={18} />
             </button>
 
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'history'
-                ? 'text-emerald-600 border-emerald-600'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <Clock size={16} />
-                <span>Histori</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'profile'
-                ? 'text-emerald-600 border-emerald-600'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <UserIcon size={16} />
-                <span>Profil</span>
-              </span>
-            </button>
+            {showMoreMenu && (
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-150 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
+                <button
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'dashboard' ? 'text-indigo-600 bg-indigo-50/20' : ''}`}
+                >
+                  <Home size={14} className={activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-400'} />
+                  <span>Servis</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('history');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'history' ? 'text-indigo-600 bg-indigo-50/20' : ''}`}
+                >
+                  <Clock size={14} className={activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'} />
+                  <span>Histori</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('profile');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'profile' ? 'text-indigo-600 bg-indigo-50/20' : ''}`}
+                >
+                  <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'} />
+                  <span>Profil</span>
+                </button>
+                <hr className="my-1 border-slate-100" />
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    logout();
+                  }}
+                  className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <LogOut size={14} />
+                  <span>Keluar</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -643,12 +698,6 @@ export default function PelangganDashboard() {
                     <h2 className="text-base font-extrabold text-white mt-1.5 truncate">Halo Kak, {activeUser.name}!</h2>
                     <p className="text-[10px] text-blue-105/85 truncate max-w-[200px] mt-0.5">{activeUser.email}</p>
                   </div>
-                  <button
-                    onClick={() => logout()}
-                    className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold cursor-pointer transition"
-                  >
-                    Keluar
-                  </button>
                 </div>
 
                 {/* Action booking widget */}
@@ -1105,18 +1154,18 @@ export default function PelangganDashboard() {
           {/* ==================== TAB 2: HISTORY ==================== */}
           {activeTab === 'history' && (
             <div>
-              <div className="bg-slate-900 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
-                <span className="text-[8px] text-blue-300 bg-white/5 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0">
+                <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-1 rounded-full font-black uppercase tracking-widest">
                   Arsip
                 </span>
-                <h2 className="text-base font-black mt-2">Histori Pekerjaan Selesai</h2>
-                <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-slate-800">
+                <h2 className="text-base font-extrabold text-white mt-2">Histori Pekerjaan Selesai</h2>
+                <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-white/10">
                   <div>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Total Pesanan</span>
-                    <span className="text-sm font-black text-blue-400 mt-0.5 block">{completedOrders.length}</span>
+                    <span className="text-[8px] text-blue-100/70 font-bold uppercase tracking-wider block">Total Pesanan</span>
+                    <span className="text-sm font-black text-white mt-0.5 block">{completedOrders.length}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Total Pengeluaran</span>
+                    <span className="text-[8px] text-blue-100/70 font-bold uppercase tracking-wider block">Total Pengeluaran</span>
                     <span className="text-sm font-black text-emerald-400 mt-0.5 block">
                       {formatRupiah(
                         completedOrders.reduce((sum, o) => sum + Number(o.serviceCost || 0) + Number(o.addonsCost || 0), 0)
@@ -1170,7 +1219,7 @@ export default function PelangganDashboard() {
                                 </span>
                               ) : (
                                 <span className="bg-slate-100 border border-slate-200 text-slate-600 text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase">
-                                  💵 TUNAI / MANUAL (BAWAAN)
+                                  💵 TUNAI
                                 </span>
                               )}
                               <span className="bg-emerald-500 text-white text-[8px] px-1 py-0.5 rounded font-black uppercase tracking-wider">
@@ -1222,12 +1271,12 @@ export default function PelangganDashboard() {
           {/* ==================== TAB 3: PROFILE ==================== */}
           {activeTab === 'profile' && (
             <div>
-              <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 md:px-8 lg:px-12 py-5 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
-                <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0">
+                <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
                   Informasi Pengguna
                 </span>
                 <div className="flex items-center gap-3 mt-3">
-                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl overflow-hidden border">
+                  <div className="w-12 h-12 bg-white text-indigo-700 font-black text-sm flex items-center justify-center rounded-xl overflow-hidden border">
                     {activeUser.photo ? (
                       <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -1235,8 +1284,8 @@ export default function PelangganDashboard() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
-                    <p className="text-[10px] text-slate-400 mt-1">{activeUser.email}</p>
+                    <h3 className="text-sm font-extrabold text-white">{activeUser.name}</h3>
+                    <p className="text-[10px] text-blue-100/80 mt-1">{activeUser.email}</p>
                   </div>
                 </div>
               </div>
@@ -1247,12 +1296,6 @@ export default function PelangganDashboard() {
                     {profileViewMode === 'readonly' ? 'Informasi Akun' :
                       profileViewMode === 'edit-profile' ? 'Perbarui Profil' : 'Ubah Password'}
                   </h3>
-                  <button
-                    onClick={() => logout()}
-                    className="bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-black uppercase px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-100 transition"
-                  >
-                    Keluar
-                  </button>
                 </div>
 
                 {saveSuccess && (
@@ -1305,11 +1348,6 @@ export default function PelangganDashboard() {
                         <div>
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Default</p>
                           <p className="text-sm font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400 text-xs">Belum diatur</span>}</p>
-                          {activeUser.lat && activeUser.lng && (
-                            <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-1">
-                              📍 {activeUser.lat.toFixed(5)}, {activeUser.lng.toFixed(5)}
-                            </p>
-                          )}
                         </div>
                         <MapPin size={18} className="text-slate-300" />
                       </div>
