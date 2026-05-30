@@ -6,11 +6,10 @@
 import { Role } from '@/types';
 
 const getApiBaseUrl = () => {
-  const configuredUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return configuredUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+  if (typeof window !== 'undefined') {
+    return '/api';
   }
-  return configuredUrl;
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
