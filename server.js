@@ -833,6 +833,78 @@ const sendFonnteNotification = async (orderId, type) => {
   }
 };
 
+const sendWorkerNotification = async (orderId, workerId) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // Get worker phone number and name
+    const [workers] = await connection.query('SELECT phone, name FROM users WHERE id = ?', [workerId]);
+    if (workers.length === 0) return;
+    const worker = workers[0];
+    
+    let phone = worker.phone || '';
+    phone = phone.replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.substring(1);
+    }
+    if (!phone) {
+      console.warn(`[Fonnte] Worker phone number is empty for worker ${workerId}`);
+      return;
+    }
+
+    // Get order details
+    const [orders] = await connection.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (orders.length === 0) return;
+    const order = orders[0];
+
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
+
+    let acDetail = null;
+    try {
+      acDetail = order.acDetail ? JSON.parse(order.acDetail) : null;
+    } catch (e) {
+      console.error('Error parsing acDetail for worker notification:', e);
+    }
+
+    const serviceName = acDetail 
+      ? `${acDetail.quantity || 0}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType} (${acDetail.acType || ''})`
+      : 'Jasa Layanan AC';
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://sugarac.com';
+
+    const message = `Halo *${worker.name}*,\n\nAnda mendapatkan tugas pekerjaan baru di *${businessName}*! 🛠️❄️\n\n*Detail Pekerjaan:*\n- *Order ID:* ${order.id}\n- *Jadwal Kerja:* *${order.scheduledDate}* pukul *${order.scheduledTime}*\n- *Layanan:* ${serviceName}\n- *Pelanggan:* ${order.customerName} (${order.customerPhone})\n- *Alamat:* ${order.address}\n- *Catatan:* ${order.notes || '-'}\n\nSilakan masuk ke aplikasi Anda untuk melihat rincian lokasi GPS dan mengunggah foto sebelum/sesudah pengerjaan:\n👉 ${frontendUrl}/login\n\nSelamat bekerja dan utamakan keselamatan! 💪`;
+
+    const fonnteApiKey = process.env.FONNTE_API_KEY || 'obJEoZWPQy74AcesKRtx';
+    console.log(`[Fonnte] Sending worker notification to ${phone} for order ${orderId}...`);
+
+    const response = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': fonnteApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        target: phone,
+        message: message
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`[Fonnte] Send worker notification success:`, result);
+    } else {
+      const errText = await response.text();
+      console.error(`[Fonnte] Send worker notification failed:`, errText);
+    }
+  } catch (err) {
+    console.error(`[Fonnte] Error sending worker notification:`, err);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 app.post('/api/orders', async (req, res) => {
   const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -864,6 +936,9 @@ app.post('/api/orders', async (req, res) => {
     connection.release();
     if (status === 'SELESAI') {
       sendFonnteInvoice(id).catch(err => console.error('Error auto-sending Fonnte invoice:', err));
+    }
+    if (status === 'DITUGASKAN' && workerId) {
+      sendWorkerNotification(id, workerId).catch(err => console.error('Error auto-sending Fonnte worker notification on create:', err));
     }
     res.status(201).json({
       id,
@@ -1117,6 +1192,14 @@ app.put('/api/orders/:id', async (req, res) => {
         }
         if (order.rescheduleStatus === 'PENDING' && oldOrder.rescheduleStatus !== 'PENDING') {
           sendFonnteNotification(id, 'RESCHEDULE').catch(err => console.error('Error sending RESCHEDULE notification:', err));
+        }
+
+        // Worker notifications (DITUGASKAN or worker reassignment)
+        const statusBecameDitugaskan = order.status === 'DITUGASKAN' && oldOrder.status !== 'DITUGASKAN';
+        const workerChanged = order.status === 'DITUGASKAN' && order.workerId && order.workerId !== oldOrder.workerId;
+        
+        if ((statusBecameDitugaskan || workerChanged) && order.workerId) {
+          sendWorkerNotification(id, order.workerId).catch(err => console.error('Error sending Fonnte worker notification:', err));
         }
       }
 
