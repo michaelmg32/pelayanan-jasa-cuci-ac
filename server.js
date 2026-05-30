@@ -68,6 +68,106 @@ app.get('/api/test-connection', async (req, res) => {
   }
 });
 
+// Test and Trigger 3-Month Reminders manually
+app.get('/api/test-reminders', async (req, res) => {
+  console.log('🔍 Manual trigger for 3-month reminders started via API...');
+  let connection;
+  const logs = [];
+  try {
+    connection = await pool.getConnection();
+
+    // Find all completed orders where status is 'SELESAI' and completedAt is >= 90 days ago
+    const [eligibleOrders] = await connection.query(
+      `SELECT * FROM orders 
+       WHERE status = 'SELESAI' 
+         AND reminderSent = 0 
+         AND completedAt <= DATE_SUB(NOW(), INTERVAL 90 DAY)`
+    );
+
+    logs.push(`Found ${eligibleOrders.length} potentially eligible completed orders in database (status = 'SELESAI', reminderSent = 0, completedAt >= 90 days ago).`);
+
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
+    const fonnteApiKey = process.env.FONNTE_API_KEY || 'obJEoZWPQy74AcesKRtx';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://sugarac.com';
+
+    const processed = [];
+
+    for (const order of eligibleOrders) {
+      // Check if this customer has any NEWER active order
+      const [newerOrders] = await connection.query(
+        'SELECT id, createdAt, status FROM orders WHERE customerId = ? AND createdAt > ? AND status != "DIBATALKAN"',
+        [order.customerId, order.completedAt]
+      );
+
+      if (newerOrders.length > 0) {
+        logs.push(`Order ID ${order.id}: Skipped customer '${order.customerName}' (${order.customerId}) because they have newer active orders: [${newerOrders.map(o => `ID ${o.id} at ${o.createdAt} status ${o.status}`).join(', ')}]. Setting reminderSent = 1.`);
+        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
+        processed.push({ id: order.id, customer: order.customerName, status: 'skipped_newer_order', newerOrders });
+        continue;
+      }
+
+      let phone = order.customerPhone || '';
+      phone = phone.replace(/[^0-9]/g, '');
+      if (phone.startsWith('0')) {
+        phone = '62' + phone.substring(1);
+      }
+
+      if (!phone) {
+        logs.push(`Order ID ${order.id}: Skipped customer '${order.customerName}' because phone number is empty. Setting reminderSent = 1.`);
+        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
+        processed.push({ id: order.id, customer: order.customerName, status: 'skipped_no_phone' });
+        continue;
+      }
+
+      let acDetail = null;
+      try {
+        acDetail = order.acDetail ? JSON.parse(order.acDetail) : null;
+      } catch (e) {}
+
+      const message = `Halo Kak *${order.customerName}*,\n\nSudah sekitar *3 bulan* sejak pencucian/layanan AC Anda terakhir kali oleh *${businessName}* pada tanggal *${new Date(order.completedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}*.\n\nUntuk menjaga performa AC tetap dingin, menghemat listrik, dan menjaga kualitas udara keluarga Anda tetap bersih, disarankan untuk melakukan pencucian AC rutin setiap 3 bulan. ❄️🌬️\n\nYuk, jadwalkan pencucian AC Anda sekarang agar AC Anda tetap prima dan dingin!\n👉 Pesan langsung lewat aplikasi kami: ${frontendUrl}/login\n\nTerima kasih dan semoga sehat selalu! 🙏❄️`;
+
+      logs.push(`Order ID ${order.id}: Sending Fonnte reminder to ${phone}...`);
+      
+      const response = await fetch('https://api.fonnte.com/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': fonnteApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          target: phone,
+          message: message
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        logs.push(`Order ID ${order.id}: Fonnte success: ${JSON.stringify(result)}`);
+        await connection.query('UPDATE orders SET reminderSent = 1 WHERE id = ?', [order.id]);
+        processed.push({ id: order.id, customer: order.customerName, phone, status: 'sent_success', result });
+      } else {
+        const errText = await response.text();
+        logs.push(`Order ID ${order.id}: Fonnte failure: ${errText}`);
+        processed.push({ id: order.id, customer: order.customerName, phone, status: 'sent_failed', error: errText });
+      }
+    }
+
+    res.json({
+      success: true,
+      logs: logs,
+      processed: processed
+    });
+
+  } catch (err) {
+    console.error('❌ Error testing reminders:', err);
+    res.status(500).json({ success: false, error: err.message, logs: logs });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+
 // Initialize database settings table
 const initializeDatabaseSettings = async () => {
   let connection;
