@@ -1056,12 +1056,13 @@ app.post('/api/models', async (req, res) => {
   const { id, name, manufacturer } = req.body;
   try {
     const connection = await pool.getConnection();
+    const newId = id || `model_${Date.now()}`;
     await connection.query(
       'INSERT INTO ac_models (id, name, manufacturer) VALUES (?, ?, ?)',
-      [id, name, manufacturer]
+      [newId, name, manufacturer || null]
     );
     connection.release();
-    res.status(201).json({ id, name, manufacturer });
+    res.status(201).json({ id: newId, name, manufacturer: manufacturer || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1074,11 +1075,11 @@ app.put('/api/models/:id', async (req, res) => {
     const connection = await pool.getConnection();
     await connection.query(
       'UPDATE ac_models SET name = ?, manufacturer = ? WHERE id = ?',
-      [name, manufacturer, id]
+      [name, manufacturer || null, id]
     );
     const [model] = await connection.query('SELECT * FROM ac_models WHERE id = ?', [id]);
     connection.release();
-    res.json(model[0] || { id, name, manufacturer });
+    res.json(model[0] || { id, name, manufacturer: manufacturer || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1097,15 +1098,16 @@ app.get('/api/categories', async (req, res) => {
 });
 
 app.post('/api/categories', async (req, res) => {
-  const { id, name, description } = req.body;
+  const { id, name, description, hasServices } = req.body;
   try {
     const connection = await pool.getConnection();
+    const newId = id || `cat_${Date.now()}`;
     await connection.query(
-      'INSERT INTO ac_categories (id, name, description) VALUES (?, ?, ?)',
-      [id, name, description]
+      'INSERT INTO ac_categories (id, name, description, hasServices) VALUES (?, ?, ?, ?)',
+      [newId, name, description || null, hasServices !== undefined ? hasServices : true]
     );
     connection.release();
-    res.status(201).json({ id, name, description });
+    res.status(201).json({ id: newId, name, description: description || null, hasServices: hasServices !== undefined ? hasServices : true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1113,16 +1115,16 @@ app.post('/api/categories', async (req, res) => {
 
 app.put('/api/categories/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { name, description, hasServices } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'UPDATE ac_categories SET name = ?, description = ? WHERE id = ?',
-      [name, description, id]
+      'UPDATE ac_categories SET name = ?, description = ?, hasServices = ? WHERE id = ?',
+      [name, description || null, hasServices !== undefined ? hasServices : true, id]
     );
     const [category] = await connection.query('SELECT * FROM ac_categories WHERE id = ?', [id]);
     connection.release();
-    res.json(category[0] || { id, name, description });
+    res.json(category[0] || { id, name, description: description || null, hasServices: hasServices !== undefined ? hasServices : true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1141,16 +1143,17 @@ app.get('/api/services', async (req, res) => {
 });
 
 app.post('/api/services', async (req, res) => {
-  const { id, name, description, basePrice, price, duration } = req.body;
+  const { id, name, description, basePrice, price, duration, categoryId } = req.body;
   try {
     const connection = await pool.getConnection();
-    const finalPrice = price || basePrice;
+    const newId = id || `svc_${Date.now()}`;
+    const finalPrice = price || basePrice || 0;
     await connection.query(
-      'INSERT INTO ac_services (id, name, description, basePrice, duration) VALUES (?, ?, ?, ?, ?)',
-      [id, name, description, finalPrice, duration]
+      'INSERT INTO ac_services (id, categoryId, name, description, basePrice, price, duration) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [newId, categoryId || null, name, description || null, finalPrice, finalPrice, duration || null]
     );
     connection.release();
-    res.status(201).json({ id, name, description, basePrice: finalPrice, duration });
+    res.status(201).json({ id: newId, categoryId: categoryId || null, name, description: description || null, basePrice: finalPrice, price: finalPrice, duration: duration || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1158,17 +1161,17 @@ app.post('/api/services', async (req, res) => {
 
 app.put('/api/services/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, basePrice, price, duration } = req.body;
+  const { name, description, basePrice, price, duration, categoryId } = req.body;
   try {
     const connection = await pool.getConnection();
-    const finalPrice = price || basePrice;
+    const finalPrice = price !== undefined ? price : (basePrice !== undefined ? basePrice : 0);
     await connection.query(
-      'UPDATE ac_services SET name = ?, description = ?, basePrice = ?, duration = ? WHERE id = ?',
-      [name, description, finalPrice, duration, id]
+      'UPDATE ac_services SET name = ?, description = ?, basePrice = ?, price = ?, duration = ?, categoryId = ? WHERE id = ?',
+      [name, description || null, finalPrice, finalPrice, duration || null, categoryId || null, id]
     );
     const [service] = await connection.query('SELECT * FROM ac_services WHERE id = ?', [id]);
     connection.release();
-    res.json(service[0] || { id, name, description, basePrice: finalPrice, duration });
+    res.json(service[0] || { id, categoryId: categoryId || null, name, description: description || null, basePrice: finalPrice, price: finalPrice, duration: duration || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1190,12 +1193,13 @@ app.post('/api/addons', async (req, res) => {
   const { id, name, description, price, hpp } = req.body;
   try {
     const connection = await pool.getConnection();
+    const newId = id || `addon_${Date.now()}`;
     await connection.query(
       'INSERT INTO ac_addons (id, name, description, price, hpp) VALUES (?, ?, ?, ?, ?)',
-      [id, name, description, price, hpp || 0]
+      [newId, name, description || null, price || 0, hpp || 0]
     );
     connection.release();
-    res.status(201).json({ id, name, description, price, hpp: hpp || 0 });
+    res.status(201).json({ id: newId, name, description: description || null, price: price || 0, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1208,11 +1212,11 @@ app.put('/api/addons/:id', async (req, res) => {
     const connection = await pool.getConnection();
     await connection.query(
       'UPDATE ac_addons SET name = ?, description = ?, price = ?, hpp = ? WHERE id = ?',
-      [name, description, price, hpp || 0, id]
+      [name, description || null, price || 0, hpp || 0, id]
     );
     const [addon] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [id]);
     connection.release();
-    res.json(addon[0] || { id, name, description, price, hpp: hpp || 0 });
+    res.json(addon[0] || { id, name, description: description || null, price: price || 0, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
