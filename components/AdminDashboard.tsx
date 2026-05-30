@@ -37,11 +37,12 @@ import {
   Camera,
   Check,
   MessageCircle,
-  MoreVertical
+  MoreVertical,
+  BarChart2
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
-type TabType = 'JOBS_TRACKER' | 'MASTER_DATA' | 'USER_MANAGEMENT' | 'PROFIL';
+type TabType = 'JOBS_TRACKER' | 'MASTER_DATA' | 'USER_MANAGEMENT' | 'PROFIL' | 'STAFF_PERFORMANCE';
 
 export default function AdminDashboard() {
   const {
@@ -348,6 +349,9 @@ export default function AdminDashboard() {
     message: '',
     onConfirm: () => {}
   });
+
+  // Performance State
+  const [performanceDate, setPerformanceDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Master Data Editing State
   const [activeMasterSubTab, setActiveMasterSubTab] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS'>('MODELS');
@@ -950,6 +954,19 @@ export default function AdminDashboard() {
               <span>Edit Pengguna ({allUsers.length})</span>
             </span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('STAFF_PERFORMANCE')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'STAFF_PERFORMANCE'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <BarChart2 size={15} />
+              <span>Kinerja Staff</span>
+            </span>
+          </button>
         </div>
       )}
 
@@ -1535,6 +1552,131 @@ export default function AdminDashboard() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ===================== TAB KINERJA STAFF ===================== */}
+        {activeTab === 'STAFF_PERFORMANCE' && (
+          <div className="p-4 space-y-4 max-w-4xl mx-auto">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600"/> Laporan Kinerja Staff</h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pilih Tanggal:</label>
+                <input 
+                  type="date" 
+                  value={performanceDate}
+                  onChange={(e) => setPerformanceDate(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5">
+              {users.filter(u => u.role === Role.STAFF).map(staff => {
+                // Filter orders for this staff
+                const staffOrders = orders.filter(o => 
+                  o.assignedTo === staff.id && 
+                  o.status === OrderStatus.SELESAI && 
+                  (o.completedAt?.startsWith(performanceDate) || o.createdAt.startsWith(performanceDate) || o.scheduledDate?.startsWith(performanceDate))
+                );
+
+                const completedCount = staffOrders.length;
+                const ratings = staffOrders.filter(o => typeof o.rating === 'number' && o.rating > 0).map(o => o.rating as number);
+                const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : '-';
+
+                // Aggregate addons used by this staff on this date
+                const addonsUsed = new Map<string, {name: string, qty: number, totalPrice: number}>();
+                staffOrders.forEach(order => {
+                  if (order.addonsUsed && Array.isArray(order.addonsUsed)) {
+                    order.addonsUsed.forEach(addon => {
+                      const existing = addonsUsed.get(addon.id || addon.name) || {name: addon.name, qty: 0, totalPrice: 0};
+                      existing.qty += addon.quantity;
+                      existing.totalPrice += addon.price * addon.quantity;
+                      addonsUsed.set(addon.id || addon.name, existing);
+                    });
+                  }
+                });
+                
+                const addonsList = Array.from(addonsUsed.values());
+
+                return (
+                  <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+                    <div className="p-5 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xl shadow-inner">
+                          {staff.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-black text-slate-800 text-sm">{staff.name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase border border-slate-200 bg-white px-2 py-0.5 rounded-full">{staff.phone || 'No HP Belum Diset'}</span>
+                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">STAFF TEKNISI</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm">
+                          <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pesanan Selesai</span>
+                          <span className="font-black text-2xl text-indigo-600">{completedCount}</span>
+                        </div>
+                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm min-w-[120px]">
+                          <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rating Rata-rata</span>
+                          <span className="font-black text-2xl text-amber-500 flex items-center justify-center gap-1.5">
+                            {avgRating !== '-' && <Star size={18} className="fill-amber-500 text-amber-500" />}
+                            {avgRating}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {addonsList.length > 0 && (
+                      <div className="p-5 bg-white">
+                        <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500"/> Rincian Penggunaan Add-ons / Sparepart</h5>
+                        <div className="border border-slate-100 rounded-xl overflow-hidden">
+                          <table className="w-full text-xs text-left">
+                            <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-100">
+                              <tr>
+                                <th className="p-3">Nama Barang</th>
+                                <th className="p-3 text-center">Jumlah Dipakai</th>
+                                <th className="p-3 text-right">Total Penjualan Barang</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-medium">
+                              {addonsList.map((addon, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50/50 transition">
+                                  <td className="p-3 font-bold text-slate-800">{addon.name}</td>
+                                  <td className="p-3 text-center font-black text-indigo-600">
+                                    <span className="bg-indigo-50 px-2 py-0.5 rounded-lg">{addon.qty}x</span>
+                                  </td>
+                                  <td className="p-3 text-right font-mono font-bold text-emerald-600">{formatRupiah(addon.totalPrice)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    {addonsList.length === 0 && completedCount > 0 && (
+                      <div className="p-4 bg-white text-center border-t border-slate-50">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Tidak ada add-ons atau sparepart yang dicatat untuk hari ini.</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {users.filter(u => u.role === Role.STAFF).length === 0 && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                    <UserIcon size={28} className="text-slate-300" />
+                  </div>
+                  <h4 className="font-black text-slate-700 uppercase mb-1">Belum ada staff/teknisi</h4>
+                  <p className="font-medium text-[11px] max-w-sm">Anda belum menambahkan akun dengan peran STAFF. Buka tab Edit Pengguna untuk mendaftarkan teknisi baru.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
