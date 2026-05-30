@@ -802,7 +802,7 @@ export default function AdminDashboard() {
   return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
       {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
-      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
