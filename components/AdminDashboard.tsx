@@ -38,7 +38,9 @@ import {
   Check,
   MessageCircle,
   MoreVertical,
-  BarChart2
+  BarChart2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
@@ -330,6 +332,9 @@ export default function AdminDashboard() {
 
   // Searches
   const [userSearch, setUserSearch] = useState('');
+  const [jobsSearch, setJobsSearch] = useState('');
+  const [jobsStartDate, setJobsStartDate] = useState('');
+  const [jobsEndDate, setJobsEndDate] = useState('');
 
   // Editing User state
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -352,6 +357,8 @@ export default function AdminDashboard() {
 
   // Performance State
   const [performanceDate, setPerformanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [performanceEndDate, setPerformanceEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [expandedPerformanceStaffId, setExpandedPerformanceStaffId] = useState<string | null>(null);
 
   // Master Data Editing State
   const [activeMasterSubTab, setActiveMasterSubTab] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS'>('MODELS');
@@ -386,7 +393,34 @@ export default function AdminDashboard() {
 
   // Filter orders according to selection
   const filteredOrders = orders.filter(o => {
-    return o.status === statusFilter;
+    // 1. Status Filter
+    if (o.status !== statusFilter) return false;
+
+    // 2. Search Filter (Name, Phone, ID)
+    if (jobsSearch) {
+      const q = jobsSearch.toLowerCase();
+      const matchName = o.customerName?.toLowerCase().includes(q);
+      const matchPhone = o.customerPhone?.toLowerCase().includes(q);
+      const matchId = o.id?.toLowerCase().includes(q);
+      if (!matchName && !matchPhone && !matchId) return false;
+    }
+
+    // 3. Date Range Filter
+    if (jobsStartDate || jobsEndDate) {
+      const orderDateStr = o.scheduledDate || o.createdAt;
+      if (orderDateStr) {
+        const orderDate = new Date(orderDateStr).toISOString().split('T')[0];
+        if (jobsStartDate && orderDate < jobsStartDate) return false;
+        if (jobsEndDate && orderDate > jobsEndDate) return false;
+      }
+    }
+
+    return true;
+  }).sort((a, b) => {
+    // Sort so newest is at the top (descending)
+    const dateA = new Date(a.createdAt || a.scheduledDate || 0).getTime();
+    const dateB = new Date(b.createdAt || b.scheduledDate || 0).getTime();
+    return dateB - dateA;
   });
 
   // Calculate average rating for each staff member based on orders
@@ -977,6 +1011,35 @@ export default function AdminDashboard() {
         {activeTab === 'JOBS_TRACKER' && (
           <div className="space-y-4">
 
+            {/* Search and Date Filter */}
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Cari nama, no telp, atau ID order..."
+                  value={jobsSearch}
+                  onChange={(e) => setJobsSearch(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm pl-9 pr-4 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
+                />
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <input 
+                  type="date"
+                  value={jobsStartDate}
+                  onChange={(e) => setJobsStartDate(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
+                />
+                <span className="text-slate-400 font-bold text-xs">S/D</span>
+                <input 
+                  type="date"
+                  value={jobsEndDate}
+                  onChange={(e) => setJobsEndDate(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
+                />
+              </div>
+            </div>
+
             {/* Horizontal state filter */}
             <div className="flex overflow-x-auto flex-nowrap gap-1 bg-white p-1.5 rounded-xl border border-slate-200">
               {Object.values(OrderStatus).map((st) => (
@@ -1564,25 +1627,35 @@ export default function AdminDashboard() {
                 <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600"/> Laporan Kinerja Staff</h3>
                 <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pilih Tanggal:</label>
-                <input 
-                  type="date" 
-                  value={performanceDate}
-                  onChange={(e) => setPerformanceDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
-                />
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date" 
+                    value={performanceDate}
+                    onChange={(e) => setPerformanceDate(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
+                  />
+                  <span className="text-[10px] font-bold text-slate-400">S/D</span>
+                  <input 
+                    type="date" 
+                    value={performanceEndDate}
+                    onChange={(e) => setPerformanceEndDate(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-5">
               {users.filter(u => u.role === Role.STAFF).map(staff => {
                 // Filter orders for this staff
-                const staffOrders = orders.filter(o => 
-                  o.assignedTo === staff.id && 
-                  o.status === OrderStatus.SELESAI && 
-                  (o.completedAt?.startsWith(performanceDate) || o.createdAt.startsWith(performanceDate) || o.scheduledDate?.startsWith(performanceDate))
-                );
+                const staffOrders = orders.filter(o => {
+                  if (o.assignedTo !== staff.id || o.status !== OrderStatus.SELESAI) return false;
+                  const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
+                  const orderDate = new Date(orderDateStr).toISOString().split('T')[0];
+                  return orderDate >= performanceDate && orderDate <= performanceEndDate;
+                });
 
                 const completedCount = staffOrders.length;
                 const ratings = staffOrders.filter(o => typeof o.rating === 'number' && o.rating > 0).map(o => o.rating as number);
@@ -1602,13 +1675,21 @@ export default function AdminDashboard() {
                 });
                 
                 const addonsList = Array.from(addonsUsed.values());
+                const isExpanded = expandedPerformanceStaffId === staff.id;
 
                 return (
                   <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
-                    <div className="p-5 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div 
+                      className="p-5 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100/70"
+                      onClick={() => setExpandedPerformanceStaffId(isExpanded ? null : staff.id)}
+                    >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xl shadow-inner">
-                          {staff.name.charAt(0).toUpperCase()}
+                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xl shadow-inner overflow-hidden border-2 border-indigo-50 shrink-0">
+                          {(staff.photoUrl || staff.photo) ? (
+                            <img src={staff.photoUrl || staff.photo} alt={staff.name} className="w-full h-full object-cover" />
+                          ) : (
+                            staff.name.charAt(0).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <h4 className="font-black text-slate-800 text-sm">{staff.name}</h4>
@@ -1618,22 +1699,32 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-4">
-                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm hidden md:block">
                           <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pesanan Selesai</span>
                           <span className="font-black text-2xl text-indigo-600">{completedCount}</span>
                         </div>
-                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm min-w-[120px]">
+                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm min-w-[120px] hidden md:block">
                           <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rating Rata-rata</span>
                           <span className="font-black text-2xl text-amber-500 flex items-center justify-center gap-1.5">
                             {avgRating !== '-' && <Star size={18} className="fill-amber-500 text-amber-500" />}
                             {avgRating}
                           </span>
                         </div>
+                        
+                        {/* Mobile view metrics */}
+                        <div className="md:hidden flex flex-col gap-1 items-end">
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">Selesai: <span className="text-indigo-600 font-black">{completedCount}</span></div>
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">Rating: <span className="text-amber-500 font-black">{avgRating}</span></div>
+                        </div>
+
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 md:ml-2">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
                       </div>
                     </div>
-                    {addonsList.length > 0 && (
-                      <div className="p-5 bg-white">
+                    {isExpanded && addonsList.length > 0 && (
+                      <div className="p-5 bg-white animate-in slide-in-from-top-2">
                         <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500"/> Rincian Penggunaan Add-ons / Sparepart</h5>
                         <div className="border border-slate-100 rounded-xl overflow-hidden">
                           <table className="w-full text-xs text-left">
@@ -1659,9 +1750,9 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     )}
-                    {addonsList.length === 0 && completedCount > 0 && (
-                      <div className="p-4 bg-white text-center border-t border-slate-50">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Tidak ada add-ons atau sparepart yang dicatat untuk hari ini.</span>
+                    {isExpanded && addonsList.length === 0 && (
+                      <div className="p-5 bg-white text-center border-t border-slate-50 animate-in slide-in-from-top-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tidak ada add-ons atau sparepart yang dicatat.</span>
                       </div>
                     )}
                   </div>
