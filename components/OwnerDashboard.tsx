@@ -339,74 +339,7 @@ export default function OwnerDashboard() {
         {activeTab === 'dashboard' && (
           <>
 
-            {/* Metrics Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Total Revenue */}
-              <div className="bg-white border rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
-                    <DollarSign size={20} />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Total Pendapatan</span>
-                    <span className="text-sm font-black text-slate-850 font-mono mt-0.5 block">{formatRupiah(totalRevenue)}</span>
-                    <span className="text-[9px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-black mt-1 inline-block">Akurat</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Average Rating */}
-              <div className="bg-white border rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                    <Star size={20} className="fill-amber-500 text-amber-500" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Rerata Kinerja</span>
-                    <span className="text-sm font-black text-slate-850 font-mono mt-0.5 block">{averageRating} / 5.0 ★</span>
-                    <span className="text-[9px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-semibold mt-1 inline-block">{ratedOrders.length} Ulasan</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Completed Orders */}
-              <div className="bg-white border rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                    <Briefcase size={20} />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Servis Rampung</span>
-                    <span className="text-sm font-black text-slate-850 font-mono mt-0.5 block">{completedOrders.length} Pekerjaan</span>
-                    <span className="text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold mt-1 inline-block">{orders.length} Total Order</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Status Overview */}
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
-              <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Ringkasan Status Pesanan</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                {[
-                  { label: 'Menunggu', key: OrderStatus.MENUNGGU, color: 'bg-amber-50 text-amber-800 border-amber-200' },
-                  { label: 'Ditugaskan', key: OrderStatus.DITUGASKAN, color: 'bg-cyan-50 text-cyan-800 border-cyan-200' },
-                  { label: 'Cek Layanan', key: OrderStatus.CEK_LAYANAN, color: 'bg-blue-50 text-blue-800 border-blue-200' },
-                  { label: 'Pengerjaan', key: OrderStatus.PENGERJAAN, color: 'bg-purple-50 text-purple-800 border-purple-200' },
-                  { label: 'Payment', key: OrderStatus.PAYMENT, color: 'bg-rose-50 text-rose-800 border-rose-200' },
-                  { label: 'Selesai', key: OrderStatus.SELESAI, color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-                  { label: 'Dibatalkan', key: OrderStatus.DIBATALKAN, color: 'bg-red-50 text-red-800 border-red-200' },
-                ].map(({ label, key, color }) => (
-                  <div key={key} className={`border rounded-xl p-3 text-center ${color}`}>
-                    <div className="text-xs font-black uppercase">{label}</div>
-                    <div className="text-lg font-black mt-1">{statusCounts[key]}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white border rounded-2xl p-4 shadow-xs">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
                   <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
                   <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
@@ -461,34 +394,6 @@ export default function OwnerDashboard() {
                   </div>
                 </div>
               </div>
-
-              {/* Stats Summary */}
-              <div className="bg-white border rounded-2xl p-4 shadow-xs">
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Statistik Bisnis</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-slate-600 font-semibold">Total Pesanan</span>
-                    <span className="text-sm font-black text-slate-800">{orders.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t pt-2">
-                    <span className="text-[10px] text-slate-600 font-semibold">Selesai & Dibayar</span>
-                    <span className="text-sm font-black text-emerald-700">{completedOrders.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t pt-2">
-                    <span className="text-[10px] text-slate-600 font-semibold">Dalam Proses</span>
-                    <span className="text-sm font-black text-amber-700">{orders.filter(o => o.status !== OrderStatus.SELESAI && o.status !== OrderStatus.MENUNGGU).length}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t pt-2">
-                    <span className="text-[10px] text-slate-600 font-semibold">Menunggu Penugasan</span>
-                    <span className="text-sm font-black text-slate-700">{statusCounts[OrderStatus.MENUNGGU]}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t pt-2">
-                    <span className="text-[10px] text-slate-600 font-semibold">Rata-rata Rating</span>
-                    <span className="text-sm font-black text-amber-600">{averageRating} ★</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Recent Orders */}
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
