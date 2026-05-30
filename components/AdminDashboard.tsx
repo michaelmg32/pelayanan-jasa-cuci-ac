@@ -338,6 +338,7 @@ export default function AdminDashboard() {
 
   // Master Data Editing State
   const [activeMasterSubTab, setActiveMasterSubTab] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS'>('MODELS');
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
 
   // Form add-new states for master data
   const [newModelName, setNewModelName] = useState('');
@@ -354,6 +355,7 @@ export default function AdminDashboard() {
 
   // Edit inline states for master data
   const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
+  const [editingMasterType, setEditingMasterType] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS' | null>(null);
   const [editMasterField1, setEditMasterField1] = useState('');
   const [editMasterField2, setEditMasterField2] = useState<number | boolean>(0);
   const [editMasterField3, setEditMasterField3] = useState('');
@@ -760,19 +762,19 @@ export default function AdminDashboard() {
       setIsLoading(true);
 
       // Determine what type of master data we're editing
-      if (activeMasterSubTab === 'MODELS') {
+      if (editingMasterType === 'MODELS') {
         await api.updateModel(id, { name: editMasterField1 });
         const updated = models.map(m => m.id === id ? { ...m, name: editMasterField1 } : m);
         setModels(updated);
-      } else if (activeMasterSubTab === 'CATEGORIES') {
+      } else if (editingMasterType === 'CATEGORIES') {
         await api.updateCategory(id, { name: editMasterField1, hasServices: editMasterField2 });
         const updated = categories.map(c => c.id === id ? { ...c, name: editMasterField1, hasServices: editMasterField2 as boolean } : c);
         setCategories(updated);
-      } else if (activeMasterSubTab === 'SERVICES') {
+      } else if (editingMasterType === 'SERVICES') {
         await api.updateService(id, { name: editMasterField1, price: editMasterField2, categoryId: editMasterField3 });
         const updated = services.map(s => s.id === id ? { ...s, name: editMasterField1, price: editMasterField2 as number, categoryId: editMasterField3 } : s);
         setServices(updated);
-      } else if (activeMasterSubTab === 'ADDONS') {
+      } else if (editingMasterType === 'ADDONS') {
         await api.updateAddon(id, { name: editMasterField1, price: editMasterField2, hpp: editMasterField4 });
         const updated = addons.map(a => a.id === id ? { ...a, name: editMasterField1, price: editMasterField2 as number, hpp: editMasterField4 } : a);
         setAddons(updated);
@@ -789,7 +791,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const startEditMaster = (id: string, f1: string, f2: number | boolean, f3 = '', f4 = 0) => {
+  const startEditMaster = (type: 'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS', id: string, f1: string, f2: number | boolean, f3 = '', f4 = 0) => {
+    setEditingMasterType(type);
     setEditingMasterId(id);
     setEditMasterField1(f1);
     setEditMasterField2(f2);
@@ -1191,7 +1194,7 @@ export default function AdminDashboard() {
                 <p className="text-[11px] text-slate-400 mt-0.5">Tambah, ubah, dan hapus konfigurasi dasar AC di sini</p>
               </div>
               <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-                {['MODELS', 'CATEGORIES', 'SERVICES', 'ADDONS'].map((sub) => (
+                {['MODELS', 'CATEGORIES', 'ADDONS'].map((sub) => (
                   <button
                     key={sub}
                     onClick={() => {
@@ -1241,7 +1244,7 @@ export default function AdminDashboard() {
                           <td className="p-3 font-mono font-bold text-slate-400">{m.id}</td>
                           <td className="p-3 font-bold text-slate-800">{m.name}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
-                            <button onClick={() => startEditMaster(m.id, m.name, 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
+                            <button onClick={() => startEditMaster('MODELS', m.id, m.name, 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
                             <button onClick={() => handleDeleteModel(m.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 transition"><Trash2 size={13} /></button>
                           </td>
                         </tr>
@@ -1283,76 +1286,95 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
                       {categories.map(c => (
-                        <tr key={c.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-slate-400">{c.id}</td>
-                          <td className="p-3 font-extrabold text-slate-800">{c.name}</td>
-                          <td className="p-3 text-right flex justify-end gap-1.5">
-                            <button onClick={() => startEditMaster(c.id, c.name, c.hasServices)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
-                            <button onClick={() => handleDeleteCategory(c.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 transition"><Trash2 size={13} /></button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* SERVICES */}
-            {activeMasterSubTab === 'SERVICES' && (
-              <div className="space-y-4">
-                <form onSubmit={handleAddService} className="bg-slate-50 border p-4 rounded-xl space-y-3">
-                  <span className="text-[9px] font-black uppercase text-indigo-600 block tracking-widest">TAMBAH JENIS PELAYANAN</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Nama layanan..."
-                      value={newServiceName}
-                      onChange={(e) => setNewServiceName(e.target.value)}
-                      className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
-                      required
-                    />
-                    <input
-                      type="number"
-                      value={newServicePrice || ''}
-                      onChange={(e) => setNewServicePrice(parseInt(e.target.value) || 0)}
-                      className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-extrabold"
-                      placeholder="Harga (Rp)"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black py-2.5 rounded-xl uppercase flex items-center justify-center gap-1 transition"
-                  >
-                    <Plus size={14} /> Daftarkan Tarif
-                  </button>
-                </form>
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
-                      <tr>
-                        <th className="p-3">Nama Layanan</th>
-                        <th className="p-3">Kategori</th>
-                        <th className="p-3">Harga</th>
-                        <th className="p-3 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {services.map(s => {
-                        const cat = categories.find(c => c.id === s.categoryId);
-                        return (
-                          <tr key={s.id} className="hover:bg-slate-50/50">
-                            <td className="p-3 font-extrabold text-slate-800">{s.name}</td>
-                            <td className="p-3 text-slate-500">{cat ? cat.name : 'Unknown'}</td>
-                            <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(s.price)}</td>
-                            <td className="p-3 text-right flex justify-end gap-1.5">
-                              <button onClick={() => startEditMaster(s.id, s.name, s.price, s.categoryId)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
-                              <button onClick={() => handleDeleteService(s.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100"><Trash2 size={13} /></button>
+                        <React.Fragment key={c.id}>
+                          <tr 
+                            className={`hover:bg-slate-50/50 cursor-pointer transition ${expandedCategoryId === c.id ? 'bg-indigo-50/50' : ''}`}
+                            onClick={() => {
+                              setExpandedCategoryId(expandedCategoryId === c.id ? null : c.id);
+                              setNewServiceCategory(expandedCategoryId === c.id ? '' : c.id);
+                            }}
+                          >
+                            <td className="p-3 font-mono font-bold text-slate-400">{c.id}</td>
+                            <td className="p-3 font-extrabold text-slate-800 flex items-center gap-2">
+                              {c.name}
+                              <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                                {services.filter(s => s.categoryId === c.id).length} Layanan
+                              </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <button onClick={() => startEditMaster('CATEGORIES', c.id, c.name, c.hasServices)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
+                                <button onClick={() => handleDeleteCategory(c.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 transition"><Trash2 size={13} /></button>
+                              </div>
                             </td>
                           </tr>
-                        );
-                      })}
+                          {expandedCategoryId === c.id && (
+                            <tr className="bg-slate-50/80">
+                              <td colSpan={3} className="p-4 border-t border-slate-200">
+                                <div className="space-y-4">
+                                  <form onSubmit={handleAddService} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
+                                    <span className="text-[9px] font-black uppercase text-indigo-600 block tracking-widest">TAMBAH LAYANAN UNTUK {c.name.toUpperCase()}</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <input
+                                        type="text"
+                                        placeholder="Nama layanan..."
+                                        value={newServiceName}
+                                        onChange={(e) => setNewServiceName(e.target.value)}
+                                        className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
+                                        required
+                                      />
+                                      <input
+                                        type="number"
+                                        value={newServicePrice || ''}
+                                        onChange={(e) => setNewServicePrice(parseInt(e.target.value) || 0)}
+                                        className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-extrabold"
+                                        placeholder="Harga (Rp)"
+                                        required
+                                      />
+                                    </div>
+                                    <button
+                                      type="submit"
+                                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 rounded-xl uppercase flex items-center justify-center gap-1 transition cursor-pointer"
+                                    >
+                                      <Plus size={13} /> Tambahkan Layanan
+                                    </button>
+                                  </form>
+                                  
+                                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                    <table className="w-full text-xs text-left">
+                                      <thead className="bg-slate-100 text-slate-500 font-extrabold uppercase tracking-wider text-[9px]">
+                                        <tr>
+                                          <th className="p-2.5 px-3">Nama Layanan</th>
+                                          <th className="p-2.5 px-3">Harga</th>
+                                          <th className="p-2.5 px-3 text-right">Aksi</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100">
+                                        {services.filter(s => s.categoryId === c.id).length === 0 ? (
+                                          <tr>
+                                            <td colSpan={3} className="p-4 text-center text-slate-400 font-medium text-xs">Belum ada layanan di kategori ini</td>
+                                          </tr>
+                                        ) : (
+                                          services.filter(s => s.categoryId === c.id).map(s => (
+                                            <tr key={s.id} className="hover:bg-slate-50">
+                                              <td className="p-2.5 px-3 font-extrabold text-slate-800">{s.name}</td>
+                                              <td className="p-2.5 px-3 font-mono text-indigo-700 font-bold">{formatRupiah(s.price)}</td>
+                                              <td className="p-2.5 px-3 text-right flex justify-end gap-1.5">
+                                                <button onClick={(e) => { e.stopPropagation(); startEditMaster('SERVICES', s.id, s.name, s.price, s.categoryId); }} className="text-indigo-600 hover:bg-indigo-100 p-1 rounded-lg transition"><Edit size={12} /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteService(s.id); }} className="text-red-500 hover:bg-red-100 p-1 rounded-lg transition"><Trash2 size={12} /></button>
+                                              </td>
+                                            </tr>
+                                          ))
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1413,7 +1435,7 @@ export default function AdminDashboard() {
                           <td className="p-3 font-mono text-amber-700 font-bold">{formatRupiah(a.hpp || 0)}</td>
                           <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
-                            <button onClick={() => startEditMaster(a.id, a.name, a.price, '', a.hpp || 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
+                            <button onClick={() => startEditMaster('ADDONS', a.id, a.name, a.price, '', a.hpp || 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
                             <button onClick={() => handleDeleteAddon(a.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100"><Trash2 size={13} /></button>
                           </td>
                         </tr>
@@ -1728,7 +1750,7 @@ export default function AdminDashboard() {
           <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
               <div>
-                <h4 className="font-black text-xs uppercase tracking-wide">Edit {activeMasterSubTab}</h4>
+                <h4 className="font-black text-xs uppercase tracking-wide">Edit {editingMasterType}</h4>
                 <p className="text-[9.5px] text-slate-400 mt-1">ID: {editingMasterId}</p>
               </div>
               <button
@@ -1746,10 +1768,10 @@ export default function AdminDashboard() {
             <div className="p-4 space-y-4">
               <div>
                 <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">
-                  {activeMasterSubTab === 'MODELS' && 'Nama Model'}
-                  {activeMasterSubTab === 'CATEGORIES' && 'Nama Kategori'}
-                  {activeMasterSubTab === 'SERVICES' && 'Nama Layanan'}
-                  {activeMasterSubTab === 'ADDONS' && 'Nama Item'}
+                  {editingMasterType === 'MODELS' && 'Nama Model'}
+                  {editingMasterType === 'CATEGORIES' && 'Nama Kategori'}
+                  {editingMasterType === 'SERVICES' && 'Nama Layanan'}
+                  {editingMasterType === 'ADDONS' && 'Nama Item'}
                 </label>
                 <input
                   type="text"
@@ -1760,7 +1782,7 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              {activeMasterSubTab === 'CATEGORIES' && (
+              {editingMasterType === 'CATEGORIES' && (
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1776,7 +1798,7 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {activeMasterSubTab === 'SERVICES' && (
+              {editingMasterType === 'SERVICES' && (
                 <>
                   <div>
                     <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga</label>
@@ -1805,7 +1827,7 @@ export default function AdminDashboard() {
                 </>
               )}
 
-              {activeMasterSubTab === 'ADDONS' && (
+              {editingMasterType === 'ADDONS' && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Modal (HPP)</label>
