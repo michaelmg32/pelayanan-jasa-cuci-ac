@@ -125,11 +125,37 @@ export default function AdminDashboard() {
   };
 
   const handleSendInvoice = async (order: Order) => {
-    // Open wa.me link in new tab
-    window.open(getWhatsAppInvoiceLink(order), '_blank');
+    setIsLoading(true);
+    try {
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+      }
 
-    if (!order.invoiceSent) {
-      try {
+      console.log('Sending invoice request for order:', order.id);
+      const response = await fetch(`${apiUrl}/orders/${order.id}/send-invoice`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        alert('✓ Invoice berhasil dikirim secara otomatis via WhatsApp (Fonnte)!');
+        
+        // Update local state
+        setOrders(prevOrders =>
+          prevOrders.map(o => o.id === order.id ? { ...o, invoiceSent: true } : o)
+        );
+
+        if (selectedOrderDetail && selectedOrderDetail.id === order.id) {
+          setSelectedOrderDetail(prev => prev ? { ...prev, invoiceSent: true } : null);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to send invoice via Fonnte, falling back to manual wa.me:', errorData);
+        
+        // Fallback to manual wa.me
+        window.open(getWhatsAppInvoiceLink(order), '_blank');
+        
+        // Mark as sent in DB
         await api.updateOrder(order.id, { invoiceSent: true });
 
         // Update local state
@@ -137,15 +163,18 @@ export default function AdminDashboard() {
           prevOrders.map(o => o.id === order.id ? { ...o, invoiceSent: true } : o)
         );
 
-        // Update selectedOrderDetail modal state if opened
         if (selectedOrderDetail && selectedOrderDetail.id === order.id) {
           setSelectedOrderDetail(prev => prev ? { ...prev, invoiceSent: true } : null);
         }
-
-        alert('✓ Status invoice berhasil diperbarui menjadi Terkirim!');
-      } catch (err) {
-        console.error('Error updating invoice status:', err);
+        alert('✓ Fonnte gagal. Dialihkan ke WhatsApp manual, status diperbarui.');
       }
+    } catch (err) {
+      console.error('Error sending invoice:', err);
+      // Fallback to manual wa.me
+      window.open(getWhatsAppInvoiceLink(order), '_blank');
+      alert('✓ Dialihkan ke WhatsApp manual.');
+    } finally {
+      setIsLoading(false);
     }
   };
 

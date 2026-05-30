@@ -676,6 +676,102 @@ const recalculateOrderMargin = async (connection, orderId) => {
   }
 };
 
+const sendFonnteInvoice = async (orderId, force = false) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [orders] = await connection.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (orders.length === 0) return;
+    const order = orders[0];
+
+    // If invoice is already sent or status is not SELESAI, don't send (unless forced)
+    if (!force && (order.status !== 'SELESAI' || order.invoiceSent === 1)) {
+      console.log(`ℹ️ Skip sending Fonnte invoice for ${orderId}: status=${order.status}, invoiceSent=${order.invoiceSent}`);
+      return;
+    }
+
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
+
+    let phone = order.customerPhone || '';
+    phone = phone.replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.substring(1);
+    }
+    if (!phone) {
+      console.warn(`⚠️ Cannot send Fonnte invoice: customer phone is missing for order ${orderId}`);
+      return;
+    }
+
+    let acDetail = null;
+    try {
+      acDetail = order.acDetail ? JSON.parse(order.acDetail) : null;
+    } catch (e) {
+      console.error('Error parsing acDetail for Fonnte:', e);
+    }
+
+    const serviceName = acDetail 
+      ? `${acDetail.quantity || 0}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType} (${acDetail.acType || ''})`
+      : 'Jasa Layanan AC';
+
+    let addonsUsedParsed = [];
+    if (order.addonsUsed) {
+      try {
+        addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+      } catch (e) {
+        console.error('Error parsing addonsUsed for Fonnte:', e);
+      }
+    }
+
+    let totalAddonsSales = 0;
+    let addonsText = '';
+    if (addonsUsedParsed && addonsUsedParsed.length > 0) {
+      addonsText = '\n*Perlengkapan Tambahan:*\n';
+      addonsUsedParsed.forEach(ad => {
+        const unitPrice = Number(ad.price || 0);
+        const qty = Number(ad.quantity || 0);
+        const subTotal = unitPrice * qty;
+        totalAddonsSales += subTotal;
+        addonsText += `- ${ad.name} (${qty}x @ Rp${unitPrice.toLocaleString('id-ID')}): Rp${subTotal.toLocaleString('id-ID')}\n`;
+      });
+      addonsText += `*Total Perlengkapan:* Rp${totalAddonsSales.toLocaleString('id-ID')}\n`;
+    }
+
+    const grandTotal = order.finalPrice || (Number(order.serviceCost || 0) + totalAddonsSales);
+
+    const message = `Halo Kak *${order.customerName}*,\n\nBerikut adalah rincian tagihan/invoice untuk pengerjaan AC Anda oleh *${businessName}*:\n\n*Order ID:* ${order.id}\n*Tanggal Pengerjaan:* ${order.scheduledDate} (${order.scheduledTime})\n*Layanan:* ${serviceName}\n\n*Rincian Biaya:*\n- Jasa Utama: Rp${Number(order.serviceCost || 0).toLocaleString('id-ID')}${addonsText}\n*Grand Total:* *Rp${Number(grandTotal).toLocaleString('id-ID')}*\n\n*Status:* ✅ *LUNAS*\n\nTerima kasih telah mempercayakan ${businessName} untuk kenyamanan AC Anda! 🙏❄️`;
+
+    const fonnteApiKey = process.env.FONNTE_API_KEY || 'obJEoZWPQy74AcesKRtx';
+
+    console.log(`Sending auto invoice via Fonnte to ${phone} for order ${orderId}...`);
+
+    const response = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': fonnteApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        target: phone,
+        message: message
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('✅ Fonnte send invoice success:', result);
+      await connection.query('UPDATE orders SET invoiceSent = 1 WHERE id = ?', [orderId]);
+    } else {
+      const errText = await response.text();
+      console.error('❌ Fonnte send invoice failed:', errText);
+    }
+  } catch (err) {
+    console.error('❌ Error sending Fonnte invoice:', err);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 app.post('/api/orders', async (req, res) => {
   const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -705,6 +801,9 @@ app.post('/api/orders', async (req, res) => {
     );
     await recalculateOrderMargin(connection, id);
     connection.release();
+    if (status === 'SELESAI') {
+      sendFonnteInvoice(id).catch(err => console.error('Error auto-sending Fonnte invoice:', err));
+    }
     res.status(201).json({
       id,
       customerId,
@@ -942,6 +1041,9 @@ app.put('/api/orders/:id', async (req, res) => {
 
     if (updatedOrder.length > 0) {
       const order = updatedOrder[0];
+      if (order.status === 'SELESAI' && order.invoiceSent !== 1) {
+        sendFonnteInvoice(id).catch(err => console.error('Error auto-sending Fonnte invoice:', err));
+      }
       const parsedOrder = {
         ...order,
         acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
@@ -975,6 +1077,7 @@ app.post('/api/webhooks/xendit', async (req, res) => {
         [external_id]
       );
       console.log(`💰 Xendit payment received for order: ${external_id}. Order set to SELESAI.`);
+      sendFonnteInvoice(external_id).catch(err => console.error('Error auto-sending Fonnte invoice on webhook:', err));
     } catch (err) {
       console.error('Error updating order on Xendit webhook:', err);
     } finally {
@@ -1026,6 +1129,7 @@ app.get('/api/orders/:id/payment-status', async (req, res) => {
             [id]
           );
           console.log(`💰 Verified: Xendit payment successful for order ${id}. Status set to SELESAI.`);
+          sendFonnteInvoice(id).catch(err => console.error('Error auto-sending Fonnte invoice on payment verification:', err));
           return res.json({ paymentStatus: 'PAID', status: 'SELESAI' });
         }
       }
@@ -1037,6 +1141,17 @@ app.get('/api/orders/:id/payment-status', async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     if (connection) connection.release();
+  }
+});
+
+// ===== SEND FONNTE INVOICE DIRECTLY =====
+app.post('/api/orders/:id/send-invoice', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await sendFonnteInvoice(id, true);
+    res.json({ success: true, message: 'Invoice sent successfully via Fonnte' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
