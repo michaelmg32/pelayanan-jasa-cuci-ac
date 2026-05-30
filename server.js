@@ -772,6 +772,67 @@ const sendFonnteInvoice = async (orderId, force = false) => {
   }
 };
 
+const sendFonnteNotification = async (orderId, type) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [orders] = await connection.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (orders.length === 0) return;
+    const order = orders[0];
+
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
+
+    let phone = order.customerPhone || '';
+    phone = phone.replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.substring(1);
+    }
+    if (!phone) {
+      console.warn(`[Fonnte] Phone number is empty for order ${orderId}`);
+      return;
+    }
+
+    let message = '';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://sugarac.com';
+
+    if (type === 'DITUGASKAN') {
+      message = `Halo Kak *${order.customerName}*,\n\nPesanan layanan AC Anda di *${businessName}* telah ditugaskan ke Teknisi Lapangan kami.\n\n*Detail Penugasan:*\n- *Order ID:* ${order.id}\n- *Teknisi:* ${order.assignedEmployeeName || 'Teknisi Kami'}\n- *Jadwal Pengerjaan:* ${order.scheduledDate} (${order.scheduledTime})\n\nTeknisi kami akan segera menghubungi Anda saat menuju ke lokasi. Terima kasih! 🙏❄️`;
+    } else if (type === 'RESCHEDULE') {
+      message = `Halo Kak *${order.customerName}*,\n\nTerdapat usulan perubahan jadwal dari admin *${businessName}* untuk pesanan Anda (Order ID: ${order.id}).\n\n*Rincian Perubahan Jadwal:*\n- *Jadwal Lama:* ${order.scheduledDate || '-'} pkl ${order.scheduledTime || '-'}\n- *Usulan Jadwal Baru:* *${order.proposedDate}* pkl *${order.proposedTime}*\n\nSilakan masuk ke akun Anda untuk menyetujui perubahan jadwal ini atau membatalkannya:\n👉 ${frontendUrl}/login\n\nTerima kasih! 🙏❄️`;
+    } else {
+      return;
+    }
+
+    const fonnteApiKey = process.env.FONNTE_API_KEY || 'obJEoZWPQy74AcesKRtx';
+    console.log(`[Fonnte] Sending notification (${type}) to ${phone} for order ${orderId}...`);
+
+    const response = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': fonnteApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        target: phone,
+        message: message
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`[Fonnte] Send notification (${type}) success:`, result);
+    } else {
+      const errText = await response.text();
+      console.error(`[Fonnte] Send notification (${type}) failed:`, errText);
+    }
+  } catch (err) {
+    console.error(`[Fonnte] Error sending notification (${type}):`, err);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 app.post('/api/orders', async (req, res) => {
   const {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -850,6 +911,10 @@ app.put('/api/orders/:id', async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
+
+    // Get existing order status before update to detect transitions
+    const [existingOrders] = await connection.query('SELECT status, rescheduleStatus FROM orders WHERE id = ?', [id]);
+    const oldOrder = existingOrders.length > 0 ? existingOrders[0] : null;
 
     let finalPaymentUrl = undefined;
     let finalPaymentInvoiceId = undefined;
@@ -1044,6 +1109,17 @@ app.put('/api/orders/:id', async (req, res) => {
       if (order.status === 'SELESAI' && order.invoiceSent !== 1) {
         sendFonnteInvoice(id).catch(err => console.error('Error auto-sending Fonnte invoice:', err));
       }
+
+      // Auto notifications on transitions
+      if (oldOrder) {
+        if (order.status === 'DITUGASKAN' && oldOrder.status !== 'DITUGASKAN') {
+          sendFonnteNotification(id, 'DITUGASKAN').catch(err => console.error('Error sending DITUGASKAN notification:', err));
+        }
+        if (order.rescheduleStatus === 'PENDING' && oldOrder.rescheduleStatus !== 'PENDING') {
+          sendFonnteNotification(id, 'RESCHEDULE').catch(err => console.error('Error sending RESCHEDULE notification:', err));
+        }
+      }
+
       const parsedOrder = {
         ...order,
         acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
