@@ -24,7 +24,7 @@ export default function AdminPage() {
   }
 
   return (
-    <MobileFrame activeUser={activeUser} onLogout={logout}>
+    <MobileFrame activeUser={activeUser} onLogout={logout} hideHeader={true}>
       <AdminDashboard />
     </MobileFrame>
   );

@@ -36,7 +36,8 @@ import {
   ShieldCheck,
   Camera,
   Check,
-  MessageCircle
+  MessageCircle,
+  MoreVertical
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
@@ -52,7 +53,8 @@ export default function AdminDashboard() {
     services, setServices,
     addons, setAddons,
     logout,
-    showAlert
+    showAlert,
+    appSettings
   } = useApp();
   const alert = showAlert;
 
@@ -149,6 +151,7 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState('');
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<TabType>('JOBS_TRACKER');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Admin Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
@@ -171,6 +174,22 @@ export default function AdminDashboard() {
       setEditProfilePhoto(activeUser.photo || '');
     }
   }, [activeUser]);
+
+  // Click-outside listener to close the three-dots menu dropdown
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleOutsideClick = () => {
+      setShowMoreMenu(false);
+    };
+    // Use timeout to prevent immediate closing during trigger click event propagation
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showMoreMenu]);
 
   // Client-side image compression
   const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
@@ -782,82 +801,121 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
-
-      {/* ===================== CONTROL HEADER ===================== */}
-      <div className="bg-slate-900 px-5 py-4 shrink-0 shadow-md text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <span className="text-[8px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded uppercase tracking-wider">
-            Portal Administrator
-          </span>
-          <h2 className="text-base font-black mt-1 leading-none text-white">Dashboard Manajemen & Operasional</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Operator aktif: <strong className="text-white">{activeUser.name}</strong> ({activeUser.email})</p>
+      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
+      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+        {/* Logo, Business Name & Slogan */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
+            {appSettings?.business_logo ? (
+              <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </div>
+          <div className="text-left">
+            <h1 className="text-sm font-black leading-none">{appSettings?.business_name || 'Sugar AC'}</h1>
+            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={logout}
-          className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition shrink-0 cursor-pointer"
-        >
-          Keluar Sesi
-        </button>
+
+        {/* Three-dots menu button */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMoreMenu(prev => !prev);
+            }}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
+          >
+            <MoreVertical size={18} />
+          </button>
+
+          {showMoreMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveTab('JOBS_TRACKER');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab !== 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <ClipboardList size={14} className={activeTab !== 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Dashboard</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('PROFIL');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <UserIcon size={14} className={activeTab === 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Profile</span>
+              </button>
+              <hr className="my-1 border-slate-100" />
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  logout();
+                }}
+                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
+              >
+                <LogOut size={14} />
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ===================== CONTROL TABS SYSTEM ===================== */}
-      <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto flex-nowrap">
-        <button
-          onClick={() => setActiveTab('JOBS_TRACKER')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'JOBS_TRACKER'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <ClipboardList size={15} />
-            <span>Pantauan Jasa</span>
-          </span>
-        </button>
+      {activeTab !== 'PROFIL' && (
+        <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto flex-nowrap">
+          <button
+            onClick={() => setActiveTab('JOBS_TRACKER')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'JOBS_TRACKER'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <ClipboardList size={15} />
+              <span>Pantauan Jasa</span>
+            </span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveTab('MASTER_DATA');
-            if (categories.length > 0) setNewServiceCategory(categories[0].id);
-          }}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'MASTER_DATA'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <Wrench size={15} />
-            <span>Edit Master Data</span>
-          </span>
-        </button>
+          <button
+            onClick={() => {
+              setActiveTab('MASTER_DATA');
+              if (categories.length > 0) setNewServiceCategory(categories[0].id);
+            }}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'MASTER_DATA'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <Wrench size={15} />
+              <span>Edit Master Data</span>
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('USER_MANAGEMENT')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'USER_MANAGEMENT'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <UserCog size={15} />
-            <span>Edit Pengguna ({allUsers.length})</span>
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('PROFIL')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'PROFIL'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <UserIcon size={15} />
-            <span>Profil</span>
-          </span>
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveTab('USER_MANAGEMENT')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'USER_MANAGEMENT'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <UserCog size={15} />
+              <span>Edit Pengguna ({allUsers.length})</span>
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* ===================== TAB BODY (SCROLLABLE Area) ===================== */}
       <div className="flex-1 overflow-y-auto p-4 min-h-0 space-y-4">
