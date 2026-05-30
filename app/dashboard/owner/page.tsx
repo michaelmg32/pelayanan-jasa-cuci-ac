@@ -24,7 +24,7 @@ export default function OwnerPage() {
   }
 
   return (
-    <MobileFrame activeUser={activeUser} onLogout={logout}>
+    <MobileFrame activeUser={activeUser} onLogout={logout} hideHeader={true}>
       <OwnerDashboard />
     </MobileFrame>
   );

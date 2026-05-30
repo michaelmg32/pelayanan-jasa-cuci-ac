@@ -20,13 +20,15 @@ import {
   Camera,
   Check,
   Loader,
-  X
+  X,
+  MoreVertical
 } from 'lucide-react';
 
 export default function OwnerDashboard() {
   const { activeUser, setActiveUser, orders, users, logout, appSettings, updateAppSettings } = useApp();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile'>('dashboard');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const getLocalDateString = (d: Date = new Date()) => {
     const year = d.getFullYear();
@@ -62,6 +64,22 @@ export default function OwnerDashboard() {
       setEditProfilePhoto(activeUser.photo || '');
     }
   }, [activeUser]);
+
+  // Click-outside listener to close the three-dots menu dropdown
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleOutsideClick = () => {
+      setShowMoreMenu(false);
+    };
+    // Use timeout to prevent immediate closing during trigger click event propagation
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showMoreMenu]);
 
   // Client-side image compression
   const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
@@ -279,59 +297,83 @@ export default function OwnerDashboard() {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 min-h-0 h-full overflow-hidden">
-
-      {/* Header */}
-      <div className="bg-slate-900 px-5 py-4 shrink-0 shadow-md text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <span className="text-[8px] bg-indigo-500 text-white font-black px-2.5 py-0.5 rounded uppercase tracking-wider">
-            Laporan Bisnis Owner
-          </span>
-          <h2 className="text-base font-black mt-1 text-white">Dashboard Owner</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Pemilik: <strong className="text-white">{activeUser.name}</strong></p>
+      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
+      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+        {/* Logo, Business Name & Slogan */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
+            {appSettings?.business_logo ? (
+              <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </div>
+          <div className="text-left">
+            <h1 className="text-sm font-black leading-none">{appSettings?.business_name || 'Sugar AC'}</h1>
+            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Owner</p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleOpenSettings}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black uppercase rounded-lg transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Settings size={12} />
-            Pengaturan Bisnis
-          </button>
-          <button
-            onClick={logout}
-            className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase rounded-lg transition cursor-pointer"
-          >
-            Keluar
-          </button>
-        </div>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'dashboard'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <TrendingUp size={15} />
-            <span>Dashboard Analisis</span>
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'profile'
-            ? 'text-slate-900 border-slate-900'
-            : 'text-slate-600 border-transparent hover:text-slate-800'
-            }`}
-        >
-          <span className="flex items-center gap-2">
-            <UserIcon size={15} />
-            <span>Profil Saya</span>
-          </span>
-        </button>
+        {/* Three-dots menu button */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMoreMenu(prev => !prev);
+            }}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
+          >
+            <MoreVertical size={18} />
+          </button>
+
+          {showMoreMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-850 text-left text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'dashboard' ? 'text-indigo-650 bg-indigo-50/20' : ''}`}
+              >
+                <TrendingUp size={14} className={activeTab === 'dashboard' ? 'text-indigo-650' : 'text-slate-400'} />
+                <span>Dashboard Analisis</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  handleOpenSettings();
+                }}
+                className="w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer"
+              >
+                <Settings size={14} className="text-slate-400" />
+                <span>Pengaturan Bisnis</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('profile');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'profile' ? 'text-indigo-650 bg-indigo-50/20' : ''}`}
+              >
+                <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-650' : 'text-slate-400'} />
+                <span>Profil Saya</span>
+              </button>
+              <hr className="my-1 border-slate-100" />
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  logout();
+                }}
+                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Keluar</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Body - Scrollable */}
