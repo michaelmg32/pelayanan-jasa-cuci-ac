@@ -467,3 +467,17 @@ export const updateSettings = async (settingsData: { business_name?: string; bus
     throw error;
   }
 };
+
+// ===== ACTIVITY LOGS =====
+export const fetchActivityLogs = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/activity-logs`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch activity logs');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching activity logs:', error);
+    return [];
+  }
+};
