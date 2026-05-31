@@ -208,7 +208,8 @@ const initializeDatabaseSettings = async () => {
         );
       }
       console.log(`✅ Backfilled financial columns for ${existingOrders.length} orders successfully.`);
-      // Auto-migration: Create activity_logs table
+    }
+    // Auto-migration: Create activity_logs table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS activity_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
