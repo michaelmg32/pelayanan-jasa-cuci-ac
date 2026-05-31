@@ -1410,7 +1410,7 @@ app.put('/api/models/:id', async (req, res) => {
     );
     const [model] = await connection.query('SELECT * FROM ac_models WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Memperbarui Model AC', `Memperbarui model AC ID: ${id}`);
+    await logActivity(req, 'Memperbarui Model AC', `Memperbarui model AC: ${model[0]?.name || name}`);
     res.json(model[0] || { id, name, manufacturer: manufacturer || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1457,7 +1457,7 @@ app.put('/api/categories/:id', async (req, res) => {
     );
     const [category] = await connection.query('SELECT * FROM ac_categories WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Memperbarui Kategori Layanan', `Memperbarui kategori ID: ${id}`);
+    await logActivity(req, 'Memperbarui Kategori Layanan', `Memperbarui kategori: ${category[0]?.name || name}`);
     res.json(category[0] || { id, name, description: description || null, hasServices: hasServices !== undefined ? hasServices : true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1506,7 +1506,7 @@ app.put('/api/services/:id', async (req, res) => {
     );
     const [service] = await connection.query('SELECT * FROM ac_services WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Memperbarui Layanan AC', `Memperbarui layanan ID: ${id}`);
+    await logActivity(req, 'Memperbarui Layanan AC', `Memperbarui layanan: ${service[0]?.name || name}`);
     res.json(service[0] || { id, categoryId: categoryId || null, name, description: description || null, basePrice: finalPrice, price: finalPrice, duration: duration || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1553,7 +1553,7 @@ app.put('/api/addons/:id', async (req, res) => {
     );
     const [addon] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Memperbarui Addon/Sparepart', `Memperbarui addon ID: ${id}`);
+    await logActivity(req, 'Memperbarui Addon/Sparepart', `Memperbarui addon: ${addon[0]?.name || name}`);
     res.json(addon[0] || { id, name, description: description || null, price: price || 0, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1565,9 +1565,12 @@ app.delete('/api/models/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const connection = await pool.getConnection();
+    const [model] = await connection.query('SELECT name FROM ac_models WHERE id = ?', [id]);
+    const itemName = model.length > 0 ? model[0].name : id;
+    
     await connection.query('DELETE FROM ac_models WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Menghapus Model AC', `Menghapus model AC ID: ${id}`);
+    await logActivity(req, 'Menghapus Model AC', `Menghapus model AC: ${itemName}`);
     res.json({ message: 'Model deleted successfully', id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1578,9 +1581,12 @@ app.delete('/api/categories/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const connection = await pool.getConnection();
+    const [category] = await connection.query('SELECT name FROM ac_categories WHERE id = ?', [id]);
+    const itemName = category.length > 0 ? category[0].name : id;
+
     await connection.query('DELETE FROM ac_categories WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Menghapus Kategori Layanan', `Menghapus kategori ID: ${id}`);
+    await logActivity(req, 'Menghapus Kategori Layanan', `Menghapus kategori: ${itemName}`);
     res.json({ message: 'Category deleted successfully', id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1591,9 +1597,12 @@ app.delete('/api/services/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const connection = await pool.getConnection();
+    const [service] = await connection.query('SELECT name FROM ac_services WHERE id = ?', [id]);
+    const itemName = service.length > 0 ? service[0].name : id;
+
     await connection.query('DELETE FROM ac_services WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Menghapus Layanan AC', `Menghapus layanan ID: ${id}`);
+    await logActivity(req, 'Menghapus Layanan AC', `Menghapus layanan: ${itemName}`);
     res.json({ message: 'Service deleted successfully', id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1604,9 +1613,12 @@ app.delete('/api/addons/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const connection = await pool.getConnection();
+    const [addon] = await connection.query('SELECT name FROM ac_addons WHERE id = ?', [id]);
+    const itemName = addon.length > 0 ? addon[0].name : id;
+
     await connection.query('DELETE FROM ac_addons WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Menghapus Addon/Sparepart', `Menghapus addon ID: ${id}`);
+    await logActivity(req, 'Menghapus Addon/Sparepart', `Menghapus addon: ${itemName}`);
     res.json({ message: 'Addon deleted successfully', id });
   } catch (error) {
     res.status(500).json({ error: error.message });
