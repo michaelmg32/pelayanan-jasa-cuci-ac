@@ -986,10 +986,7 @@ export default function PelangganDashboard() {
 
                               {selectedPayMethod === 'TRANSFER' && (
                                 <div className="bg-white border border-indigo-100 p-3.5 rounded-lg text-[11px] text-slate-700 space-y-3 text-left">
-                                  <p className="font-bold text-indigo-700">🏦 Transfer Bank & E-Wallet (Xendit)</p>
-                                  <p className="text-[10px] text-slate-500 leading-normal">
-                                    Anda dapat membayar tagihan dengan mudah menggunakan Virtual Account (BCA, Mandiri, BRI, BNI), QRIS (GoPay, OVO, ShopeePay, DANA), atau Alfamart.
-                                  </p>
+                                  <p className="font-bold text-indigo-700">🏦 Transfer Bank & Qris</p>
                                   <div className="border-t border-slate-100 pt-2.5 space-y-1 text-slate-600 text-[10px]">
                                     <div className="flex justify-between">
                                       <span>Biaya Jasa Utama:</span>
@@ -1065,7 +1062,7 @@ export default function PelangganDashboard() {
                                           </p>
                                         </div>
                                       )}
-                                      
+
                                       <p className="text-[9px] text-amber-700 font-bold bg-amber-55 border border-amber-200 p-2.5 rounded-lg text-center leading-normal">
                                         Kirimkan bukti transfer manual Anda ke teknisi di lokasi untuk dikonfirmasi secara langsung.
                                       </p>
