@@ -1145,7 +1145,7 @@ app.post('/api/orders', async (req, res) => {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
     status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes,
     serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
-    paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
+    paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof
   } = req.body;
 
   try {
@@ -1155,16 +1155,16 @@ app.post('/api/orders', async (req, res) => {
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
         status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes,
         serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
-        paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
+        paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )`,
       [
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
         status, schedule, scheduledDate, scheduledTime,
         JSON.stringify(serviceIds), JSON.stringify(addonIds), JSON.stringify(acDetail), notes,
         serviceCost || 0, addonsCost || 0, totalPrice, totalCost,
-        photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
+        photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof || null
       ]
     );
     await syncOrderAddonTransactions(connection, id);
