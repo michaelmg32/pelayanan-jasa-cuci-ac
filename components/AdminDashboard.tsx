@@ -415,6 +415,16 @@ export default function AdminDashboard() {
   const [addonTransactions, setAddonTransactions] = useState<AddonTransaction[]>([]);
   const [addonTxFilter, setAddonTxFilter] = useState<string>('ALL');
 
+  // Komprehensif Pembelian Barang Modal
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [purchaseItems, setPurchaseItems] = useState<Array<{
+    addonId: string;
+    qty: number;
+    hpp: number;
+  }>>([]);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentStatus, setPaymentStatus] = useState<'LUNAS' | 'BELUM'>('LUNAS');
+
   // Edit inline states for master data
   const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
   const [editingMasterType, setEditingMasterType] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS' | null>(null);
@@ -1382,20 +1392,6 @@ export default function AdminDashboard() {
                             ⏳ Belum Dikirim
                           </span>
                         )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSendInvoice(order);
-                          }}
-                          className={`flex items-center justify-center gap-1.5 font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition duration-200 shadow-sm hover:shadow cursor-pointer ml-auto ${order.invoiceSent
-                              ? 'bg-slate-200 hover:bg-slate-350 text-slate-550 border border-slate-300'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                            }`}
-                        >
-                          <MessageCircle size={12} />
-                          Kirim Invoice
-                        </button>
                       </div>
                     )}
                   </div>
@@ -1628,7 +1624,7 @@ export default function AdminDashboard() {
                   </div>
                   
                   {activeAddonSubTab === 'TRANSAKSI' && (
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Filter Barang:</span>
                       <select
                         value={addonTxFilter}
@@ -1640,7 +1636,23 @@ export default function AdminDashboard() {
                           <option key={a.id} value={a.id}>{a.name}</option>
                         ))}
                       </select>
+                      <button
+                        type="button"
+                        onClick={() => setShowPurchaseForm(true)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-3 py-1.5 rounded-lg transition cursor-pointer shadow-sm whitespace-nowrap"
+                      >
+                        + Beli Barang
+                      </button>
                     </div>
+                  )}
+                  {activeAddonSubTab === 'KATALOG' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPurchaseForm(true)}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black px-3 py-1.5 rounded-lg transition cursor-pointer shadow-sm"
+                    >
+                      + Beli Barang
+                    </button>
                   )}
                 </div>
 
@@ -2370,6 +2382,270 @@ export default function AdminDashboard() {
                   type="submit"
                   disabled={isLoading}
                   className="flex-1 bg-indigo-600 hover:bg-indigo-750 disabled:bg-slate-350 text-white font-black text-xs px-4 py-2.5 rounded-xl uppercase transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                >
+                  {isLoading && <Loader size={14} className="animate-spin" />}
+                  {isLoading ? 'Menyimpan...' : 'Simpan Pembelian'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== FORM PEMBELIAN BARANG KOMPREHENSIF ===================== */}
+      {showPurchaseForm && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white border rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl text-left my-8">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white sticky top-0">
+              <div>
+                <h4 className="font-black text-xs uppercase tracking-wide">Form Pembelian Barang</h4>
+                <p className="text-[9.5px] text-slate-400 mt-1">Tambahkan barang yang akan dibeli</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPurchaseForm(false);
+                  setPurchaseItems([]);
+                  setPaymentAmount(0);
+                  setPaymentStatus('LUNAS');
+                }}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-850 transition cursor-pointer"
+                disabled={isLoading}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <form className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* DAFTAR ITEM PEMBELIAN */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black uppercase text-slate-700 tracking-wide">Daftar Barang Pembelian</label>
+                  <button
+                    type="button"
+                    onClick={() => setPurchaseItems([...purchaseItems, { addonId: '', qty: 1, hpp: 0 }])}
+                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[9px] font-black px-2.5 py-1 rounded-lg border border-emerald-250 transition cursor-pointer"
+                  >
+                    + Tambah Barang
+                  </button>
+                </div>
+
+                {purchaseItems.length === 0 ? (
+                  <div className="bg-slate-50 border border-slate-150 rounded-xl p-4 text-center text-slate-500 text-xs">
+                    Belum ada barang. Klik "Tambah Barang" untuk menambahkan item.
+                  </div>
+                ) : (
+                  <div className="space-y-2 bg-slate-50 border border-slate-150 rounded-xl p-3">
+                    {purchaseItems.map((item, idx) => {
+                      const selectedAddon = addons.find(a => a.id === item.addonId);
+                      const grandTotal = item.qty * item.hpp;
+                      const hppOld = selectedAddon?.hpp || 0;
+                      
+                      return (
+                        <div key={idx} className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+                          <div className="grid grid-cols-1 gap-2">
+                            {/* Row 1: Pilih Barang & Qty */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-[8px] font-black text-slate-400 uppercase block mb-0.5">Nama Barang</label>
+                                <select
+                                  value={item.addonId}
+                                  onChange={(e) => {
+                                    const addon = addons.find(a => a.id === e.target.value);
+                                    const newItems = [...purchaseItems];
+                                    newItems[idx] = { 
+                                      addonId: e.target.value, 
+                                      qty: item.qty, 
+                                      hpp: addon?.hpp || 0 
+                                    };
+                                    setPurchaseItems(newItems);
+                                  }}
+                                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-semibold"
+                                  required
+                                >
+                                  <option value="">-- Pilih Barang --</option>
+                                  {addons.map(addon => (
+                                    <option key={addon.id} value={addon.id}>{addon.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="text-[8px] font-black text-slate-400 uppercase block mb-0.5">Jumlah Beli</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={item.qty}
+                                  onChange={(e) => {
+                                    const newItems = [...purchaseItems];
+                                    newItems[idx].qty = parseInt(e.target.value) || 1;
+                                    setPurchaseItems(newItems);
+                                  }}
+                                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-mono font-bold"
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[8px] font-black text-slate-400 uppercase block mb-0.5">HPP (Harga Beli Unit)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={item.hpp}
+                                  onChange={(e) => {
+                                    const newItems = [...purchaseItems];
+                                    newItems[idx].hpp = parseInt(e.target.value) || 0;
+                                    setPurchaseItems(newItems);
+                                  }}
+                                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-mono font-bold"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            {/* Row 2: Info HPP Lama & Grand Total */}
+                            {selectedAddon && (
+                              <div className="grid grid-cols-3 gap-2 text-xs bg-indigo-50 p-2 rounded-lg border border-indigo-150">
+                                <div>
+                                  <span className="text-[8px] font-black text-indigo-600 uppercase block">HPP Lama</span>
+                                  <span className="font-mono font-bold text-indigo-700">{formatRupiah(hppOld)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-black text-indigo-600 uppercase block">Grand Total</span>
+                                  <span className="font-mono font-bold text-indigo-700">{formatRupiah(grandTotal)}</span>
+                                </div>
+                                <div className="text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPurchaseItems(purchaseItems.filter((_, i) => i !== idx));
+                                    }}
+                                    className="text-red-500 hover:bg-red-50 p-1 rounded border border-red-200 w-full text-[8px] font-bold uppercase"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* TOTAL KESELURUHAN */}
+              {purchaseItems.length > 0 && (
+                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-xl p-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-indigo-700 uppercase">Total Pembelian (Semua Barang)</span>
+                    <span className="text-lg font-mono font-black text-indigo-700">
+                      {formatRupiah(purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0))}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* PEMBAYARAN */}
+              {purchaseItems.length > 0 && (
+                <div className="space-y-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  <label className="text-[10px] font-black uppercase text-slate-700 tracking-wide block">Informasi Pembayaran</label>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Nominal Bayar</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(parseInt(e.target.value) || 0)}
+                        placeholder="0"
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-lg outline-none focus:border-amber-500 font-mono font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Status Pembayaran</label>
+                      <select
+                        value={paymentStatus}
+                        onChange={(e) => setPaymentStatus(e.target.value as 'LUNAS' | 'BELUM')}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-lg outline-none focus:border-amber-500 font-bold"
+                      >
+                        <option value="LUNAS">✓ Lunas</option>
+                        <option value="BELUM">⏳ Belum Lunas</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Informasi Pembayaran */}
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-amber-300">
+                    <div>
+                      <span className="text-[8px] font-bold text-amber-600 uppercase block">Total Pembelian</span>
+                      <span className="font-mono font-bold text-amber-700">
+                        {formatRupiah(purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0))}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[8px] font-bold text-amber-600 uppercase block">Sisa/Kelebihan</span>
+                      <span className={`font-mono font-bold ${
+                        paymentAmount >= purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0)
+                          ? 'text-emerald-700'
+                          : 'text-red-700'
+                      }`}>
+                        {formatRupiah(paymentAmount - purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* BUTTONS */}
+              <div className="flex gap-2 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPurchaseForm(false);
+                    setPurchaseItems([]);
+                    setPaymentAmount(0);
+                    setPaymentStatus('LUNAS');
+                  }}
+                  disabled={isLoading}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-650 font-black text-xs px-4 py-3 rounded-xl uppercase transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (purchaseItems.length === 0) {
+                      alert('Silakan tambahkan minimal satu barang');
+                      return;
+                    }
+                    
+                    setIsLoading(true);
+                    try {
+                      // Simpan setiap pembelian barang
+                      for (const item of purchaseItems) {
+                        await api.purchaseAddon(item.addonId, {
+                          quantity: item.qty,
+                          purchasePrice: item.hpp,
+                          notes: `Pembelian melalui form komprehensif. Status: ${paymentStatus}. Nominal bayar: ${paymentAmount}`
+                        });
+                      }
+                      
+                      alert('Pembelian barang berhasil disimpan!');
+                      setShowPurchaseForm(false);
+                      setPurchaseItems([]);
+                      setPaymentAmount(0);
+                      setPaymentStatus('LUNAS');
+                    } catch (err: any) {
+                      alert('Error: ' + err.message);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  disabled={isLoading || purchaseItems.length === 0}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-750 disabled:bg-slate-350 text-white font-black text-xs px-4 py-3 rounded-xl uppercase transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
                 >
                   {isLoading && <Loader size={14} className="animate-spin" />}
                   {isLoading ? 'Menyimpan...' : 'Simpan Pembelian'}
