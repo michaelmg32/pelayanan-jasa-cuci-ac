@@ -1605,8 +1605,8 @@ export default function AdminDashboard() {
                       type="button"
                       onClick={() => setActiveAddonSubTab('KATALOG')}
                       className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${activeAddonSubTab === 'KATALOG'
-                          ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
+                        ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
                         }`}
                     >
                       Katalog & Stok
@@ -1615,8 +1615,8 @@ export default function AdminDashboard() {
                       type="button"
                       onClick={() => setActiveAddonSubTab('TRANSAKSI')}
                       className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${activeAddonSubTab === 'TRANSAKSI'
-                          ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
+                        ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
                         }`}
                     >
                       Riwayat Transaksi
@@ -1794,8 +1794,8 @@ export default function AdminDashboard() {
                                 <td className="p-3 font-extrabold text-slate-800">{tx.addonName}</td>
                                 <td className="p-3">
                                   <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider border ${tx.type === 'masuk'
-                                      ? 'bg-emerald-50 border-emerald-250 text-emerald-700'
-                                      : 'bg-rose-50 border-rose-250 text-rose-700'
+                                    ? 'bg-emerald-50 border-emerald-250 text-emerald-700'
+                                    : 'bg-rose-50 border-rose-250 text-rose-700'
                                     }`}>
                                     {tx.type === 'masuk' ? 'Masuk (Beli)' : 'Keluar (Pakai)'}
                                   </span>
@@ -2642,7 +2642,7 @@ export default function AdminDashboard() {
                           notes: `Pembelian barang - Status: LUNAS`
                         });
                       }
-                      
+
                       // Update addons & transaksi secara realtime
                       try {
                         const updatedAddons = await api.fetchAddons();
@@ -2651,7 +2651,7 @@ export default function AdminDashboard() {
                       } catch (err) {
                         console.error('Error updating addon stock and transactions:', err);
                       }
-                      
+
                       alert('Pembelian barang berhasil disimpan!');
                       setShowPurchaseForm(false);
                       setPurchaseItems([]);
@@ -3236,12 +3236,12 @@ export default function AdminDashboard() {
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
                       <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.finalPrice || (Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0)))}</span>
                     </div>
-                    {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
+                    {/* {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
                       <div className="flex justify-between font-bold text-emerald-750 bg-emerald-50 border border-emerald-100 p-2 rounded-lg mt-2">
                         <span className="text-[10.5px] uppercase">Margin Keuntungan:</span>
                         <span className="font-mono text-[11.5px]">{formatRupiah(selectedOrderDetail.margin)}</span>
                       </div>
-                    )}
+                    )} */}
                   </div>
                   {selectedOrderDetail.status === OrderStatus.SELESAI && (
                     <div className="pt-3 border-t border-slate-100 mt-2 space-y-2">

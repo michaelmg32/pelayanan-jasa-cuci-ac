@@ -606,9 +606,9 @@ export default function KaryawanDashboard() {
                             </h4>
                           </div>
                           <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${task.status === OrderStatus.DITUGASKAN ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                              task.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-50 border-blue-200 text-blue-850' :
-                                task.status === OrderStatus.PENGERJAAN ? 'bg-purple-50 border-purple-200 text-purple-800' :
-                                  'bg-indigo-50 border-indigo-200 text-indigo-750'
+                            task.status === OrderStatus.CEK_LAYANAN ? 'bg-blue-50 border-blue-200 text-blue-850' :
+                              task.status === OrderStatus.PENGERJAAN ? 'bg-purple-50 border-purple-200 text-purple-800' :
+                                'bg-indigo-50 border-indigo-200 text-indigo-750'
                             }`}>
                             {task.status.replace('_', ' ')}
                           </span>
@@ -1363,7 +1363,7 @@ export default function KaryawanDashboard() {
                 <X size={16} />
               </button>
             </div>
-            
+
             <div className="p-5 space-y-4">
               <div>
                 <label className="text-[10px] text-slate-500 font-black uppercase tracking-wider block mb-1.5">Alasan Kendala</label>
@@ -1375,7 +1375,7 @@ export default function KaryawanDashboard() {
                   className="w-full bg-slate-50 border border-slate-200 text-xs p-3.5 rounded-xl outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 h-28 resize-none font-medium leading-relaxed transition-all text-slate-700"
                 />
               </div>
-              
+
               <div className="flex gap-2">
                 <button
                   onClick={() => setActiveCancelOrderId(null)}

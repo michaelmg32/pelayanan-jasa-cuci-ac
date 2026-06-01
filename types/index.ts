@@ -110,7 +110,7 @@ export interface Order {
   createdAt: string;
   completedAt?: string;
   completionNotes?: string;
-  
+
   serviceCost: number; // Harga dasar layanan
   addonsCost: number;  // Total harga perlengkapan tambahan
   totalCost: number;   // serviceCost + addonsCost
@@ -125,13 +125,13 @@ export interface Order {
     quantity: number;
     hpp?: number;
   }[];
-  
+
   rating?: number; // 1-5 bintang
   ratingNotes?: string;
-  
+
   photoBefore?: string; // Base64 before AC cleaning/maintenance
   photoAfter?: string;  // Base64 after AC cleaning/maintenance
-  
+
   paymentMethod?: 'CASH' | 'TRANSFER';
   paymentStatus?: 'WAITING_APPROVAL' | 'PAID';
   bankName?: string; // Norek detail

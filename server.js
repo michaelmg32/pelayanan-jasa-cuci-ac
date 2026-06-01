@@ -180,7 +180,7 @@ const initializeDatabaseSettings = async () => {
             if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
               quantity = acDetailParsed.quantity;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         let totalAddonsSales = 0;
@@ -197,7 +197,7 @@ const initializeDatabaseSettings = async () => {
                 totalAddonsHpp += hpp * qty;
               });
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         const serviceCostTotal = Number(order.serviceCost) || 0;
@@ -248,7 +248,7 @@ const initializeDatabaseSettings = async () => {
     const txCount = txCountRows[0]?.count || 0;
     if (txCount === 0) {
       console.log("⏳ Seeding initial addon transactions...");
-      
+
       // 1. Seed starting stock of 100 for each existing addon
       const [allAddons] = await connection.query("SELECT id, hpp, name FROM ac_addons");
       for (const addon of allAddons) {
@@ -294,7 +294,7 @@ const initializeDatabaseSettings = async () => {
       console.log(`✅ Backfilled transaction logs for ${backfilledOrdersCount} completed orders.`);
     }
 
-    
+
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -360,13 +360,13 @@ const logActivity = async (req, action, details) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return;
-    
+
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded && decoded.role === 'admin') {
       const connection = await pool.getConnection();
       const [users] = await connection.query('SELECT name FROM users WHERE id = ?', [decoded.id]);
       const adminName = users.length > 0 ? users[0].name : 'Unknown Admin';
-      
+
       await connection.query(
         'INSERT INTO activity_logs (admin_id, admin_name, action, details) VALUES (?, ?, ?, ?)',
         [decoded.id, adminName, action, details]
@@ -653,7 +653,7 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
     const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
 
     await connection.query(updateQuery, updateValues);
-    
+
     await logActivity(req, 'Memperbarui Pengguna', `Memperbarui data pengguna ID: ${id}`);
 
     const [user] = await connection.query('SELECT id, name, email, phone, role, address, lat, lng, photo FROM users WHERE id = ?', [id]);
@@ -740,7 +740,7 @@ app.get('/api/orders', async (req, res) => {
           // It's in the past and still waiting, auto cancel it
           order.status = 'DIBATALKAN';
           order.cancelReason = 'Dibatalkan Otomatis oleh Sistem (Melewati Batas Waktu)';
-          
+
           try {
             const updateConn = await pool.getConnection();
             await updateConn.query(
@@ -766,13 +766,13 @@ const getAddonStockAndHpp = async (connection, addonId) => {
   const [addonRows] = await connection.query("SELECT hpp FROM ac_addons WHERE id = ?", [addonId]);
   if (addonRows.length === 0) return { stock: 0, hpp: 0 };
   const hpp = Number(addonRows[0].hpp) || 0;
-  
+
   const [txRows] = await connection.query(`
     SELECT CAST(COALESCE(SUM(CASE WHEN type = 'masuk' THEN qty ELSE -qty END), 0) AS SIGNED) AS stock
     FROM ac_addon_transactions
     WHERE addonId = ?
   `, [addonId]);
-  
+
   return {
     stock: txRows[0]?.stock || 0,
     hpp
@@ -856,7 +856,7 @@ const recalculateOrderMargin = async (connection, orderId) => {
     const [rows] = await connection.query('SELECT acDetail, serviceCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
     if (rows.length > 0) {
       const order = rows[0];
-      
+
       let quantity = 1;
       if (order.acDetail) {
         try {
@@ -938,7 +938,7 @@ const sendFonnteInvoice = async (orderId, force = false) => {
       console.error('Error parsing acDetail for Fonnte:', e);
     }
 
-    const serviceName = acDetail 
+    const serviceName = acDetail
       ? `${acDetail.quantity || 0}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType} (${acDetail.acType || ''})`
       : 'Jasa Layanan AC';
 
@@ -1065,12 +1065,12 @@ const sendWorkerNotification = async (orderId, workerId) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    
+
     // Get worker phone number and name
     const [workers] = await connection.query('SELECT phone, name FROM users WHERE id = ?', [workerId]);
     if (workers.length === 0) return;
     const worker = workers[0];
-    
+
     let phone = worker.phone || '';
     phone = phone.replace(/[^0-9]/g, '');
     if (phone.startsWith('0')) {
@@ -1096,7 +1096,7 @@ const sendWorkerNotification = async (orderId, workerId) => {
       console.error('Error parsing acDetail for worker notification:', e);
     }
 
-    const serviceName = acDetail 
+    const serviceName = acDetail
       ? `${acDetail.quantity || 0}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType} (${acDetail.acType || ''})`
       : 'Jasa Layanan AC';
 
@@ -1273,7 +1273,7 @@ app.put('/api/orders/:id', async (req, res) => {
 
             // Build itemized items list for Xendit
             const items = [];
-            
+
             // Add basic service
             let acDetail = null;
             try {
@@ -1429,7 +1429,7 @@ app.put('/api/orders/:id', async (req, res) => {
         // Worker notifications (DITUGASKAN or worker reassignment)
         const statusBecameDitugaskan = order.status === 'DITUGASKAN' && oldOrder.status !== 'DITUGASKAN';
         const workerChanged = order.status === 'DITUGASKAN' && order.workerId && order.workerId !== oldOrder.workerId;
-        
+
         if ((statusBecameDitugaskan || workerChanged) && order.workerId) {
           sendWorkerNotification(id, order.workerId).catch(err => console.error('Error sending Fonnte worker notification:', err));
         }
@@ -1772,7 +1772,7 @@ app.post('/api/addons/purchase', verifyToken, async (req, res) => {
     if (currentStockNum > 0) {
       newHpp = ((currentStockNum * currentHppNum) + (qtyNum * priceNum)) / (currentStockNum + qtyNum);
     }
-    
+
     newHpp = Math.round(newHpp * 100) / 100;
 
     await connection.query(
@@ -1787,7 +1787,7 @@ app.post('/api/addons/purchase', verifyToken, async (req, res) => {
 
     await connection.commit();
     await logActivity(req, 'Restock Addon/Sparepart', `Membeli ${qtyNum} unit addon (ID: ${addonId}) @ Rp ${priceNum.toLocaleString('id-ID')} (HPP Baru: Rp ${newHpp.toLocaleString('id-ID')})`);
-    
+
     res.json({
       success: true,
       newStock: currentStockNum + qtyNum,
@@ -1840,7 +1840,7 @@ app.delete('/api/models/:id', async (req, res) => {
     const connection = await pool.getConnection();
     const [model] = await connection.query('SELECT name FROM ac_models WHERE id = ?', [id]);
     const itemName = model.length > 0 ? model[0].name : id;
-    
+
     await connection.query('DELETE FROM ac_models WHERE id = ?', [id]);
     connection.release();
     await logActivity(req, 'Menghapus Model AC', `Menghapus model AC: ${itemName}`);
