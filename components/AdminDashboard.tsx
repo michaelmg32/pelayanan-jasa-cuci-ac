@@ -2627,8 +2627,8 @@ export default function AdminDashboard() {
                       // Simpan setiap pembelian barang
                       for (const item of purchaseItems) {
                         await api.purchaseAddon(item.addonId, {
-                          quantity: item.qty,
-                          purchasePrice: item.hpp,
+                          qty: item.qty,
+                          price: item.hpp,
                           notes: `Pembelian melalui form komprehensif. Status: ${paymentStatus}. Nominal bayar: ${paymentAmount}`
                         });
                       }
