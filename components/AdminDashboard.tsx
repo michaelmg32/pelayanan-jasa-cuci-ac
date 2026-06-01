@@ -424,6 +424,8 @@ export default function AdminDashboard() {
   }>>([]);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<'LUNAS' | 'BELUM'>('LUNAS');
+  const [purchaseSearchInputs, setPurchaseSearchInputs] = useState<Array<string>>([]);
+  const [purchaseOpenDropdown, setPurchaseOpenDropdown] = useState<number | null>(null);
 
   // Edit inline states for master data
   const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
@@ -2405,8 +2407,8 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setShowPurchaseForm(false);
                   setPurchaseItems([]);
-                  setPaymentAmount(0);
-                  setPaymentStatus('LUNAS');
+                  setPurchaseSearchInputs([]);
+                  setPurchaseOpenDropdown(null);
                 }}
                 className="p-1 rounded-full text-slate-400 hover:bg-slate-850 transition cursor-pointer"
                 disabled={isLoading}
@@ -2422,7 +2424,10 @@ export default function AdminDashboard() {
                   <label className="text-[10px] font-black uppercase text-slate-700 tracking-wide">Daftar Barang Pembelian</label>
                   <button
                     type="button"
-                    onClick={() => setPurchaseItems([...purchaseItems, { addonId: '', qty: 1, hpp: 0 }])}
+                    onClick={() => {
+                      setPurchaseItems([...purchaseItems, { addonId: '', qty: 1, hpp: 0 }]);
+                      setPurchaseSearchInputs([...purchaseSearchInputs, '']);
+                    }}
                     className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[9px] font-black px-2.5 py-1 rounded-lg border border-emerald-250 transition cursor-pointer"
                   >
                     + Tambah Barang
@@ -2445,28 +2450,65 @@ export default function AdminDashboard() {
                           <div className="grid grid-cols-1 gap-2">
                             {/* Row 1: Pilih Barang & Qty */}
                             <div className="grid grid-cols-3 gap-2">
-                              <div>
+                              <div className="relative">
                                 <label className="text-[8px] font-black text-slate-400 uppercase block mb-0.5">Nama Barang</label>
-                                <select
-                                  value={item.addonId}
+                                <input
+                                  type="text"
+                                  placeholder="Cari barang..."
+                                  value={purchaseSearchInputs[idx] || ''}
                                   onChange={(e) => {
-                                    const addon = addons.find(a => a.id === e.target.value);
-                                    const newItems = [...purchaseItems];
-                                    newItems[idx] = { 
-                                      addonId: e.target.value, 
-                                      qty: item.qty, 
-                                      hpp: addon?.hpp || 0 
-                                    };
-                                    setPurchaseItems(newItems);
+                                    const newSearchInputs = [...purchaseSearchInputs];
+                                    newSearchInputs[idx] = e.target.value;
+                                    setPurchaseSearchInputs(newSearchInputs);
+                                    setPurchaseOpenDropdown(idx);
                                   }}
+                                  onFocus={() => setPurchaseOpenDropdown(idx)}
+                                  onBlur={() => setTimeout(() => setPurchaseOpenDropdown(null), 200)}
                                   className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-semibold"
-                                  required
-                                >
-                                  <option value="">-- Pilih Barang --</option>
-                                  {addons.map(addon => (
-                                    <option key={addon.id} value={addon.id}>{addon.name}</option>
-                                  ))}
-                                </select>
+                                />
+                                
+                                {purchaseOpenDropdown === idx && (
+                                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                                    {addons
+                                      .filter(addon => 
+                                        addon.name.toLowerCase().includes((purchaseSearchInputs[idx] || '').toLowerCase())
+                                      )
+                                      .map(addon => (
+                                        <button
+                                          key={addon.id}
+                                          type="button"
+                                          onClick={() => {
+                                            const newItems = [...purchaseItems];
+                                            newItems[idx] = { 
+                                              addonId: addon.id, 
+                                              qty: item.qty, 
+                                              hpp: addon.hpp || 0 
+                                            };
+                                            setPurchaseItems(newItems);
+                                            
+                                            const newSearchInputs = [...purchaseSearchInputs];
+                                            newSearchInputs[idx] = addon.name;
+                                            setPurchaseSearchInputs(newSearchInputs);
+                                            setPurchaseOpenDropdown(null);
+                                          }}
+                                          className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-50 border-b border-slate-100 last:border-b-0 font-semibold text-slate-800 transition"
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <span>{addon.name}</span>
+                                            <span className="text-[9px] text-slate-400 font-mono">{formatRupiah(addon.hpp || 0)}</span>
+                                          </div>
+                                        </button>
+                                      ))
+                                    }
+                                    {addons.filter(addon => 
+                                      addon.name.toLowerCase().includes((purchaseSearchInputs[idx] || '').toLowerCase())
+                                    ).length === 0 && (
+                                      <div className="px-3 py-2 text-[8px] text-slate-400 text-center">
+                                        Barang tidak ditemukan
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
 
                               <div>
@@ -2518,6 +2560,7 @@ export default function AdminDashboard() {
                                     type="button"
                                     onClick={() => {
                                       setPurchaseItems(purchaseItems.filter((_, i) => i !== idx));
+                                      setPurchaseSearchInputs(purchaseSearchInputs.filter((_, i) => i !== idx));
                                     }}
                                     className="text-red-500 hover:bg-red-50 p-1 rounded border border-red-200 w-full text-[8px] font-bold uppercase"
                                   >
@@ -2548,52 +2591,22 @@ export default function AdminDashboard() {
 
               {/* PEMBAYARAN */}
               {purchaseItems.length > 0 && (
-                <div className="space-y-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
                   <label className="text-[10px] font-black uppercase text-slate-700 tracking-wide block">Informasi Pembayaran</label>
                   
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Nominal Bayar</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(parseInt(e.target.value) || 0)}
-                        placeholder="0"
-                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-lg outline-none focus:border-amber-500 font-mono font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Status Pembayaran</label>
-                      <select
-                        value={paymentStatus}
-                        onChange={(e) => setPaymentStatus(e.target.value as 'LUNAS' | 'BELUM')}
-                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-lg outline-none focus:border-amber-500 font-bold"
-                      >
-                        <option value="LUNAS">✓ Lunas</option>
-                        <option value="BELUM">⏳ Belum Lunas</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Informasi Pembayaran */}
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-amber-300">
-                    <div>
-                      <span className="text-[8px] font-bold text-amber-600 uppercase block">Total Pembelian</span>
-                      <span className="font-mono font-bold text-amber-700">
+                      <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Total Pembelian</label>
+                      <div className="w-full bg-amber-100 border border-amber-300 text-slate-800 text-xs px-3 py-2 rounded-lg font-mono font-bold text-amber-900">
                         {formatRupiah(purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0))}
-                      </span>
+                      </div>
                     </div>
+
                     <div>
-                      <span className="text-[8px] font-bold text-amber-600 uppercase block">Sisa/Kelebihan</span>
-                      <span className={`font-mono font-bold ${
-                        paymentAmount >= purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0)
-                          ? 'text-emerald-700'
-                          : 'text-red-700'
-                      }`}>
-                        {formatRupiah(paymentAmount - purchaseItems.reduce((sum, item) => sum + (item.qty * item.hpp), 0))}
-                      </span>
+                      <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Status</label>
+                      <div className="w-full bg-emerald-100 border border-emerald-300 text-slate-800 text-xs px-3 py-2 rounded-lg font-bold text-emerald-900">
+                        ✓ Lunas
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2606,8 +2619,8 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setShowPurchaseForm(false);
                     setPurchaseItems([]);
-                    setPaymentAmount(0);
-                    setPaymentStatus('LUNAS');
+                    setPurchaseSearchInputs([]);
+                    setPurchaseOpenDropdown(null);
                   }}
                   disabled={isLoading}
                   className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-650 font-black text-xs px-4 py-3 rounded-xl uppercase transition cursor-pointer"
@@ -2629,15 +2642,15 @@ export default function AdminDashboard() {
                         await api.purchaseAddon(item.addonId, {
                           qty: item.qty,
                           price: item.hpp,
-                          notes: `Pembelian melalui form komprehensif. Status: ${paymentStatus}. Nominal bayar: ${paymentAmount}`
+                          notes: `Pembelian barang - Status: LUNAS`
                         });
                       }
                       
                       alert('Pembelian barang berhasil disimpan!');
                       setShowPurchaseForm(false);
                       setPurchaseItems([]);
-                      setPaymentAmount(0);
-                      setPaymentStatus('LUNAS');
+                      setPurchaseSearchInputs([]);
+                      setPurchaseOpenDropdown(null);
                     } catch (err: any) {
                       alert('Error: ' + err.message);
                     } finally {
