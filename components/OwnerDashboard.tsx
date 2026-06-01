@@ -224,6 +224,10 @@ export default function OwnerDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editName, setEditName] = useState(appSettings?.business_name || '');
   const [editLogo, setEditLogo] = useState(appSettings?.business_logo || '');
+  const [editBankName, setEditBankName] = useState(appSettings?.bank_name || '');
+  const [editBankAccountNumber, setEditBankAccountNumber] = useState(appSettings?.bank_account_number || '');
+  const [editBankAccountHolder, setEditBankAccountHolder] = useState(appSettings?.bank_account_holder || '');
+  const [editQrisImage, setEditQrisImage] = useState(appSettings?.qris_image || '');
 
   const formatRupiah = (num: any) => {
     return 'Rp' + Number(num || 0).toLocaleString('id-ID');
@@ -232,6 +236,10 @@ export default function OwnerDashboard() {
   const handleOpenSettings = () => {
     setEditName(appSettings?.business_name || '');
     setEditLogo(appSettings?.business_logo || '');
+    setEditBankName(appSettings?.bank_name || '');
+    setEditBankAccountNumber(appSettings?.bank_account_number || '');
+    setEditBankAccountHolder(appSettings?.bank_account_holder || '');
+    setEditQrisImage(appSettings?.qris_image || '');
     setIsSettingsOpen(true);
   };
 
@@ -241,6 +249,17 @@ export default function OwnerDashboard() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setEditLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleQrisFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditQrisImage(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -960,7 +979,7 @@ export default function OwnerDashboard() {
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-800">Pengaturan Profil Usaha</h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {/* Nama Usaha */}
               <div className="space-y-1">
                 <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
@@ -1013,6 +1032,85 @@ export default function OwnerDashboard() {
                   />
                 </div>
               </div>
+
+              {/* Rekening Bank Manual & QRIS */}
+              <div className="border-t border-slate-100 pt-3 space-y-3">
+                <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
+                    <input
+                      type="text"
+                      value={editBankName}
+                      onChange={(e) => setEditBankName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                      placeholder="e.g. Bank BCA"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
+                    <input
+                      type="text"
+                      value={editBankAccountNumber}
+                      onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                      placeholder="e.g. 123456789"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
+                  <input
+                    type="text"
+                    value={editBankAccountHolder}
+                    onChange={(e) => setEditBankAccountHolder(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                    placeholder="e.g. Sugar AC PT"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
+
+                  {/* QRIS Preview */}
+                  <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
+                      {editQrisImage ? (
+                        <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold">No QRIS</span>
+                      )}
+                    </div>
+                    <div className="flex-grow text-left">
+                      <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
+                      <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQrisFileChange}
+                      className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
+                    <input
+                      type="text"
+                      value={editQrisImage}
+                      onChange={(e) => setEditQrisImage(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                      placeholder="https://example.com/qris.png"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Actions */}
@@ -1025,7 +1123,7 @@ export default function OwnerDashboard() {
               </button>
               <button
                 onClick={async () => {
-                  await updateAppSettings(editName, editLogo);
+                  await updateAppSettings(editName, editLogo, editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage);
                   setIsSettingsOpen(false);
                 }}
                 className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase rounded-lg shadow-sm transition"

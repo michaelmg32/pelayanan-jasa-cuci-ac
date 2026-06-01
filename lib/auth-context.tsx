@@ -26,11 +26,24 @@ interface AppContextType {
   addons: ACAddon[];
   setAddons: (addons: ACAddon[]) => void;
   
-  // Loading/Connection
   isLoading: boolean;
   dbConnected: boolean;
-  appSettings: { business_name: string; business_logo: string };
-  updateAppSettings: (business_name: string, business_logo: string) => Promise<void>;
+  appSettings: { 
+    business_name: string; 
+    business_logo: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    bank_account_holder?: string;
+    qris_image?: string;
+  };
+  updateAppSettings: (
+    business_name: string, 
+    business_logo: string,
+    bank_name?: string,
+    bank_account_number?: string,
+    bank_account_holder?: string,
+    qris_image?: string
+  ) => Promise<void>;
   
   // Actions
   login: (user: User) => void;
@@ -75,7 +88,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [dbConnected, setDbConnected] = useState(false);
-  const [appSettings, setAppSettings] = useState({ business_name: 'CoolAir Pro', business_logo: '' });
+  const [appSettings, setAppSettings] = useState({ 
+    business_name: 'CoolAir Pro', 
+    business_logo: '',
+    bank_name: '',
+    bank_account_number: '',
+    bank_account_holder: '',
+    qris_image: ''
+  });
 
   // Initialize data from database
   useEffect(() => {
@@ -114,6 +134,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setAppSettings({
             business_name: fetchedSettings.business_name || 'CoolAir Pro',
             business_logo: fetchedSettings.business_logo || '',
+            bank_name: fetchedSettings.bank_name || '',
+            bank_account_number: fetchedSettings.bank_account_number || '',
+            bank_account_holder: fetchedSettings.bank_account_holder || '',
+            qris_image: fetchedSettings.qris_image || '',
           });
         }
 
@@ -229,10 +253,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [appSettings.business_name, appSettings.business_logo]);
 
-  const updateAppSettings = async (business_name: string, business_logo: string) => {
+  const updateAppSettings = async (
+    business_name: string, 
+    business_logo: string,
+    bank_name?: string,
+    bank_account_number?: string,
+    bank_account_holder?: string,
+    qris_image?: string
+  ) => {
     try {
-      await api.updateSettings({ business_name, business_logo });
-      setAppSettings({ business_name, business_logo });
+      await api.updateSettings({ 
+        business_name, 
+        business_logo,
+        bank_name,
+        bank_account_number,
+        bank_account_holder,
+        qris_image
+      });
+      setAppSettings({ 
+        business_name, 
+        business_logo,
+        bank_name: bank_name || '',
+        bank_account_number: bank_account_number || '',
+        bank_account_holder: bank_account_holder || '',
+        qris_image: qris_image || ''
+      });
       showAlert('Pengaturan bisnis berhasil diperbarui!');
     } catch (error) {
       console.error('Failed to update app settings:', error);

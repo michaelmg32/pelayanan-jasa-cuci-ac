@@ -486,7 +486,14 @@ export const fetchSettings = async () => {
   }
 };
 
-export const updateSettings = async (settingsData: { business_name?: string; business_logo?: string }) => {
+export const updateSettings = async (settingsData: { 
+  business_name?: string; 
+  business_logo?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_holder?: string;
+  qris_image?: string;
+}) => {
   try {
     const response = await fetch(`${API_BASE_URL}/settings`, {
       method: 'PUT',

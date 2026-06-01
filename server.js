@@ -82,7 +82,11 @@ const initializeDatabaseSettings = async () => {
     await connection.query(`
       INSERT INTO settings (key_name, value) VALUES 
       ('business_name', 'CoolAir Pro'),
-      ('business_logo', '')
+      ('business_logo', ''),
+      ('bank_name', ''),
+      ('bank_account_number', ''),
+      ('bank_account_holder', ''),
+      ('qris_image', '')
       ON DUPLICATE KEY UPDATE key_name=key_name
     `);
     console.log('✅ Settings table initialized in database');
@@ -320,7 +324,7 @@ app.get('/api/settings', async (req, res) => {
 
 // PUT App Settings (Update Settings)
 app.put('/api/settings', async (req, res) => {
-  const { business_name, business_logo } = req.body;
+  const { business_name, business_logo, bank_name, bank_account_number, bank_account_holder, qris_image } = req.body;
   let connection;
   try {
     connection = await pool.getConnection();
@@ -329,6 +333,18 @@ app.put('/api/settings', async (req, res) => {
     }
     if (business_logo !== undefined) {
       await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_logo', business_logo, business_logo]);
+    }
+    if (bank_name !== undefined) {
+      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_name', bank_name, bank_name]);
+    }
+    if (bank_account_number !== undefined) {
+      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_number', bank_account_number, bank_account_number]);
+    }
+    if (bank_account_holder !== undefined) {
+      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_holder', bank_account_holder, bank_account_holder]);
+    }
+    if (qris_image !== undefined) {
+      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['qris_image', qris_image, qris_image]);
     }
     res.json({ message: 'Settings updated successfully' });
   } catch (error) {
