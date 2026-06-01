@@ -11,10 +11,14 @@ export default function AdminPage() {
   const router = useRouter();
   const { activeUser, logout, isLoading } = useApp();
 
+  console.log('[AdminPage] Render - isLoading:', isLoading, 'activeUser:', activeUser);
+
   useEffect(() => {
     if (isLoading) return;
 
+    console.log('[AdminPage] useEffect Check - activeUser:', activeUser);
     if (!activeUser || activeUser.role !== Role.ADMIN) {
+      console.log('[AdminPage] Redirecting to /login because user is missing or role is not ADMIN. Role:', activeUser?.role);
       router.push('/login');
     }
   }, [activeUser, isLoading, router]);
