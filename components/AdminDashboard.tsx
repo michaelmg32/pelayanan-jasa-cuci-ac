@@ -3215,6 +3215,27 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  {/* Bukti Pembayaran Transfer (Payment Proof) */}
+                  {selectedOrderDetail.paymentMethod === 'TRANSFER' && (
+                    <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3 space-y-2">
+                      <span className="text-slate-450 font-black block text-[8px] uppercase tracking-wider">Bukti Pembayaran Transfer:</span>
+                      {selectedOrderDetail.paymentProof ? (
+                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center max-h-56 shadow-sm mx-auto">
+                          <img
+                            src={selectedOrderDetail.paymentProof}
+                            alt="Bukti Pembayaran"
+                            className="w-full h-full object-contain cursor-zoom-in"
+                            onClick={() => {
+                              if (typeof window !== 'undefined') window.open(selectedOrderDetail.paymentProof, '_blank');
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 italic block text-[10px]">Belum mengunggah bukti pembayaran.</span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Breakdown cost */}
                   <div className="space-y-1.5 text-xs text-slate-600">
                     <div className="flex justify-between">

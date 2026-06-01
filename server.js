@@ -132,6 +132,13 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN invoiceSent BOOLEAN DEFAULT FALSE");
       console.log("✅ Added invoiceSent field to 'orders' table in database");
     }
+ 
+    // Auto-migration: Add paymentProof field to 'orders' table
+    const [paymentProofCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'paymentProof'");
+    if (paymentProofCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN paymentProof LONGTEXT NULL");
+      console.log("✅ Added paymentProof field to 'orders' table in database");
+    }
 
     // Auto-migration: Add hpp column to 'ac_addons' table
     const [addonHppCols] = await connection.query("SHOW COLUMNS FROM ac_addons LIKE 'hpp'");
@@ -1198,6 +1205,7 @@ app.post('/api/orders', async (req, res) => {
       ratingNotes,
       latitude,
       longitude,
+      paymentProof,
       createdAt: new Date().toISOString()
     });
   } catch (error) {
@@ -1211,7 +1219,7 @@ app.put('/api/orders/:id', async (req, res) => {
     status, workerId, assignedTo, assignedEmployeeName, notes, totalPrice, photoBefore, photoAfter,
     paymentMethod, paymentStatus, rating, ratingNotes, acDetail, serviceCost, addonsCost, totalCost, addonsUsed,
     scheduledDate, scheduledTime, proposedDate, proposedTime, rescheduleStatus, cancelReason, workerCancelReason,
-    invoiceSent
+    invoiceSent, paymentProof
   } = req.body;
   let connection;
   try {
@@ -1391,6 +1399,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (cancelReason !== undefined) { updateFields.push('cancelReason = ?'); updateValues.push(cancelReason); }
     if (workerCancelReason !== undefined) { updateFields.push('workerCancelReason = ?'); updateValues.push(workerCancelReason); }
     if (invoiceSent !== undefined) { updateFields.push('invoiceSent = ?'); updateValues.push(invoiceSent ? 1 : 0); }
+    if (paymentProof !== undefined) { updateFields.push('paymentProof = ?'); updateValues.push(paymentProof); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }

@@ -56,6 +56,7 @@ export default function KaryawanDashboard() {
   const [photoBeforeUrl, setPhotoBeforeUrl] = useState('');
   const [photoAfterUrl, setPhotoAfterUrl] = useState('');
   const [completionNotes, setCompletionNotes] = useState('');
+  const [paymentProofs, setPaymentProofs] = useState<{ [orderId: string]: string }>({});
 
   // Profile edit states
   const [editName, setEditName] = useState(activeUser?.name || '');
@@ -444,6 +445,32 @@ export default function KaryawanDashboard() {
       alert('✓ Pembayaran CASH lunas disetujui. Status pengerjaan: SELESAI!');
     } catch (error) {
       alert('❌ Gagal update status');
+    }
+  };
+
+  const handleApproveTransferReceived = async (orderId: string) => {
+    const proof = paymentProofs[orderId];
+    if (!proof) {
+      alert('❌ Harap unggah atau ambil foto bukti pembayaran terlebih dahulu!');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await api.updateOrder(orderId, {
+        status: OrderStatus.SELESAI,
+        paymentStatus: 'PAID',
+        paymentProof: proof
+      });
+      setOrders(prevOrders =>
+        prevOrders.map(o =>
+          o.id === orderId ? { ...o, status: OrderStatus.SELESAI, paymentStatus: 'PAID', paymentProof: proof } : o
+        )
+      );
+      alert('✓ Bukti transfer berhasil diupload. Status pengerjaan: SELESAI!');
+    } catch (error) {
+      alert('❌ Gagal mengonfirmasi pembayaran transfer');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -849,8 +876,58 @@ export default function KaryawanDashboard() {
                                   )}
                                 </div>
                               ) : (
-                                <div className="pt-1 text-[10px] text-indigo-800 bg-white p-2 rounded-lg border border-indigo-100/55 leading-relaxed font-semibold">
-                                  ⏳ Transfer VA. Menunggu konfirmasi otomatis.
+                                <div className="space-y-2.5 pt-1">
+                                  <p className="text-[10px] text-indigo-800 leading-normal font-semibold">🏦 Pembayaran Transfer / QRIS. Unggah Bukti Transaksi:</p>
+                                  
+                                  {paymentProofs[task.id] ? (
+                                    <div className="space-y-2">
+                                      <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 aspect-video max-h-40 flex items-center justify-center">
+                                        <img src={paymentProofs[task.id]} alt="Bukti Transfer" className="w-full h-full object-contain" />
+                                        <button
+                                          type="button"
+                                          onClick={() => setPaymentProofs(prev => {
+                                            const updated = { ...prev };
+                                            delete updated[task.id];
+                                            return updated;
+                                          })}
+                                          className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full transition shadow"
+                                        >
+                                          <X size={12} />
+                                        </button>
+                                      </div>
+                                      
+                                      <button
+                                        onClick={() => handleApproveTransferReceived(task.id)}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] py-2 rounded-lg uppercase cursor-pointer"
+                                      >
+                                        Konfirmasi Terima Pembayaran Transfer
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center border border-dashed border-indigo-200 rounded-xl p-4 bg-white hover:bg-indigo-50/20 transition relative">
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            try {
+                                              const compressedBase64 = await compressImage(file, 1000, 1000, 0.7);
+                                              setPaymentProofs(prev => ({ ...prev, [task.id]: compressedBase64 }));
+                                            } catch (err) {
+                                              console.error('Error compressing payment proof:', err);
+                                              alert('❌ Gagal memproses gambar bukti transfer. Silakan coba lagi.');
+                                            }
+                                          }
+                                        }}
+                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                      />
+                                      <div className="text-center space-y-1">
+                                        <Camera size={18} className="mx-auto text-indigo-500" />
+                                        <span className="text-[9px] font-bold text-indigo-700 uppercase tracking-wide block">Ambil atau Pilih Foto Bukti</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
