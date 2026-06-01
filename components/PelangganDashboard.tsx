@@ -1072,6 +1072,7 @@ export default function PelangganDashboard() {
                                     </div>
                                   )}
 
+                                  {/*
                                   {order.paymentUrl ? (
                                     <div className="space-y-2 pt-1">
                                       <a
@@ -1117,6 +1118,7 @@ export default function PelangganDashboard() {
                                       <span>Menyiapkan Invoice Xendit...</span>
                                     </div>
                                   )}
+                                  */}
                                 </div>
                               )}
                             </div>
