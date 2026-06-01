@@ -139,7 +139,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         alert('✓ Invoice berhasil dikirim secara otomatis via WhatsApp (Fonnte)!');
-        
+
         // Update local state
         setOrders(prevOrders =>
           prevOrders.map(o => o.id === order.id ? { ...o, invoiceSent: true } : o)
@@ -151,10 +151,10 @@ export default function AdminDashboard() {
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('Failed to send invoice via Fonnte, falling back to manual wa.me:', errorData);
-        
+
         // Fallback to manual wa.me
         window.open(getWhatsAppInvoiceLink(order), '_blank');
-        
+
         // Mark as sent in DB
         await api.updateOrder(order.id, { invoiceSent: true });
 
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => { }
   });
 
   // Performance State
@@ -917,9 +917,9 @@ export default function AdminDashboard() {
       });
 
       // Update addons state in UI
-      setAddons(addons.map(a => 
-        a.id === selectedAddonForPurchase.id 
-          ? { ...a, stock: result.newStock, hpp: result.newHpp } 
+      setAddons(addons.map(a =>
+        a.id === selectedAddonForPurchase.id
+          ? { ...a, stock: result.newStock, hpp: result.newHpp }
           : a
       ));
 
@@ -929,7 +929,7 @@ export default function AdminDashboard() {
       setPurchasePrice(0);
       setPurchaseNotes('');
       alert('✅ Berhasil mencatat pembelian stok baru');
-      
+
       if (activeAddonSubTab === 'TRANSAKSI') {
         fetchTransactions(addonTxFilter);
       }
@@ -1128,8 +1128,8 @@ export default function AdminDashboard() {
             <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Cari nama, no telp, atau ID order..."
                   value={jobsSearch}
                   onChange={(e) => setJobsSearch(e.target.value)}
@@ -1137,14 +1137,14 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <input 
+                <input
                   type="date"
                   value={jobsStartDate}
                   onChange={(e) => setJobsStartDate(e.target.value)}
                   className="bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
                 />
                 <span className="text-slate-400 font-bold text-xs">S/D</span>
-                <input 
+                <input
                   type="date"
                   value={jobsEndDate}
                   onChange={(e) => setJobsEndDate(e.target.value)}
@@ -1502,7 +1502,7 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-slate-100 font-medium">
                       {categories.map(c => (
                         <React.Fragment key={c.id}>
-                          <tr 
+                          <tr
                             className={`hover:bg-slate-50/50 cursor-pointer transition ${expandedCategoryId === c.id ? 'bg-indigo-50/50' : ''}`}
                             onClick={() => {
                               setExpandedCategoryId(expandedCategoryId === c.id ? null : c.id);
@@ -1553,7 +1553,7 @@ export default function AdminDashboard() {
                                       <Plus size={13} /> Tambahkan Layanan
                                     </button>
                                   </form>
-                                  
+
                                   <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                                     <table className="w-full text-xs text-left">
                                       <thead className="bg-slate-100 text-slate-500 font-extrabold uppercase tracking-wider text-[9px]">
@@ -1604,27 +1604,25 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       onClick={() => setActiveAddonSubTab('KATALOG')}
-                      className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${
-                        activeAddonSubTab === 'KATALOG'
+                      className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${activeAddonSubTab === 'KATALOG'
                           ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
                           : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
-                      }`}
+                        }`}
                     >
                       Katalog & Stok
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveAddonSubTab('TRANSAKSI')}
-                      className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${
-                        activeAddonSubTab === 'TRANSAKSI'
+                      className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${activeAddonSubTab === 'TRANSAKSI'
                           ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
                           : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
-                      }`}
+                        }`}
                     >
                       Riwayat Transaksi
                     </button>
                   </div>
-                  
+
                   {activeAddonSubTab === 'TRANSAKSI' && (
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Filter Barang:</span>
@@ -1733,7 +1731,7 @@ export default function AdminDashboard() {
                                 <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
                                 <td className="p-3 text-right">
                                   <div className="flex justify-end gap-1.5">
-                                    <button
+                                    {/* <button
                                       type="button"
                                       onClick={() => {
                                         setSelectedAddonForPurchase(a);
@@ -1745,7 +1743,7 @@ export default function AdminDashboard() {
                                       className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-lg border border-emerald-250 transition cursor-pointer"
                                     >
                                       📦 Beli Stok
-                                    </button>
+                                    </button> */}
                                     <button
                                       onClick={() => startEditMaster('ADDONS', a.id, a.name, a.price, '', a.hpp || 0)}
                                       className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition cursor-pointer"
@@ -1795,11 +1793,10 @@ export default function AdminDashboard() {
                                 <td className="p-3 text-slate-500 font-mono">{new Date(tx.createdAt).toLocaleString('id-ID')}</td>
                                 <td className="p-3 font-extrabold text-slate-800">{tx.addonName}</td>
                                 <td className="p-3">
-                                  <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider border ${
-                                    tx.type === 'masuk'
+                                  <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider border ${tx.type === 'masuk'
                                       ? 'bg-emerald-50 border-emerald-250 text-emerald-700'
                                       : 'bg-rose-50 border-rose-250 text-rose-700'
-                                  }`}>
+                                    }`}>
                                     {tx.type === 'masuk' ? 'Masuk (Beli)' : 'Keluar (Pakai)'}
                                   </span>
                                 </td>
@@ -1889,21 +1886,21 @@ export default function AdminDashboard() {
           <div className="p-4 space-y-4 max-w-4xl mx-auto">
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600"/> Laporan Kinerja Staff</h3>
+                <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600" /> Laporan Kinerja Staff</h3>
                 <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
               </div>
               <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
                 <div className="flex items-center gap-2">
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={performanceDate}
                     onChange={(e) => setPerformanceDate(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
                   />
                   <span className="text-[10px] font-bold text-slate-400">S/D</span>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={performanceEndDate}
                     onChange={(e) => setPerformanceEndDate(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
@@ -1927,24 +1924,24 @@ export default function AdminDashboard() {
                 const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : '-';
 
                 // Aggregate addons used by this staff on this date
-                const addonsUsed = new Map<string, {name: string, qty: number, totalPrice: number}>();
+                const addonsUsed = new Map<string, { name: string, qty: number, totalPrice: number }>();
                 staffOrders.forEach(order => {
                   if (order.addonsUsed && Array.isArray(order.addonsUsed)) {
                     order.addonsUsed.forEach(addon => {
-                      const existing = addonsUsed.get(addon.id || addon.name) || {name: addon.name, qty: 0, totalPrice: 0};
+                      const existing = addonsUsed.get(addon.id || addon.name) || { name: addon.name, qty: 0, totalPrice: 0 };
                       existing.qty += addon.quantity;
                       existing.totalPrice += addon.price * addon.quantity;
                       addonsUsed.set(addon.id || addon.name, existing);
                     });
                   }
                 });
-                
+
                 const addonsList = Array.from(addonsUsed.values());
                 const isExpanded = expandedPerformanceStaffId === staff.id;
 
                 return (
                   <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
-                    <div 
+                    <div
                       className="p-5 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100/70"
                       onClick={() => setExpandedPerformanceStaffId(isExpanded ? null : staff.id)}
                     >
@@ -1976,7 +1973,7 @@ export default function AdminDashboard() {
                             {avgRating}
                           </span>
                         </div>
-                        
+
                         {/* Mobile view metrics */}
                         <div className="md:hidden flex flex-col gap-1 items-end">
                           <div className="flex items-center gap-2 text-xs font-bold text-slate-500">Selesai: <span className="text-indigo-600 font-black">{completedCount}</span></div>
@@ -1990,7 +1987,7 @@ export default function AdminDashboard() {
                     </div>
                     {isExpanded && addonsList.length > 0 && (
                       <div className="p-5 bg-white animate-in slide-in-from-top-2">
-                        <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500"/> Rincian Penggunaan Add-ons / Sparepart</h5>
+                        <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500" /> Rincian Penggunaan Add-ons / Sparepart</h5>
                         <div className="border border-slate-100 rounded-xl overflow-hidden">
                           <table className="w-full text-xs text-left">
                             <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-100">
@@ -2023,7 +2020,7 @@ export default function AdminDashboard() {
                   </div>
                 );
               })}
-              
+
               {users.filter(u => u.role === Role.STAFF).length === 0 && (
                 <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center">
                   <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
@@ -2336,7 +2333,7 @@ export default function AdminDashboard() {
               {/* Real-time Moving Average Cost Calculation Preview */}
               <div className="bg-indigo-50/70 border border-indigo-150 p-3.5 rounded-xl space-y-2">
                 <span className="text-[9px] font-black uppercase text-indigo-700 tracking-wider block border-b border-indigo-100 pb-1.5">🧮 Live Simulasi Moving Average HPP</span>
-                
+
                 <div className="grid grid-cols-2 gap-2 text-[10.5px] font-bold text-slate-700">
                   <div>
                     <span className="text-[9px] font-black text-slate-450 block uppercase tracking-wide">Stok Saat Ini:</span>
@@ -2444,7 +2441,7 @@ export default function AdminDashboard() {
                       const selectedAddon = addons.find(a => a.id === item.addonId);
                       const grandTotal = item.qty * item.hpp;
                       const hppOld = selectedAddon?.hpp || 0;
-                      
+
                       return (
                         <div key={idx} className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
                           <div className="grid grid-cols-1 gap-2">
@@ -2466,11 +2463,11 @@ export default function AdminDashboard() {
                                   onBlur={() => setTimeout(() => setPurchaseOpenDropdown(null), 200)}
                                   className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-semibold"
                                 />
-                                
+
                                 {purchaseOpenDropdown === idx && (
                                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
                                     {addons
-                                      .filter(addon => 
+                                      .filter(addon =>
                                         addon.name.toLowerCase().includes((purchaseSearchInputs[idx] || '').toLowerCase())
                                       )
                                       .map(addon => (
@@ -2479,13 +2476,13 @@ export default function AdminDashboard() {
                                           type="button"
                                           onClick={() => {
                                             const newItems = [...purchaseItems];
-                                            newItems[idx] = { 
-                                              addonId: addon.id, 
-                                              qty: item.qty, 
-                                              hpp: addon.hpp || 0 
+                                            newItems[idx] = {
+                                              addonId: addon.id,
+                                              qty: item.qty,
+                                              hpp: addon.hpp || 0
                                             };
                                             setPurchaseItems(newItems);
-                                            
+
                                             const newSearchInputs = [...purchaseSearchInputs];
                                             newSearchInputs[idx] = addon.name;
                                             setPurchaseSearchInputs(newSearchInputs);
@@ -2500,13 +2497,13 @@ export default function AdminDashboard() {
                                         </button>
                                       ))
                                     }
-                                    {addons.filter(addon => 
+                                    {addons.filter(addon =>
                                       addon.name.toLowerCase().includes((purchaseSearchInputs[idx] || '').toLowerCase())
                                     ).length === 0 && (
-                                      <div className="px-3 py-2 text-[8px] text-slate-400 text-center">
-                                        Barang tidak ditemukan
-                                      </div>
-                                    )}
+                                        <div className="px-3 py-2 text-[8px] text-slate-400 text-center">
+                                          Barang tidak ditemukan
+                                        </div>
+                                      )}
                                   </div>
                                 )}
                               </div>
@@ -2593,7 +2590,7 @@ export default function AdminDashboard() {
               {purchaseItems.length > 0 && (
                 <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
                   <label className="text-[10px] font-black uppercase text-slate-700 tracking-wide block">Informasi Pembayaran</label>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">Total Pembelian</label>
@@ -2634,7 +2631,7 @@ export default function AdminDashboard() {
                       alert('Silakan tambahkan minimal satu barang');
                       return;
                     }
-                    
+
                     setIsLoading(true);
                     try {
                       // Simpan setiap pembelian barang
@@ -2644,6 +2641,15 @@ export default function AdminDashboard() {
                           price: item.hpp,
                           notes: `Pembelian barang - Status: LUNAS`
                         });
+                      }
+                      
+                      // Update addons & transaksi secara realtime
+                      try {
+                        const updatedAddons = await api.fetchAddons();
+                        setAddons(updatedAddons);
+                        await fetchTransactions(addonTxFilter);
+                      } catch (err) {
+                        console.error('Error updating addon stock and transactions:', err);
                       }
                       
                       alert('Pembelian barang berhasil disimpan!');
@@ -3255,8 +3261,8 @@ export default function AdminDashboard() {
                         type="button"
                         onClick={() => handleSendInvoice(selectedOrderDetail)}
                         className={`flex items-center justify-center gap-2 w-full font-extrabold text-[11px] py-2.5 rounded-xl uppercase tracking-wider transition duration-200 shadow-md cursor-pointer ${selectedOrderDetail.invoiceSent
-                            ? 'bg-slate-150 hover:bg-slate-200 text-slate-550 border border-slate-250 shadow-slate-200/10'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/10'
+                          ? 'bg-slate-150 hover:bg-slate-200 text-slate-550 border border-slate-250 shadow-slate-200/10'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/10'
                           }`}
                       >
                         <MessageCircle size={14} />
@@ -3297,13 +3303,13 @@ export default function AdminDashboard() {
               <p className="text-slate-600 text-xs font-semibold">{confirmDialog.message}</p>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button 
+              <button
                 onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
                 className="px-4 py-2 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-200 rounded-xl transition cursor-pointer"
               >
                 Batal
               </button>
-              <button 
+              <button
                 onClick={confirmDialog.onConfirm}
                 className="px-4 py-2 text-[10px] font-black uppercase text-white bg-red-500 hover:bg-red-600 rounded-xl transition shadow-md shadow-red-500/20 cursor-pointer flex items-center gap-1"
                 disabled={isLoading}
