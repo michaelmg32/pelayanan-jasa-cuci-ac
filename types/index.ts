@@ -57,6 +57,19 @@ export interface ACAddon {
   name: string;
   price: number;
   hpp?: number;
+  stock?: number;
+}
+
+export interface AddonTransaction {
+  id: number;
+  addonId: string;
+  addonName?: string;
+  type: 'masuk' | 'keluar';
+  qty: number;
+  price: number;
+  notes?: string;
+  orderId?: string;
+  createdAt: string;
 }
 
 export interface SelectedAddon {

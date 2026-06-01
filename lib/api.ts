@@ -421,6 +421,39 @@ export const deleteAddon = async (addonId: string) => {
   }
 };
 
+export const purchaseAddon = async (addonId: string, purchaseData: { qty: number; price: number; notes?: string }) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/addons/purchase`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ addonId, ...purchaseData }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to purchase addon');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error purchasing addon:', error);
+    throw error;
+  }
+};
+
+export const fetchAddonTransactions = async (addonId?: string) => {
+  try {
+    const query = addonId ? `?addonId=${addonId}` : '';
+    const response = await fetch(`${API_BASE_URL}/addons/transactions${query}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch addon transactions');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching addon transactions:', error);
+    return [];
+  }
+};
+
+
 // ===== TEST CONNECTION =====
 export const testConnection = async () => {
   try {

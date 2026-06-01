@@ -221,6 +221,75 @@ const initializeDatabaseSettings = async () => {
       )
     `);
     console.log("✅ Auto-migrated 'activity_logs' table in database");
+
+    // Auto-migration: Create ac_addon_transactions table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ac_addon_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        addonId VARCHAR(50) NOT NULL,
+        type ENUM('masuk', 'keluar') NOT NULL,
+        qty INT NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        notes TEXT,
+        orderId VARCHAR(50) NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (addonId) REFERENCES ac_addons(id) ON DELETE CASCADE,
+        FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE SET NULL
+      )
+    `);
+    console.log("✅ Auto-migrated 'ac_addon_transactions' table in database");
+
+    // Check if we need to seed initial transactions
+    const [txCountRows] = await connection.query("SELECT COUNT(*) as count FROM ac_addon_transactions");
+    const txCount = txCountRows[0]?.count || 0;
+    if (txCount === 0) {
+      console.log("⏳ Seeding initial addon transactions...");
+      
+      // 1. Seed starting stock of 100 for each existing addon
+      const [allAddons] = await connection.query("SELECT id, hpp, name FROM ac_addons");
+      for (const addon of allAddons) {
+        const hppValue = Number(addon.hpp) || 0;
+        await connection.query(
+          "INSERT INTO ac_addon_transactions (addonId, type, qty, price, notes) VALUES (?, 'masuk', 100, ?, ?)",
+          [addon.id, hppValue, `Stok awal migrasi sistem (${addon.name})`]
+        );
+      }
+      console.log(`✅ Seeded starting stock of 100 units for ${allAddons.length} addons.`);
+
+      // 2. Seed 'keluar' transactions for completed ('SELESAI') orders
+      const [completedOrders] = await connection.query(
+        "SELECT id, addonsUsed, completedAt FROM orders WHERE status = 'SELESAI'"
+      );
+      let backfilledOrdersCount = 0;
+      for (const order of completedOrders) {
+        if (order.addonsUsed) {
+          try {
+            const addonsUsedParsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+            if (Array.isArray(addonsUsedParsed)) {
+              for (const addonUsed of addonsUsedParsed) {
+                const qty = Number(addonUsed.quantity) || 0;
+                const costPrice = Number(addonUsed.hpp) || Number(addonUsed.price) || 0;
+                const addonId = addonUsed.id;
+                if (addonId && qty > 0) {
+                  const [addonCheck] = await connection.query("SELECT id FROM ac_addons WHERE id = ?", [addonId]);
+                  if (addonCheck.length > 0) {
+                    await connection.query(
+                      "INSERT INTO ac_addon_transactions (addonId, type, qty, price, notes, orderId, createdAt) VALUES (?, 'keluar', ?, ?, ?, ?, ?)",
+                      [addonId, qty, costPrice, `Pemakaian pesanan completed ${order.id}`, order.id, order.completedAt || new Date()]
+                    );
+                  }
+                }
+              }
+              backfilledOrdersCount++;
+            }
+          } catch (e) {
+            console.error(`Error backfilling addons for order ${order.id}:`, e);
+          }
+        }
+      }
+      console.log(`✅ Backfilled transaction logs for ${backfilledOrdersCount} completed orders.`);
+    }
+
     
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
@@ -677,6 +746,95 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
+const getAddonStockAndHpp = async (connection, addonId) => {
+  const [addonRows] = await connection.query("SELECT hpp FROM ac_addons WHERE id = ?", [addonId]);
+  if (addonRows.length === 0) return { stock: 0, hpp: 0 };
+  const hpp = Number(addonRows[0].hpp) || 0;
+  
+  const [txRows] = await connection.query(`
+    SELECT CAST(COALESCE(SUM(CASE WHEN type = 'masuk' THEN qty ELSE -qty END), 0) AS SIGNED) AS stock
+    FROM ac_addon_transactions
+    WHERE addonId = ?
+  `, [addonId]);
+  
+  return {
+    stock: txRows[0]?.stock || 0,
+    hpp
+  };
+};
+
+const syncOrderAddonTransactions = async (connection, orderId) => {
+  const [orders] = await connection.query(
+    "SELECT status, addonsUsed FROM orders WHERE id = ?",
+    [orderId]
+  );
+  if (orders.length === 0) return;
+  const order = orders[0];
+  const status = order.status;
+
+  let addonsUsed = [];
+  if (order.addonsUsed) {
+    try {
+      addonsUsed = typeof order.addonsUsed === 'string' ? JSON.parse(order.addonsUsed) : order.addonsUsed;
+    } catch (e) {
+      console.error(`Error parsing addonsUsed for order ${orderId} in sync:`, e);
+    }
+  }
+
+  if (status !== 'SELESAI') {
+    await connection.query(
+      "DELETE FROM ac_addon_transactions WHERE orderId = ? AND type = 'keluar'",
+      [orderId]
+    );
+    return;
+  }
+
+  let updatedAddonsUsed = [];
+  let updated = false;
+
+  if (Array.isArray(addonsUsed)) {
+    for (const item of addonsUsed) {
+      let currentItem = { ...item };
+      if (currentItem.hpp === undefined || currentItem.hpp === null) {
+        const [addonRows] = await connection.query("SELECT hpp FROM ac_addons WHERE id = ?", [currentItem.id]);
+        if (addonRows.length > 0) {
+          currentItem.hpp = Number(addonRows[0].hpp) || 0;
+          updated = true;
+        } else {
+          currentItem.hpp = 0;
+        }
+      }
+      updatedAddonsUsed.push(currentItem);
+    }
+  }
+
+  if (updated) {
+    await connection.query(
+      "UPDATE orders SET addonsUsed = ? WHERE id = ?",
+      [JSON.stringify(updatedAddonsUsed), orderId]
+    );
+    addonsUsed = updatedAddonsUsed;
+  }
+
+  await connection.query(
+    "DELETE FROM ac_addon_transactions WHERE orderId = ? AND type = 'keluar'",
+    [orderId]
+  );
+
+  if (Array.isArray(addonsUsed)) {
+    for (const item of addonsUsed) {
+      const qty = Number(item.quantity) || 0;
+      const hppVal = Number(item.hpp) || 0;
+      if (item.id && qty > 0) {
+        await connection.query(
+          "INSERT INTO ac_addon_transactions (addonId, type, qty, price, notes, orderId) VALUES (?, 'keluar', ?, ?, ?, ?)",
+          [item.id, qty, hppVal, `Pemakaian pesanan completed ${orderId}`, orderId]
+        );
+      }
+    }
+  }
+};
+
 const recalculateOrderMargin = async (connection, orderId) => {
   try {
     const [rows] = await connection.query('SELECT acDetail, serviceCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
@@ -986,6 +1144,7 @@ app.post('/api/orders', async (req, res) => {
         photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude
       ]
     );
+    await syncOrderAddonTransactions(connection, id);
     await recalculateOrderMargin(connection, id);
     connection.release();
     await logActivity(req, 'Membuat Pesanan', `Membuat pesanan baru untuk ${customerName} (ID: ${id})`);
@@ -1231,6 +1390,7 @@ app.put('/api/orders/:id', async (req, res) => {
       await logActivity(req, 'Memperbarui Pesanan', `Memperbarui pesanan ID: ${id}`);
     }
 
+    await syncOrderAddonTransactions(connection, id);
     await recalculateOrderMargin(connection, id);
 
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
@@ -1291,6 +1451,8 @@ app.post('/api/webhooks/xendit', async (req, res) => {
         "UPDATE orders SET paymentStatus = 'PAID', status = 'SELESAI', completedAt = NOW() WHERE id = ?",
         [external_id]
       );
+      await syncOrderAddonTransactions(connection, external_id);
+      await recalculateOrderMargin(connection, external_id);
       console.log(`💰 Xendit payment received for order: ${external_id}. Order set to SELESAI.`);
       sendFonnteInvoice(external_id).catch(err => console.error('Error auto-sending Fonnte invoice on webhook:', err));
     } catch (err) {
@@ -1343,6 +1505,8 @@ app.get('/api/orders/:id/payment-status', async (req, res) => {
             "UPDATE orders SET paymentStatus = 'PAID', status = 'SELESAI', completedAt = NOW() WHERE id = ?",
             [id]
           );
+          await syncOrderAddonTransactions(connection, id);
+          await recalculateOrderMargin(connection, id);
           console.log(`💰 Verified: Xendit payment successful for order ${id}. Status set to SELESAI.`);
           sendFonnteInvoice(id).catch(err => console.error('Error auto-sending Fonnte invoice on payment verification:', err));
           return res.json({ paymentStatus: 'PAID', status: 'SELESAI' });
@@ -1517,7 +1681,13 @@ app.put('/api/services/:id', async (req, res) => {
 app.get('/api/addons', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [addons] = await connection.query('SELECT * FROM ac_addons');
+    const [addons] = await connection.query(`
+      SELECT a.*, 
+             CAST(COALESCE(SUM(CASE WHEN t.type = 'masuk' THEN t.qty ELSE -t.qty END), 0) AS SIGNED) AS stock
+      FROM ac_addons a
+      LEFT JOIN ac_addon_transactions t ON a.id = t.addonId
+      GROUP BY a.id
+    `);
     connection.release();
     res.json(addons);
   } catch (error) {
@@ -1557,6 +1727,93 @@ app.put('/api/addons/:id', async (req, res) => {
     res.json(addon[0] || { id, name, description: description || null, price: price || 0, hpp: hpp || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/addons/purchase', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Access denied. Admins or owners only.' });
+  }
+
+  const { addonId, qty, price, notes } = req.body;
+  if (!addonId || !qty || qty <= 0 || price === undefined || price < 0) {
+    return res.status(400).json({ error: 'Valid addonId, positive qty, and non-negative price are required.' });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const { stock: currentStock, hpp: currentHpp } = await getAddonStockAndHpp(connection, addonId);
+
+    const qtyNum = Number(qty);
+    const priceNum = Number(price);
+    const currentStockNum = Number(currentStock);
+    const currentHppNum = Number(currentHpp);
+
+    let newHpp = priceNum;
+    if (currentStockNum > 0) {
+      newHpp = ((currentStockNum * currentHppNum) + (qtyNum * priceNum)) / (currentStockNum + qtyNum);
+    }
+    
+    newHpp = Math.round(newHpp * 100) / 100;
+
+    await connection.query(
+      "UPDATE ac_addons SET hpp = ? WHERE id = ?",
+      [newHpp, addonId]
+    );
+
+    await connection.query(
+      "INSERT INTO ac_addon_transactions (addonId, type, qty, price, notes) VALUES (?, 'masuk', ?, ?, ?)",
+      [addonId, qtyNum, priceNum, notes || 'Pembelian/Restock Addon']
+    );
+
+    await connection.commit();
+    await logActivity(req, 'Restock Addon/Sparepart', `Membeli ${qtyNum} unit addon (ID: ${addonId}) @ Rp ${priceNum.toLocaleString('id-ID')} (HPP Baru: Rp ${newHpp.toLocaleString('id-ID')})`);
+    
+    res.json({
+      success: true,
+      newStock: currentStockNum + qtyNum,
+      newHpp: newHpp
+    });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error('Error recording addon purchase:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+app.get('/api/addons/transactions', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Access denied. Admins or owners only.' });
+  }
+
+  const { addonId } = req.query;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    let query = `
+      SELECT t.*, a.name AS addonName
+      FROM ac_addon_transactions t
+      JOIN ac_addons a ON t.addonId = a.id
+    `;
+    let params = [];
+    if (addonId) {
+      query += " WHERE t.addonId = ?";
+      params.push(addonId);
+    }
+    query += " ORDER BY t.createdAt DESC";
+
+    const [transactions] = await connection.query(query, params);
+    res.json(transactions);
+  } catch (error) {
+    console.error('Error fetching addon transactions:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
   }
 });
 

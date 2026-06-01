@@ -147,3 +147,18 @@ INSERT INTO settings (key_name, value) VALUES
 ('business_name', 'CoolAir Pro'),
 ('business_logo', '')
 ON DUPLICATE KEY UPDATE key_name=key_name;
+
+-- AC Addon Transactions Table
+CREATE TABLE IF NOT EXISTS ac_addon_transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  addonId VARCHAR(50) NOT NULL,
+  type ENUM('masuk', 'keluar') NOT NULL,
+  qty INT NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  notes TEXT,
+  orderId VARCHAR(50) NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (addonId) REFERENCES ac_addons(id) ON DELETE CASCADE,
+  FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE SET NULL
+);
+

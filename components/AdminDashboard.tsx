@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Order, OrderStatus, Role, ACModel, ACCategory, ACService, ACAddon } from '@/types';
+import { User, Order, OrderStatus, Role, ACModel, ACCategory, ACService, ACAddon, AddonTransaction } from '@/types';
 import * as api from '@/lib/api';
 import {
   LogOut,
@@ -405,6 +405,15 @@ export default function AdminDashboard() {
   const [newAddonName, setNewAddonName] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState(0);
   const [newAddonHpp, setNewAddonHpp] = useState(0);
+
+  // Addon Inventory states
+  const [activeAddonSubTab, setActiveAddonSubTab] = useState<'KATALOG' | 'TRANSAKSI'>('KATALOG');
+  const [selectedAddonForPurchase, setSelectedAddonForPurchase] = useState<ACAddon | null>(null);
+  const [purchaseQty, setPurchaseQty] = useState<number>(0);
+  const [purchasePrice, setPurchasePrice] = useState<number>(0);
+  const [purchaseNotes, setPurchaseNotes] = useState<string>('');
+  const [addonTransactions, setAddonTransactions] = useState<AddonTransaction[]>([]);
+  const [addonTxFilter, setAddonTxFilter] = useState<string>('ALL');
 
   // Edit inline states for master data
   const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
@@ -855,6 +864,69 @@ export default function AdminDashboard() {
         }
       }
     });
+  };
+
+  const fetchTransactions = async (addonId?: string) => {
+    try {
+      setIsLoading(true);
+      const data = await api.fetchAddonTransactions(addonId === 'ALL' ? undefined : addonId);
+      setAddonTransactions(data);
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMasterSubTab === 'ADDONS' && activeAddonSubTab === 'TRANSAKSI') {
+      fetchTransactions(addonTxFilter);
+    }
+  }, [activeMasterSubTab, activeAddonSubTab, addonTxFilter]);
+
+  const handlePurchaseAddon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAddonForPurchase) return;
+    if (purchaseQty <= 0) {
+      alert('⚠️ Jumlah pembelian harus lebih dari 0');
+      return;
+    }
+    if (purchasePrice <= 0) {
+      alert('⚠️ Harga unit harus lebih dari 0');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await api.purchaseAddon(selectedAddonForPurchase.id, {
+        qty: purchaseQty,
+        price: purchasePrice,
+        notes: purchaseNotes
+      });
+
+      // Update addons state in UI
+      setAddons(addons.map(a => 
+        a.id === selectedAddonForPurchase.id 
+          ? { ...a, stock: result.newStock, hpp: result.newHpp } 
+          : a
+      ));
+
+      // Reset states
+      setSelectedAddonForPurchase(null);
+      setPurchaseQty(0);
+      setPurchasePrice(0);
+      setPurchaseNotes('');
+      alert('✅ Berhasil mencatat pembelian stok baru');
+      
+      if (activeAddonSubTab === 'TRANSAKSI') {
+        fetchTransactions(addonTxFilter);
+      }
+    } catch (err: any) {
+      console.error('Error purchasing addon:', err);
+      alert(`❌ Gagal mencatat pembelian: ${err.message || 'Error'}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveMasterEdit = async (id: string) => {
@@ -1528,63 +1600,213 @@ export default function AdminDashboard() {
             {/* ADDONS */}
             {activeMasterSubTab === 'ADDONS' && (
               <div className="space-y-4">
-                <form onSubmit={handleAddAddon} className="flex flex-col sm:flex-row gap-3 bg-slate-50 border p-3 rounded-xl">
-                  <input
-                    type="text"
-                    placeholder="Alat/Bahan..."
-                    value={newAddonName}
-                    onChange={(e) => setNewAddonName(e.target.value)}
-                    className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500 font-semibold"
-                    required
-                  />
-                  <input
-                    type="number"
-                    value={newAddonHpp || ''}
-                    onChange={(e) => setNewAddonHpp(parseInt(e.target.value) || 0)}
-                    className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
-                    placeholder="Harga Modal (HPP)"
-                    required
-                  />
-                  <input
-                    type="number"
-                    value={newAddonPrice || ''}
-                    onChange={(e) => setNewAddonPrice(parseInt(e.target.value) || 0)}
-                    className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
-                    placeholder="Harga Jual"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-4 py-2 rounded-xl uppercase flex items-center gap-1 transition cursor-pointer self-end"
-                  >
-                    <Plus size={15} /> Tambah
-                  </button>
-                </form>
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
-                      <tr>
-                        <th className="p-3">Nama Suku Cadang</th>
-                        <th className="p-3">Harga Modal (HPP)</th>
-                        <th className="p-3">Harga Jual</th>
-                        <th className="p-3 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {addons.map(a => (
-                        <tr key={a.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-extrabold text-slate-800">{a.name}</td>
-                          <td className="p-3 font-mono text-amber-700 font-bold">{formatRupiah(a.hpp || 0)}</td>
-                          <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
-                          <td className="p-3 text-right flex justify-end gap-1.5">
-                            <button onClick={() => startEditMaster('ADDONS', a.id, a.name, a.price, '', a.hpp || 0)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
-                            <button onClick={() => handleDeleteAddon(a.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100"><Trash2 size={13} /></button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Addon Sub Tabs */}
+                <div className="flex border-b border-slate-100 pb-2 justify-between items-center flex-wrap gap-2">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveAddonSubTab('KATALOG')}
+                      className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${
+                        activeAddonSubTab === 'KATALOG'
+                          ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                          : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Katalog & Stok
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveAddonSubTab('TRANSAKSI')}
+                      className={`px-3 py-1.5 text-[9.5px] font-black uppercase rounded-lg transition duration-150 cursor-pointer ${
+                        activeAddonSubTab === 'TRANSAKSI'
+                          ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                          : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Riwayat Transaksi
+                    </button>
+                  </div>
+                  
+                  {activeAddonSubTab === 'TRANSAKSI' && (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Filter Barang:</span>
+                      <select
+                        value={addonTxFilter}
+                        onChange={(e) => setAddonTxFilter(e.target.value)}
+                        className="bg-white border border-slate-200 text-slate-700 text-[10px] px-2 py-1 rounded-lg outline-none font-bold"
+                      >
+                        <option value="ALL">Semua Barang</option>
+                        {addons.map(a => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
+
+                {/* KATALOG SUBTAB */}
+                {activeAddonSubTab === 'KATALOG' && (
+                  <div className="space-y-4">
+                    <form onSubmit={handleAddAddon} className="flex flex-col sm:flex-row gap-3 bg-slate-50 border p-3 rounded-xl">
+                      <input
+                        type="text"
+                        placeholder="Alat/Bahan..."
+                        value={newAddonName}
+                        onChange={(e) => setNewAddonName(e.target.value)}
+                        className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500 font-semibold"
+                        required
+                      />
+                      <input
+                        type="number"
+                        value={newAddonHpp || ''}
+                        onChange={(e) => setNewAddonHpp(parseInt(e.target.value) || 0)}
+                        className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
+                        placeholder="Harga Modal (HPP)"
+                        required
+                      />
+                      <input
+                        type="number"
+                        value={newAddonPrice || ''}
+                        onChange={(e) => setNewAddonPrice(parseInt(e.target.value) || 0)}
+                        className="bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-bold"
+                        placeholder="Harga Jual"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-4 py-2 rounded-xl uppercase flex items-center gap-1 transition cursor-pointer self-end shrink-0"
+                      >
+                        <Plus size={15} /> Tambah
+                      </button>
+                    </form>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
+                          <tr>
+                            <th className="p-3">Nama Suku Cadang</th>
+                            <th className="p-3">Stok</th>
+                            <th className="p-3">Harga Modal (HPP)</th>
+                            <th className="p-3">Harga Jual</th>
+                            <th className="p-3 text-right">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          {addons.map(a => {
+                            const stockCount = a.stock ?? 0;
+                            let stockColor = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+                            let stockLabel = 'Tersedia';
+                            if (stockCount <= 0) {
+                              stockColor = 'bg-rose-50 border-rose-200 text-rose-700 font-black';
+                              stockLabel = 'Habis';
+                            } else if (stockCount <= 5) {
+                              stockColor = 'bg-amber-50 border-amber-200 text-amber-700 font-bold';
+                              stockLabel = 'Menipis';
+                            }
+
+                            return (
+                              <tr key={a.id} className="hover:bg-slate-50/50 transition">
+                                <td className="p-3 font-extrabold text-slate-800">{a.name}</td>
+                                <td className="p-3">
+                                  <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-lg text-[10px] ${stockColor}`}>
+                                    <span className="font-extrabold font-mono">{stockCount}</span>
+                                    <span className="text-[8.5px] uppercase tracking-wide opacity-80">({stockLabel})</span>
+                                  </span>
+                                </td>
+                                <td className="p-3">
+                                  <span className="font-mono text-amber-700 font-bold block">{formatRupiah(a.hpp || 0)}</span>
+                                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block -mt-0.5">Moving Avg</span>
+                                </td>
+                                <td className="p-3 font-mono text-indigo-700 font-bold">{formatRupiah(a.price)}</td>
+                                <td className="p-3 text-right">
+                                  <div className="flex justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAddonForPurchase(a);
+                                        setPurchasePrice(a.hpp || a.price);
+                                        setPurchaseQty(10);
+                                        setPurchaseNotes('');
+                                      }}
+                                      title="Beli Stok (Restock)"
+                                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-lg border border-emerald-250 transition cursor-pointer"
+                                    >
+                                      📦 Beli Stok
+                                    </button>
+                                    <button
+                                      onClick={() => startEditMaster('ADDONS', a.id, a.name, a.price, '', a.hpp || 0)}
+                                      className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition cursor-pointer"
+                                    >
+                                      <Edit size={13} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteAddon(a.id)}
+                                      className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 cursor-pointer"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* TRANSAKSI SUBTAB */}
+                {activeAddonSubTab === 'TRANSAKSI' && (
+                  <div className="space-y-4">
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
+                          <tr>
+                            <th className="p-3">Tanggal & Waktu</th>
+                            <th className="p-3">Nama Barang</th>
+                            <th className="p-3">Tipe</th>
+                            <th className="p-3 text-center">Jumlah</th>
+                            <th className="p-3 text-right">Harga Unit</th>
+                            <th className="p-3">Catatan / Order ID</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          {addonTransactions.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="p-8 text-center text-slate-400 font-bold uppercase tracking-wider">Tidak ada riwayat transaksi ditemukan.</td>
+                            </tr>
+                          ) : (
+                            addonTransactions.map(tx => (
+                              <tr key={tx.id} className="hover:bg-slate-50/50 transition">
+                                <td className="p-3 text-slate-500 font-mono">{new Date(tx.createdAt).toLocaleString('id-ID')}</td>
+                                <td className="p-3 font-extrabold text-slate-800">{tx.addonName}</td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider border ${
+                                    tx.type === 'masuk'
+                                      ? 'bg-emerald-50 border-emerald-250 text-emerald-700'
+                                      : 'bg-rose-50 border-rose-250 text-rose-700'
+                                  }`}>
+                                    {tx.type === 'masuk' ? 'Masuk (Beli)' : 'Keluar (Pakai)'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-center font-black text-slate-850">
+                                  <span className="font-mono">{tx.qty}x</span>
+                                </td>
+                                <td className="p-3 text-right font-mono font-bold text-slate-700">{formatRupiah(tx.price)}</td>
+                                <td className="p-3 text-slate-600 font-semibold leading-relaxed">
+                                  {tx.notes || '-'}
+                                  {tx.orderId && (
+                                    <span className="block text-[8.5px] text-indigo-600 font-mono mt-0.5">Order ID: {tx.orderId}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2038,6 +2260,125 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* ===================== PURCHASE ADDON MODAL ===================== */}
+      {selectedAddonForPurchase && (
+        <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl text-left">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+              <div>
+                <h4 className="font-black text-xs uppercase tracking-wide">Beli Stok Addon / Sparepart</h4>
+                <p className="text-[9.5px] text-slate-400 mt-1">Barang: {selectedAddonForPurchase.name}</p>
+              </div>
+              <button
+                onClick={() => setSelectedAddonForPurchase(null)}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-850 transition cursor-pointer"
+                disabled={isLoading}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePurchaseAddon} className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Jumlah Pembelian</label>
+                  <input
+                    type="number"
+                    value={purchaseQty || ''}
+                    onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)}
+                    min={1}
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-mono font-extrabold"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Harga Beli Unit</label>
+                  <input
+                    type="number"
+                    value={purchasePrice || ''}
+                    onChange={(e) => setPurchasePrice(parseInt(e.target.value) || 0)}
+                    min={0}
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-mono font-extrabold"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Catatan Pembelian</label>
+                <textarea
+                  value={purchaseNotes}
+                  onChange={(e) => setPurchaseNotes(e.target.value)}
+                  placeholder="Misal: Beli di Toko AC Berkah, Nota #889"
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-semibold"
+                  rows={2}
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Real-time Moving Average Cost Calculation Preview */}
+              <div className="bg-indigo-50/70 border border-indigo-150 p-3.5 rounded-xl space-y-2">
+                <span className="text-[9px] font-black uppercase text-indigo-700 tracking-wider block border-b border-indigo-100 pb-1.5">🧮 Live Simulasi Moving Average HPP</span>
+                
+                <div className="grid grid-cols-2 gap-2 text-[10.5px] font-bold text-slate-700">
+                  <div>
+                    <span className="text-[9px] font-black text-slate-450 block uppercase tracking-wide">Stok Saat Ini:</span>
+                    <span>{selectedAddonForPurchase.stock ?? 0} Unit</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black text-slate-450 block uppercase tracking-wide">HPP Saat Ini:</span>
+                    <span className="font-mono">{formatRupiah(selectedAddonForPurchase.hpp || 0)}</span>
+                  </div>
+                  <div className="border-t border-slate-200/55 pt-1.5 mt-0.5">
+                    <span className="text-[9px] font-black text-slate-450 block uppercase tracking-wide">Stok Akhir:</span>
+                    <span className="text-indigo-700 font-extrabold">
+                      {(selectedAddonForPurchase.stock ?? 0) + (purchaseQty || 0)} Unit
+                    </span>
+                  </div>
+                  <div className="border-t border-slate-200/55 pt-1.5 mt-0.5">
+                    <span className="text-[9px] font-black text-slate-450 block uppercase tracking-wide">HPP Baru (Moving Avg):</span>
+                    <span className="text-indigo-700 font-extrabold font-mono">
+                      {(() => {
+                        const curStock = selectedAddonForPurchase.stock ?? 0;
+                        const curHpp = selectedAddonForPurchase.hpp ?? 0;
+                        const addQty = purchaseQty || 0;
+                        const addPrice = purchasePrice || 0;
+                        let newHpp = addPrice;
+                        if (curStock > 0) {
+                          newHpp = ((curStock * curHpp) + (addQty * addPrice)) / (curStock + addQty);
+                        }
+                        return formatRupiah(Math.round(newHpp * 100) / 100);
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAddonForPurchase(null)}
+                  disabled={isLoading}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-650 font-black text-xs px-4 py-2.5 rounded-xl uppercase transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-750 disabled:bg-slate-350 text-white font-black text-xs px-4 py-2.5 rounded-xl uppercase transition cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                >
+                  {isLoading && <Loader size={14} className="animate-spin" />}
+                  {isLoading ? 'Menyimpan...' : 'Simpan Pembelian'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ===================== EDIT MASTER DATA MODAL ===================== */}
       {editingMasterId && (
