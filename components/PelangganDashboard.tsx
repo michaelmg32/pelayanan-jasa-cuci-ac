@@ -61,7 +61,6 @@ export default function PelangganDashboard() {
   // Simulated Location details
   const [lat, setLat] = useState<number | undefined>(activeUser?.lat);
   const [lng, setLng] = useState<number | undefined>(activeUser?.lng);
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Rating input state
@@ -452,24 +451,6 @@ export default function PelangganDashboard() {
       setErrorMsg(error?.message || 'Gagal mengganti password');
       setIsLoading(false);
     }
-  };
-
-  // GPS Detection (simulated)
-  const handleGPSDetection = () => {
-    setIsDetectingLocation(true);
-    setTimeout(() => {
-      const randLat = -6.273 + (Math.random() - 0.5) * 0.05;
-      const randLng = 106.812 + (Math.random() - 0.5) * 0.05;
-      setLat(parseFloat(randLat.toFixed(5)));
-      setLng(parseFloat(randLng.toFixed(5)));
-
-      const cleanAddress = activeUser.address
-        ? activeUser.address
-        : `Jl. Kemang Raya No. ${Math.floor(Math.random() * 80) + 1}, Jakarta Selatan`;
-
-      setAddress(cleanAddress);
-      setIsDetectingLocation(false);
-    }, 1200);
   };
 
   // Handle rating submission
@@ -1670,11 +1651,11 @@ export default function PelangganDashboard() {
                         .filter(s => s.categoryId === selectedCategory)
                         .map(s => (
                           <option key={s.id} value={s.name}>
-                            {s.name} ({formatRupiah(s.price)})
+                            {s.name}
                           </option>
                         ))}
                       {services.filter(s => s.categoryId === selectedCategory).length === 0 && (
-                        <option value="none">Inspeksi & Konsultasi (Rp50.000)</option>
+                        <option value="none">Inspeksi & Konsultasi</option>
                       )}
                     </select>
                   </div>
@@ -1763,6 +1744,11 @@ export default function PelangganDashboard() {
                       <MapPin size={13} />
                       Pilih dari Peta Pintar
                     </button>
+                    {lat !== undefined && lng !== undefined && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
+                        <CheckCircle2 size={12} /> Titik lokasi tersimpan: {lat.toFixed(5)}, {lng.toFixed(5)}
+                      </p>
+                    )}
                   </div>
 
                   {/* Address */}
@@ -1774,7 +1760,7 @@ export default function PelangganDashboard() {
                       value={address}
                       onChange={e => setAddress(e.target.value)}
                       className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none h-16 resize-none"
-                      placeholder="Jl. Kemang Raya No. 123, Jakarta Selatan"
+                      placeholder="Walaupun terisi Otomatis dari Peta Pintar bisa ditulis alamat lebih lengkapnya"
                       required
                     />
                   </div>
