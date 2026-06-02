@@ -365,6 +365,35 @@ export const deleteService = async (serviceId: string) => {
   }
 };
 
+// ===== AC SERVICE PRICES =====
+export const fetchServicePrices = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/service-prices`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch service prices');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching service prices:', error);
+    return [];
+  }
+};
+
+export const updateServicePricesBulk = async (serviceId: string, prices: any[]) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/service-prices/bulk`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ serviceId, prices }),
+    });
+    if (!response.ok) throw new Error('Failed to update service prices bulk');
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating service prices bulk:', error);
+    throw error;
+  }
+};
+
 // ===== AC ADDONS =====
 export const fetchAddons = async () => {
   try {

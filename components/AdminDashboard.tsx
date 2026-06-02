@@ -54,6 +54,7 @@ export default function AdminDashboard() {
     models, setModels,
     categories, setCategories,
     services, setServices,
+    servicePrices, setServicePrices,
     addons, setAddons,
     logout,
     showAlert,
@@ -399,8 +400,10 @@ export default function AdminDashboard() {
   const [newCategoryHasServices, setNewCategoryHasServices] = useState(true);
 
   const [newServiceName, setNewServiceName] = useState('');
-  const [newServicePrice, setNewServicePrice] = useState(0);
   const [newServiceCategory, setNewServiceCategory] = useState('');
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [activePriceServiceId, setActivePriceServiceId] = useState<string | null>(null);
+  const [editingPrices, setEditingPrices] = useState<Record<string, number>>({});
 
   const [newAddonName, setNewAddonName] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState(0);
@@ -789,12 +792,10 @@ export default function AdminDashboard() {
       setIsLoading(true);
       const newService = await api.createService({
         name: newServiceName,
-        price: newServicePrice,
         categoryId: newServiceCategory
       });
       setServices([...services, newService]);
       setNewServiceName('');
-      setNewServicePrice(0);
       setErrorMsg('');
       alert('✅ Jenis pelayanan berhasil ditambahkan');
     } catch (error) {
@@ -955,8 +956,8 @@ export default function AdminDashboard() {
         const updated = categories.map(c => c.id === id ? { ...c, name: editMasterField1, hasServices: editMasterField2 as boolean } : c);
         setCategories(updated);
       } else if (editingMasterType === 'SERVICES') {
-        await api.updateService(id, { name: editMasterField1, price: editMasterField2, categoryId: editMasterField3 });
-        const updated = services.map(s => s.id === id ? { ...s, name: editMasterField1, price: editMasterField2 as number, categoryId: editMasterField3 } : s);
+        await api.updateService(id, { name: editMasterField1, categoryId: editMasterField3 });
+        const updated = services.map(s => s.id === id ? { ...s, name: editMasterField1, categoryId: editMasterField3 } : s);
         setServices(updated);
       } else if (editingMasterType === 'ADDONS') {
         await api.updateAddon(id, { name: editMasterField1, price: editMasterField2, hpp: editMasterField4 });
@@ -1528,21 +1529,13 @@ export default function AdminDashboard() {
                                 <div className="space-y-4">
                                   <form onSubmit={handleAddService} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
                                     <span className="text-[9px] font-black uppercase text-indigo-600 block tracking-widest">TAMBAH LAYANAN UNTUK {c.name.toUpperCase()}</span>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 gap-3">
                                       <input
                                         type="text"
                                         placeholder="Nama layanan..."
                                         value={newServiceName}
                                         onChange={(e) => setNewServiceName(e.target.value)}
                                         className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
-                                        required
-                                      />
-                                      <input
-                                        type="number"
-                                        value={newServicePrice || ''}
-                                        onChange={(e) => setNewServicePrice(parseInt(e.target.value) || 0)}
-                                        className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-mono font-extrabold"
-                                        placeholder="Harga (Rp)"
                                         required
                                       />
                                     </div>
@@ -1559,22 +1552,30 @@ export default function AdminDashboard() {
                                       <thead className="bg-slate-100 text-slate-500 font-extrabold uppercase tracking-wider text-[9px]">
                                         <tr>
                                           <th className="p-2.5 px-3">Nama Layanan</th>
-                                          <th className="p-2.5 px-3">Harga</th>
                                           <th className="p-2.5 px-3 text-right">Aksi</th>
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-slate-100">
                                         {services.filter(s => s.categoryId === c.id).length === 0 ? (
                                           <tr>
-                                            <td colSpan={3} className="p-4 text-center text-slate-400 font-medium text-xs">Belum ada layanan di kategori ini</td>
+                                            <td colSpan={2} className="p-4 text-center text-slate-400 font-medium text-xs">Belum ada layanan di kategori ini</td>
                                           </tr>
                                         ) : (
                                           services.filter(s => s.categoryId === c.id).map(s => (
                                             <tr key={s.id} className="hover:bg-slate-50">
                                               <td className="p-2.5 px-3 font-extrabold text-slate-800">{s.name}</td>
-                                              <td className="p-2.5 px-3 font-mono text-indigo-700 font-bold">{formatRupiah(s.price)}</td>
                                               <td className="p-2.5 px-3 text-right flex justify-end gap-1.5">
-                                                <button onClick={(e) => { e.stopPropagation(); startEditMaster('SERVICES', s.id, s.name, s.price, s.categoryId); }} className="text-indigo-600 hover:bg-indigo-100 p-1 rounded-lg transition"><Edit size={12} /></button>
+                                                <button onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const initialPrices: Record<string, number> = {};
+                                                  servicePrices.filter(sp => sp.serviceId === s.id).forEach(sp => {
+                                                    initialPrices[sp.modelId] = sp.price;
+                                                  });
+                                                  setEditingPrices(initialPrices);
+                                                  setActivePriceServiceId(s.id);
+                                                  setShowPriceModal(true);
+                                                }} className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-[9px] px-2 py-1 rounded border border-indigo-200 transition">Atur Harga Model</button>
+                                                <button onClick={(e) => { e.stopPropagation(); startEditMaster('SERVICES', s.id, s.name, 0, s.categoryId); }} className="text-indigo-600 hover:bg-indigo-100 p-1 rounded-lg transition"><Edit size={12} /></button>
                                                 <button onClick={(e) => { e.stopPropagation(); handleDeleteService(s.id); }} className="text-red-500 hover:bg-red-100 p-1 rounded-lg transition"><Trash2 size={12} /></button>
                                               </td>
                                             </tr>
@@ -3336,6 +3337,90 @@ export default function AdminDashboard() {
                 disabled={isLoading}
               >
                 <Trash2 size={13} /> {confirmDialog.title.includes('Batalkan') ? 'Batalkan' : 'Ya, Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ===================== PRICE MODAL ===================== */}
+      {showPriceModal && activePriceServiceId && (
+        <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white border rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl text-left flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-indigo-600 text-white shrink-0">
+              <h4 className="font-black text-xs uppercase tracking-wide flex items-center gap-2">
+                <DollarSign size={14} /> Atur Harga Model AC
+              </h4>
+              <button onClick={() => setShowPriceModal(false)} className="p-1 rounded-full text-indigo-200 hover:bg-indigo-700 transition cursor-pointer">
+                <X size={15} />
+              </button>
+            </div>
+            
+            <div className="p-5 overflow-y-auto flex-1 bg-slate-50">
+              <p className="text-[10px] text-slate-500 font-semibold mb-4">
+                Layanan: <strong className="text-slate-800 text-xs">{services.find(s => s.id === activePriceServiceId)?.name}</strong>
+              </p>
+              
+              <div className="space-y-3">
+                {models.map(m => (
+                  <div key={m.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <span className="text-xs font-bold text-slate-800">{m.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-400">Rp</span>
+                      <input
+                        type="number"
+                        value={editingPrices[m.id] !== undefined ? editingPrices[m.id] : ''}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value);
+                          setEditingPrices(prev => ({
+                            ...prev,
+                            [m.id]: val as number
+                          }));
+                        }}
+                        className="w-32 bg-slate-50 border border-slate-200 text-slate-800 text-xs px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-mono font-extrabold text-right"
+                        placeholder="Harga"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-end gap-2 shrink-0">
+              <button
+                onClick={() => setShowPriceModal(false)}
+                className="px-4 py-2 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-100 rounded-xl transition cursor-pointer border border-slate-200"
+              >
+                Batal
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    const pricesArray = Object.entries(editingPrices)
+                      .filter(([_, price]) => price !== undefined && price !== '' && !isNaN(price as number))
+                      .map(([modelId, price]) => ({
+                        modelId,
+                        price: Number(price)
+                      }));
+                      
+                    await api.updateServicePricesBulk(activePriceServiceId, pricesArray);
+                    
+                    const updatedPrices = await api.fetchServicePrices();
+                    setServicePrices(updatedPrices);
+                    
+                    setShowPriceModal(false);
+                    alert('✅ Harga per model berhasil disimpan!');
+                  } catch (err) {
+                    console.error(err);
+                    alert('❌ Gagal menyimpan harga.');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                className="px-4 py-2 text-[10px] font-black uppercase text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-500/20 cursor-pointer flex items-center gap-1"
+                disabled={isLoading}
+              >
+                <Save size={13} /> {isLoading ? 'Menyimpan...' : 'Simpan Harga'}
               </button>
             </div>
           </div>

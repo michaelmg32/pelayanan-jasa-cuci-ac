@@ -23,6 +23,8 @@ interface AppContextType {
   setCategories: (categories: ACCategory[]) => void;
   services: ACService[];
   setServices: (services: ACService[]) => void;
+  servicePrices: any[];
+  setServicePrices: (prices: any[]) => void;
   addons: ACAddon[];
   setAddons: (addons: ACAddon[]) => void;
   
@@ -83,6 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [models, setModels] = useState<ACModel[]>([]);
   const [categories, setCategories] = useState<ACCategory[]>([]);
   const [services, setServices] = useState<ACService[]>([]);
+  const [servicePrices, setServicePrices] = useState<any[]>([]);
   const [addons, setAddons] = useState<ACAddon[]>([]);
 
   // Loading state
@@ -114,7 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         // Fetch all data
-        const [fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings] = await Promise.all([
+        const [fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings, fetchedServicePrices] = await Promise.all([
           api.fetchUsers(),
           api.fetchOrders(),
           api.fetchModels(),
@@ -122,12 +125,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           api.fetchCategories(),
           api.fetchAddons(),
           api.fetchSettings(),
+          api.fetchServicePrices(),
         ]);
 
         setUsers(fetchedUsers);
         setOrders(fetchedOrders);
         setModels(fetchedModels);
         setServices(fetchedServices);
+        setServicePrices(fetchedServicePrices);
         setCategories(fetchedCategories);
         setAddons(fetchedAddons);
         if (fetchedSettings) {
@@ -343,11 +348,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addNewOrder = async (orderData: any) => {
     if (!activeUser) return;
 
-    let serviceCost = 50000;
+    let serviceCost = 0;
     if (orderData.serviceType && orderData.serviceType !== 'none') {
-      const match = services.find(s => s.name === orderData.serviceType);
-      if (match) {
-        serviceCost = match.price;
+      const matchService = services.find(s => s.name === orderData.serviceType || s.id === orderData.serviceType);
+      const matchModel = models.find(m => m.name === orderData.acType || m.id === orderData.acType);
+      if (matchService && matchModel) {
+        const priceEntry = servicePrices.find(sp => sp.serviceId === matchService.id && sp.modelId === matchModel.id);
+        if (priceEntry) {
+          serviceCost = priceEntry.price;
+        }
       }
     }
     serviceCost = serviceCost * orderData.quantity;
@@ -452,6 +461,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCategories,
         services,
         setServices,
+        servicePrices,
+        setServicePrices,
         addons,
         setAddons,
         isLoading,

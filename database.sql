@@ -43,12 +43,22 @@ CREATE TABLE IF NOT EXISTS ac_services (
   categoryId VARCHAR(50),
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  basePrice DECIMAL(10, 2) NOT NULL,
-  price DECIMAL(10, 2),
   duration INT,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (categoryId) REFERENCES ac_categories(id),
   INDEX idx_categoryId (categoryId)
+);
+
+-- AC Service Prices Table (Pivot)
+CREATE TABLE IF NOT EXISTS ac_service_prices (
+  id VARCHAR(50) PRIMARY KEY,
+  serviceId VARCHAR(50) NOT NULL,
+  modelId VARCHAR(50) NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (serviceId) REFERENCES ac_services(id) ON DELETE CASCADE,
+  FOREIGN KEY (modelId) REFERENCES ac_models(id) ON DELETE CASCADE,
+  UNIQUE INDEX idx_service_model (serviceId, modelId)
 );
 
 -- AC Addons Table
@@ -125,11 +135,25 @@ INSERT INTO ac_models (id, name, manufacturer) VALUES
 ('model-2', 'Window Unit 2PK', 'LG'),
 ('model-3', 'Split Unit 1.5PK', 'Daikin');
 
-INSERT INTO ac_services (id, categoryId, name, description, basePrice, price, duration) VALUES
-('svc-1', 'cat-1', 'Cuci AC Rutin', 'Pembersihan menyeluruh AC', 150000, 150000, 60),
-('svc-2', 'cat-1', 'Cuci AC Overhaul', 'Pembersihan lengkap dengan penggantian spare', 250000, 250000, 120),
-('svc-3', 'cat-2', 'Perbaikan Kompresor', 'Perbaikan kompresor AC', 500000, 500000, 180),
-('svc-4', 'cat-3', 'Service Bulanan', 'Service rutin bulanan', 100000, 100000, 45);
+INSERT INTO ac_services (id, categoryId, name, description, duration) VALUES
+('svc-1', 'cat-1', 'Cuci AC Rutin', 'Pembersihan menyeluruh AC', 60),
+('svc-2', 'cat-1', 'Cuci AC Overhaul', 'Pembersihan lengkap dengan penggantian spare', 120),
+('svc-3', 'cat-2', 'Perbaikan Kompresor', 'Perbaikan kompresor AC', 180),
+('svc-4', 'cat-3', 'Service Bulanan', 'Service rutin bulanan', 45);
+
+INSERT INTO ac_service_prices (id, serviceId, modelId, price) VALUES
+('price-1', 'svc-1', 'model-1', 150000),
+('price-2', 'svc-1', 'model-2', 150000),
+('price-3', 'svc-1', 'model-3', 150000),
+('price-4', 'svc-2', 'model-1', 250000),
+('price-5', 'svc-2', 'model-2', 250000),
+('price-6', 'svc-2', 'model-3', 250000),
+('price-7', 'svc-3', 'model-1', 500000),
+('price-8', 'svc-3', 'model-2', 500000),
+('price-9', 'svc-3', 'model-3', 500000),
+('price-10', 'svc-4', 'model-1', 100000),
+('price-11', 'svc-4', 'model-2', 100000),
+('price-12', 'svc-4', 'model-3', 100000);
 
 INSERT INTO ac_addons (id, name, description, price, hpp) VALUES
 ('addon-1', 'Desinfektan', 'Disinfektasi khusus AC', 50000, 20000),

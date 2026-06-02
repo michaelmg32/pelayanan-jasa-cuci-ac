@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, models, categories, services, addons, logout, showAlert, users, appSettings } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, models, categories, services, servicePrices, addons, logout, showAlert, users, appSettings } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
@@ -251,10 +251,17 @@ export default function PelangganDashboard() {
   // Get service price
   const getSelectedServicePrice = () => {
     if (selectedService === 'none' || !selectedService) {
-      return 50000;
+      return 0;
     }
-    const match = services.find(s => s.name === selectedService);
-    return match ? match.price : 75000;
+    const matchService = services.find(s => s.name === selectedService);
+    const matchModel = models.find(m => m.name === selectedModel);
+    if (matchService && matchModel) {
+      const priceEntry = servicePrices.find(sp => sp.serviceId === matchService.id && sp.modelId === matchModel.id);
+      if (priceEntry) {
+        return priceEntry.price;
+      }
+    }
+    return 0;
   };
 
   const currentServicePrice = getSelectedServicePrice();
@@ -265,6 +272,11 @@ export default function PelangganDashboard() {
     e.preventDefault();
     if (!address.trim() || !phone.trim() || !date) {
       alert('Mohon lengkapi alamat, nomor telepon, dan tanggal pengerjaan.');
+      return;
+    }
+
+    if (currentServicePrice === 0) {
+      alert('❌ Maaf, harga untuk layanan dan model AC ini belum tersedia. Silakan hubungi admin.');
       return;
     }
 
@@ -297,8 +309,7 @@ export default function PelangganDashboard() {
       const orderId = `ORD-${yymmdd}-${rand}`;
 
       // Get service price
-      const serviceObj = services.find(s => s.id === selectedService || s.name === selectedService);
-      const serviceCost = serviceObj ? serviceObj.price : 75000;
+      const serviceCost = currentServicePrice;
       const totalCost = serviceCost * quantity;
 
       await api.createOrder({

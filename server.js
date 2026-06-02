@@ -250,6 +250,37 @@ const initializeDatabaseSettings = async () => {
     `);
     console.log("✅ Auto-migrated 'ac_addon_transactions' table in database");
 
+    // Auto-migration: Create ac_service_prices table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ac_service_prices (
+        id VARCHAR(50) PRIMARY KEY,
+        serviceId VARCHAR(50) NOT NULL,
+        modelId VARCHAR(50) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (serviceId) REFERENCES ac_services(id) ON DELETE CASCADE,
+        FOREIGN KEY (modelId) REFERENCES ac_models(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_service_model (serviceId, modelId)
+      )
+    `);
+    console.log("✅ Auto-migrated 'ac_service_prices' table in database");
+
+    // Auto-migration: Remove basePrice and price from ac_services if they exist
+    try {
+      const [svcCols1] = await connection.query("SHOW COLUMNS FROM ac_services LIKE 'basePrice'");
+      if (svcCols1.length > 0) {
+        await connection.query("ALTER TABLE ac_services DROP COLUMN basePrice");
+        console.log("✅ Dropped 'basePrice' column from 'ac_services'");
+      }
+      const [svcCols2] = await connection.query("SHOW COLUMNS FROM ac_services LIKE 'price'");
+      if (svcCols2.length > 0) {
+        await connection.query("ALTER TABLE ac_services DROP COLUMN price");
+        console.log("✅ Dropped 'price' column from 'ac_services'");
+      }
+    } catch(e) {
+      console.log("⚠️ Could not drop columns from ac_services (might be due to constraints):", e.message);
+    }
+
     // Check if we need to seed initial transactions
     const [txCountRows] = await connection.query("SELECT COUNT(*) as count FROM ac_addon_transactions");
     const txCount = txCountRows[0]?.count || 0;
@@ -1666,18 +1697,17 @@ app.get('/api/services', async (req, res) => {
 });
 
 app.post('/api/services', async (req, res) => {
-  const { id, name, description, basePrice, price, duration, categoryId } = req.body;
+  const { id, name, description, duration, categoryId } = req.body;
   try {
     const connection = await pool.getConnection();
     const newId = id || `svc_${Date.now()}`;
-    const finalPrice = price || basePrice || 0;
     await connection.query(
-      'INSERT INTO ac_services (id, categoryId, name, description, basePrice, price, duration) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [newId, categoryId || null, name, description || null, finalPrice, finalPrice, duration || null]
+      'INSERT INTO ac_services (id, categoryId, name, description, duration) VALUES (?, ?, ?, ?, ?)',
+      [newId, categoryId || null, name, description || null, duration || null]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Layanan AC', `Menambahkan layanan baru: ${name}`);
-    res.status(201).json({ id: newId, categoryId: categoryId || null, name, description: description || null, basePrice: finalPrice, price: finalPrice, duration: duration || null });
+    res.status(201).json({ id: newId, categoryId: categoryId || null, name, description: description || null, duration: duration || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1685,19 +1715,66 @@ app.post('/api/services', async (req, res) => {
 
 app.put('/api/services/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, basePrice, price, duration, categoryId } = req.body;
+  const { name, description, duration, categoryId } = req.body;
   try {
     const connection = await pool.getConnection();
-    const finalPrice = price !== undefined ? price : (basePrice !== undefined ? basePrice : 0);
     await connection.query(
-      'UPDATE ac_services SET name = ?, description = ?, basePrice = ?, price = ?, duration = ?, categoryId = ? WHERE id = ?',
-      [name, description || null, finalPrice, finalPrice, duration || null, categoryId || null, id]
+      'UPDATE ac_services SET name = ?, description = ?, duration = ?, categoryId = ? WHERE id = ?',
+      [name, description || null, duration || null, categoryId || null, id]
     );
     const [service] = await connection.query('SELECT * FROM ac_services WHERE id = ?', [id]);
     connection.release();
     await logActivity(req, 'Memperbarui Layanan AC', `Memperbarui layanan: ${service[0]?.name || name}`);
-    res.json(service[0] || { id, categoryId: categoryId || null, name, description: description || null, basePrice: finalPrice, price: finalPrice, duration: duration || null });
+    res.json(service[0] || { id, categoryId: categoryId || null, name, description: description || null, duration: duration || null });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== AC SERVICE PRICES API =====
+app.get('/api/service-prices', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [prices] = await connection.query('SELECT * FROM ac_service_prices');
+    connection.release();
+    res.json(prices);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/service-prices/bulk', async (req, res) => {
+  const { serviceId, prices } = req.body;
+  if (!serviceId || !Array.isArray(prices)) {
+    return res.status(400).json({ error: 'Valid serviceId and prices array required' });
+  }
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    await connection.query('DELETE FROM ac_service_prices WHERE serviceId = ?', [serviceId]);
+
+    for (const p of prices) {
+      if (p.modelId && p.price !== undefined) {
+        const newId = \`price_\${Date.now()}_\${Math.random().toString(36).substring(2, 6)}\`;
+        await connection.query(
+          'INSERT INTO ac_service_prices (id, serviceId, modelId, price) VALUES (?, ?, ?, ?)',
+          [newId, serviceId, p.modelId, Number(p.price)]
+        );
+      }
+    }
+
+    await connection.commit();
+    connection.release();
+    
+    await logActivity(req, 'Mengatur Harga Layanan', \`Mengatur harga per model untuk layanan ID: \${serviceId}\`);
+    res.json({ success: true, message: 'Harga layanan berhasil diperbarui' });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+      connection.release();
+    }
     res.status(500).json({ error: error.message });
   }
 });
