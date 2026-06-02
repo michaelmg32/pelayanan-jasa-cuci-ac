@@ -62,6 +62,7 @@ export default function PelangganDashboard() {
   const [lat, setLat] = useState<number | undefined>(activeUser?.lat);
   const [lng, setLng] = useState<number | undefined>(activeUser?.lng);
   const [showMapPicker, setShowMapPicker] = useState(false);
+  const [inspectedPhoto, setInspectedPhoto] = useState<string | null>(null);
 
   // Rating input state
   const [ratingInput, setRatingInput] = useState<{ [orderId: string]: { score: number; review: string } }>({});
@@ -824,7 +825,13 @@ export default function PelangganDashboard() {
                           {/* Staff Assignment */}
                           {order.assignedEmployeeName ? (
                             <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-3 py-2 rounded-xl text-left">
-                              <div className="w-8 h-8 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border">
+                              <div 
+                                className="w-8 h-8 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border cursor-pointer hover:opacity-80 transition"
+                                onClick={() => {
+                                  const photo = users?.find(u => u.id === order.assignedTo)?.photo;
+                                  if (photo) setInspectedPhoto(photo);
+                                }}
+                              >
                                 {users?.find(u => u.id === order.assignedTo)?.photo ? (
                                   <img src={users.find(u => u.id === order.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
                                 ) : (
@@ -2010,6 +2017,20 @@ export default function PelangganDashboard() {
                   onCancel={() => setShowProfileMapPicker(false)}
                 />
               </div>
+            </div>
+          </div>
+        )}
+        {/* PHOTO INSPECTION MODAL */}
+        {inspectedPhoto && (
+          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in" onClick={() => setInspectedPhoto(null)}>
+            <div className="relative max-w-sm w-full animate-scale-in" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setInspectedPhoto(null)}
+                className="absolute -top-12 right-0 p-2 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer transition"
+              >
+                <X size={20} />
+              </button>
+              <img src={inspectedPhoto} alt="Inspected Photo" className="w-full h-auto rounded-2xl shadow-2xl border-4 border-white" />
             </div>
           </div>
         )}

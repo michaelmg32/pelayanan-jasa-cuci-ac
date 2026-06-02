@@ -61,6 +61,7 @@ export default function AdminDashboard() {
     appSettings
   } = useApp();
   const alert = showAlert;
+  const [inspectedPhoto, setInspectedPhoto] = useState<string | null>(null);
 
   // Extract staff members from users and sort by rating & jobs done
   const staffList = users.filter(u => u.role === Role.STAFF);
@@ -1258,7 +1259,14 @@ export default function AdminDashboard() {
                       <div className="flex flex-col gap-2 bg-slate-100 border border-slate-200 p-3 rounded-xl">
                         <div className="flex items-center gap-2 text-[10.5px]">
                           <span className="font-bold text-slate-500">Teknisi Lapangan:</span>
-                          <div className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750">
+                          <div 
+                            className="w-5 h-5 rounded-full overflow-hidden border bg-white shrink-0 flex items-center justify-center font-bold text-[9px] text-indigo-750 cursor-pointer hover:opacity-80 transition"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const photo = users?.find(u => u.id === order.assignedTo)?.photo;
+                              if (photo) setInspectedPhoto(photo);
+                            }}
+                          >
                             {users?.find(u => u.id === order.assignedTo)?.photo ? (
                               <img src={users.find(u => u.id === order.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
                             ) : (
@@ -3080,7 +3088,14 @@ export default function AdminDashboard() {
                 <div className="bg-white p-3 rounded-xl border border-slate-100">
                   {selectedOrderDetail.assignedEmployeeName ? (
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase overflow-hidden">
+                      <div 
+                        className="w-9 h-9 bg-indigo-50 border border-indigo-200 text-indigo-700 font-black flex items-center justify-center rounded-lg uppercase overflow-hidden cursor-pointer hover:opacity-80 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const photo = users?.find(u => u.id === selectedOrderDetail.assignedTo)?.photo;
+                          if (photo) setInspectedPhoto(photo);
+                        }}
+                      >
                         {users?.find(u => u.id === selectedOrderDetail.assignedTo)?.photo ? (
                           <img src={users.find(u => u.id === selectedOrderDetail.assignedTo)?.photo} alt="Teknisi" className="w-full h-full object-cover" />
                         ) : (
@@ -3423,6 +3438,20 @@ export default function AdminDashboard() {
                 <Save size={13} /> {isLoading ? 'Menyimpan...' : 'Simpan Harga'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* PHOTO INSPECTION MODAL */}
+      {inspectedPhoto && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in" onClick={() => setInspectedPhoto(null)}>
+          <div className="relative max-w-sm w-full animate-scale-in" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setInspectedPhoto(null)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer transition"
+            >
+              <X size={20} />
+            </button>
+            <img src={inspectedPhoto} alt="Inspected Photo" className="w-full h-auto rounded-2xl shadow-2xl border-4 border-white" />
           </div>
         </div>
       )}
