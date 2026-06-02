@@ -3397,7 +3397,7 @@ export default function AdminDashboard() {
                   try {
                     setIsLoading(true);
                     const pricesArray = Object.entries(editingPrices)
-                      .filter(([_, price]) => price !== undefined && price !== '' && !isNaN(price as number))
+                      .filter(([_, price]) => price !== undefined && (price as any) !== '' && !isNaN(Number(price)))
                       .map(([modelId, price]) => ({
                         modelId,
                         price: Number(price)
