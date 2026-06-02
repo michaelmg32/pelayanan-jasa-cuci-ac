@@ -1757,7 +1757,7 @@ app.post('/api/service-prices/bulk', async (req, res) => {
 
     for (const p of prices) {
       if (p.modelId && p.price !== undefined) {
-        const newId = \`price_\${Date.now()}_\${Math.random().toString(36).substring(2, 6)}\`;
+        const newId = `price_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
         await connection.query(
           'INSERT INTO ac_service_prices (id, serviceId, modelId, price) VALUES (?, ?, ?, ?)',
           [newId, serviceId, p.modelId, Number(p.price)]
@@ -1768,7 +1768,7 @@ app.post('/api/service-prices/bulk', async (req, res) => {
     await connection.commit();
     connection.release();
     
-    await logActivity(req, 'Mengatur Harga Layanan', \`Mengatur harga per model untuk layanan ID: \${serviceId}\`);
+    await logActivity(req, 'Mengatur Harga Layanan', `Mengatur harga per model untuk layanan ID: ${serviceId}`);
     res.json({ success: true, message: 'Harga layanan berhasil diperbarui' });
   } catch (error) {
     if (connection) {
