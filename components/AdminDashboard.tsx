@@ -89,8 +89,12 @@ export default function AdminDashboard() {
       phone = '62' + phone.substring(1);
     }
 
-    const serviceName = `${order.acDetail?.quantity || 0}x ${order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType
-      } (${order.acDetail?.acType || ''})`;
+    let serviceName = 'Jasa Layanan AC';
+    if (Array.isArray(order.acDetail) && order.acDetail.length > 0) {
+      serviceName = order.acDetail.map(s => `${s.quantity || 0}x ${s.serviceType === 'none' ? s.category : s.serviceType} (${s.acType || ''})`).join(', ');
+    } else if (order.acDetail) {
+      serviceName = `${(order.acDetail as any).quantity || 0}x ${(order.acDetail as any).serviceType === 'none' ? (order.acDetail as any).category : (order.acDetail as any).serviceType} (${(order.acDetail as any).acType || ''})`;
+    }
 
     let addonsUsedParsed: any[] = [];
     if (order.addonsUsed) {
@@ -1190,7 +1194,9 @@ export default function AdminDashboard() {
                       <div>
                         <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase tracking-wider">{order.id}</span>
                         <h4 className="font-extrabold text-xs text-slate-850 mt-1.5 uppercase tracking-normal">
-                          {order.acDetail ? `${order.acDetail.quantity} Unit x ${order.acDetail.serviceType === 'none' ? order.acDetail.category : order.acDetail.serviceType}` : 'Detail tidak tersedia'}
+                          {Array.isArray(order.acDetail) 
+                            ? order.acDetail.map(s => `${s.quantity} Unit x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ') 
+                            : order.acDetail ? `${(order.acDetail as any).quantity} Unit x ${(order.acDetail as any).serviceType === 'none' ? (order.acDetail as any).category : (order.acDetail as any).serviceType}` : 'Detail tidak tersedia'}
                         </h4>
                       </div>
                       <span className={`text-[8.5px] px-2 py-0.6 font-black uppercase rounded tracking-wider border ${order.status === OrderStatus.MENUNGGU ? 'bg-amber-50 border-amber-200 text-amber-800' :
@@ -2847,7 +2853,7 @@ export default function AdminDashboard() {
 
             <div className="p-4 space-y-4">
               <div className="text-[10.5px] text-slate-600 bg-slate-50 p-2.5 rounded-xl font-medium">
-                <div>🛠️ Jasa: {selectedOrderForAssign.acDetail.quantity} Unit</div>
+                <div>🛠️ Jasa: {Array.isArray(selectedOrderForAssign.acDetail) ? selectedOrderForAssign.acDetail.reduce((sum, s) => sum + (s.quantity || 0), 0) : (selectedOrderForAssign.acDetail as any).quantity} Unit</div>
                 <div>👤 Pelanggan: {selectedOrderForAssign.customerName}</div>
                 <div>📍 Alamat: {selectedOrderForAssign.address}</div>
               </div>
@@ -3065,14 +3071,31 @@ export default function AdminDashboard() {
               <div className="space-y-2 text-xs">
                 <h5 className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block border-b pb-1.5">🛠️ Rincian Jasa & Model AC</h5>
                 <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl space-y-2">
-                  <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 font-extrabold text-slate-800 text-[11px]">
-                    <span>{selectedOrderDetail.acDetail?.category} - {selectedOrderDetail.acDetail?.serviceType === 'none' ? 'Umum' : selectedOrderDetail.acDetail?.serviceType}</span>
-                    <span className="text-indigo-700 font-mono">{selectedOrderDetail.acDetail?.quantity} Unit</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold block text-[9.5px]">Tipe/Model AC Pelanggan:</span>
-                    <span className="font-extrabold text-slate-700 uppercase">{selectedOrderDetail.acDetail?.acType || 'Tidak Diisi'}</span>
-                  </div>
+                  {Array.isArray(selectedOrderDetail.acDetail) ? (
+                    selectedOrderDetail.acDetail.map((item, idx) => (
+                      <div key={idx} className="mb-2 last:mb-0 border-b border-slate-100 last:border-0 pb-2 last:pb-0">
+                        <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 font-extrabold text-slate-800 text-[11px] mb-1">
+                          <span>{item.category} - {item.serviceType === 'none' ? 'Umum' : item.serviceType}</span>
+                          <span className="text-indigo-700 font-mono">{item.quantity} Unit</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 font-bold block text-[9.5px]">Tipe/Model AC Pelanggan:</span>
+                          <span className="font-extrabold text-slate-700 uppercase">{item.acType || 'Tidak Diisi'}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : selectedOrderDetail.acDetail && (
+                    <div className="mb-2 border-b border-slate-100 pb-2">
+                      <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 font-extrabold text-slate-800 text-[11px] mb-1">
+                        <span>{(selectedOrderDetail.acDetail as any).category} - {(selectedOrderDetail.acDetail as any).serviceType === 'none' ? 'Umum' : (selectedOrderDetail.acDetail as any).serviceType}</span>
+                        <span className="text-indigo-700 font-mono">{(selectedOrderDetail.acDetail as any).quantity} Unit</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold block text-[9.5px]">Tipe/Model AC Pelanggan:</span>
+                        <span className="font-extrabold text-slate-700 uppercase">{(selectedOrderDetail.acDetail as any).acType || 'Tidak Diisi'}</span>
+                      </div>
+                    </div>
+                  )}
                   {selectedOrderDetail.notes && (
                     <div className="bg-white p-2 rounded-lg border border-slate-100/50">
                       <span className="text-slate-400 font-bold block text-[9.5px]">Catatan Khusus Pelanggan:</span>
@@ -3255,7 +3278,7 @@ export default function AdminDashboard() {
                   {/* Breakdown cost */}
                   <div className="space-y-1.5 text-xs text-slate-600">
                     <div className="flex justify-between">
-                      <span>Harga Layanan Dasar ({selectedOrderDetail.acDetail?.quantity} Unit):</span>
+                      <span>Harga Layanan Dasar ({Array.isArray(selectedOrderDetail.acDetail) ? selectedOrderDetail.acDetail.reduce((sum, s) => sum + (s.quantity || 0), 0) : (selectedOrderDetail.acDetail as any)?.quantity} Unit):</span>
                       <span className="font-mono font-semibold">{formatRupiah(selectedOrderDetail.serviceCost)}</span>
                     </div>
                     {selectedOrderDetail.addonsUsed && selectedOrderDetail.addonsUsed.length > 0 && (

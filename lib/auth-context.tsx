@@ -375,12 +375,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       longitude: orderData.longitude,
       scheduledDate: orderData.scheduledDate,
       scheduledTime: orderData.scheduledTime,
-      acDetail: {
+      acDetail: orderData.acDetail || [{
         acType: orderData.acType,
         category: orderData.category,
         serviceType: orderData.serviceType,
         quantity: orderData.quantity,
-      },
+      }],
       notes: orderData.notes,
       status: OrderStatus.MENUNGGU,
       createdAt: new Date().toISOString(),

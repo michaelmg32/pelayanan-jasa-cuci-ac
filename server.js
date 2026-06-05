@@ -184,7 +184,9 @@ const initializeDatabaseSettings = async () => {
         if (order.acDetail) {
           try {
             const acDetailParsed = typeof order.acDetail === 'string' ? JSON.parse(order.acDetail) : order.acDetail;
-            if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
+            if (Array.isArray(acDetailParsed)) {
+              quantity = acDetailParsed.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            } else if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
               quantity = acDetailParsed.quantity;
             }
           } catch (e) { }
@@ -762,7 +764,7 @@ app.get('/api/orders', async (req, res) => {
     const parsedOrders = orders.map(order => ({
       ...order,
       assignedTo: order.workerId, // Map database field to API field
-      acDetail: order.acDetail ? JSON.parse(order.acDetail) : null,
+      acDetail: order.acDetail ? (Array.isArray(JSON.parse(order.acDetail)) ? JSON.parse(order.acDetail) : [JSON.parse(order.acDetail)]) : [],
       serviceIds: order.serviceIds ? JSON.parse(order.serviceIds) : [],
       addonIds: order.addonIds ? JSON.parse(order.addonIds) : [],
       addonsUsed: order.addonsUsed ? JSON.parse(order.addonsUsed) : []
@@ -899,7 +901,9 @@ const recalculateOrderMargin = async (connection, orderId) => {
       if (order.acDetail) {
         try {
           const acDetailParsed = typeof order.acDetail === 'string' ? JSON.parse(order.acDetail) : order.acDetail;
-          if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
+          if (Array.isArray(acDetailParsed)) {
+            quantity = acDetailParsed.reduce((sum, item) => sum + (item.quantity || 1), 0);
+          } else if (acDetailParsed && typeof acDetailParsed.quantity === 'number') {
             quantity = acDetailParsed.quantity;
           }
         } catch (e) {
@@ -1134,9 +1138,12 @@ const sendWorkerNotification = async (orderId, workerId) => {
       console.error('Error parsing acDetail for worker notification:', e);
     }
 
-    const serviceName = acDetail
-      ? `${acDetail.quantity || 0}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType} (${acDetail.acType || ''})`
-      : 'Jasa Layanan AC';
+    let serviceName = 'Jasa Layanan AC';
+    if (Array.isArray(acDetail) && acDetail.length > 0) {
+      serviceName = acDetail.map(s => `${s.quantity || 0}x ${s.serviceType === 'none' ? s.category : s.serviceType} (${s.acType || ''})`).join(', ');
+    } else if (acDetail) {
+      serviceName = `${acDetail.quantity || 0}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType} (${acDetail.acType || ''})`;
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://sugarac.com';
 
@@ -1321,7 +1328,15 @@ app.put('/api/orders/:id', async (req, res) => {
               console.error('Error parsing acDetail for Xendit invoice:', e);
             }
 
-            if (acDetail) {
+            if (Array.isArray(acDetail) && acDetail.length > 0) {
+              const serviceNames = acDetail.map(s => `${s.quantity}x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ');
+              items.push({
+                name: serviceNames.substring(0, 255),
+                quantity: 1,
+                price: Number(orderData.serviceCost) || 0,
+                category: 'Service AC'
+              });
+            } else if (acDetail) {
               const serviceName = `${acDetail.quantity}x ${acDetail.serviceType === 'none' ? acDetail.category : acDetail.serviceType}`;
               items.push({
                 name: serviceName.substring(0, 255),

@@ -639,7 +639,9 @@ export default function OwnerDashboard() {
 
                         <div className="bg-white p-2 rounded-lg border border-slate-100 space-y-1">
                           <div className="text-slate-500 font-semibold text-[9px]">
-                            Layanan: {review.acDetail?.quantity}x {review.acDetail?.serviceType === 'none' ? review.acDetail?.category : review.acDetail?.serviceType} ({review.acDetail?.acType})
+                            Layanan: {Array.isArray(review.acDetail) 
+                              ? review.acDetail.map(s => `${s.quantity}x ${s.serviceType === 'none' ? s.category : s.serviceType} (${s.acType || ''})`).join(', ')
+                              : review.acDetail ? `${(review.acDetail as any).quantity}x ${(review.acDetail as any).serviceType === 'none' ? (review.acDetail as any).category : (review.acDetail as any).serviceType} (${(review.acDetail as any).acType})` : ''}
                           </div>
                           {review.ratingNotes && review.ratingNotes.trim() ? (
                             <p className="text-slate-700 italic font-medium">"{review.ratingNotes}"</p>

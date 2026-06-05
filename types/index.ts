@@ -102,7 +102,7 @@ export interface Order {
     category: string;     // Kategori Jasa (Cuci AC, Perbaikan AC, dll)
     serviceType: string;  // Jenis Layanan (e.g. Cuci Rutin, Overhaul, none)
     quantity: number;
-  };
+  }[];
   notes?: string;
   status: OrderStatus;
   assignedTo?: string; // ID Staff (Teknisi)

@@ -57,6 +57,14 @@ export default function PelangganDashboard() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('09:00');
   const [notes, setNotes] = useState('');
+  const [cartServices, setCartServices] = useState<{
+    acType: string;
+    category: string;
+    categoryId: string;
+    serviceType: string;
+    quantity: number;
+    price: number;
+  }[]>([]);
 
   // Simulated Location details
   const [lat, setLat] = useState<number | undefined>(activeUser?.lat);
@@ -265,18 +273,42 @@ export default function PelangganDashboard() {
   };
 
   const currentServicePrice = getSelectedServicePrice();
-  const estimatedCost = currentServicePrice * quantity;
+  const estimatedCost = cartServices.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const handleAddServiceToCart = () => {
+    if (currentServicePrice === 0) {
+      alert('❌ Maaf, harga untuk layanan dan model AC ini belum tersedia. Silakan hubungi admin.');
+      return;
+    }
+    const catObj = categories.find(c => c.id === selectedCategory);
+    const categoryName = catObj ? catObj.name : 'Inspeksi & Konsultasi';
+    
+    setCartServices([...cartServices, {
+      acType: selectedModel,
+      category: categoryName,
+      categoryId: selectedCategory,
+      serviceType: selectedService,
+      quantity,
+      price: currentServicePrice
+    }]);
+    setQuantity(1);
+  };
+
+  const handleRemoveServiceFromCart = (index: number) => {
+    const newCart = [...cartServices];
+    newCart.splice(index, 1);
+    setCartServices(newCart);
+  };
 
   // Submit new booking (pre-submit confirmation)
   const handlePreSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address.trim() || !phone.trim() || !date) {
-      alert('Mohon lengkapi alamat, nomor telepon, dan tanggal pengerjaan.');
+    if (cartServices.length === 0) {
+      alert('Mohon tambah layanan servis ke daftar terlebih dahulu.');
       return;
     }
-
-    if (currentServicePrice === 0) {
-      alert('❌ Maaf, harga untuk layanan dan model AC ini belum tersedia. Silakan hubungi admin.');
+    if (!address.trim() || !phone.trim() || !date) {
+      alert('Mohon lengkapi alamat, nomor telepon, dan tanggal pengerjaan.');
       return;
     }
 
@@ -297,8 +329,6 @@ export default function PelangganDashboard() {
     try {
       setIsLoading(true);
       setConfirmErrorMsg('');
-      const catObj = categories.find(c => c.id === selectedCategory);
-      const categoryName = catObj ? catObj.name : 'Inspeksi & Konsultasi';
 
       // Generate order ID (Short format: ORD-YYMMDD-XXXX)
       const today = new Date();
@@ -308,34 +338,33 @@ export default function PelangganDashboard() {
       const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderId = `ORD-${yymmdd}-${rand}`;
 
-      // Get service price
-      const serviceCost = currentServicePrice;
-      const totalCost = serviceCost * quantity;
+      const totalCost = estimatedCost;
+      const totalQuantity = cartServices.reduce((sum, item) => sum + item.quantity, 0);
 
       await api.createOrder({
         id: orderId,
         customerId: activeUser.id,
         customerName: activeUser.name,
         customerPhone: phone.trim(),
-        acType: selectedModel,
+        acType: cartServices.length > 0 ? cartServices[0].acType : selectedModel,
         address: address.trim(),
         scheduledDate: date,
         scheduledTime: time,
         schedule: `${date} ${time}`,
         status: 'MENUNGGU',
-        acDetail: {
-          acType: selectedModel,
-          category: categoryName,
-          serviceType: selectedService,
-          quantity,
-        },
+        acDetail: cartServices.map(item => ({
+          acType: item.acType,
+          category: item.category,
+          serviceType: item.serviceType,
+          quantity: item.quantity,
+        })),
         notes: notes.trim(),
         serviceCost: totalCost,
         addonsCost: 0,
         totalCost: totalCost,
         totalPrice: totalCost,
         finalPrice: totalCost,
-        quantity: quantity,
+        quantity: totalQuantity,
         latitude: lat,
         longitude: lng,
       });
@@ -347,6 +376,7 @@ export default function PelangganDashboard() {
       setNotes('');
       setLat(activeUser.lat);
       setLng(activeUser.lng);
+      setCartServices([]);
       setShowNewOrderModal(false);
       setShowConfirmOrderModal(false);
 
@@ -752,10 +782,15 @@ export default function PelangganDashboard() {
                                 {order.id}
                               </span>
                               <h4 className="font-bold text-xs text-slate-800 mt-1">
-                                {order.acDetail?.quantity || 0} Unit x{' '}
-                                {order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType}
+                                {Array.isArray(order.acDetail) ? (
+                                  order.acDetail.map((s, idx) => (
+                                    <div key={idx} className="mb-0.5">{s.quantity} Unit x {s.serviceType === 'none' ? s.category : s.serviceType} <span className="text-[9px] text-slate-400 font-semibold">({s.acType})</span></div>
+                                  ))
+                                ) : order.acDetail ? (
+                                  `${(order.acDetail as any).quantity || 0} Unit x ${(order.acDetail as any).serviceType === 'none' ? (order.acDetail as any).category : (order.acDetail as any).serviceType}`
+                                ) : 'Detail tidak tersedia'}
                               </h4>
-                              <p className="text-[9.5px] text-slate-400 font-semibold">{order.acDetail?.acType}</p>
+                              {!Array.isArray(order.acDetail) && order.acDetail && <p className="text-[9.5px] text-slate-400 font-semibold">{(order.acDetail as any).acType}</p>}
                               <p className="text-[8px] text-blue-500 font-mono mt-1">
                                 Status: {order.status}{order.rating != null ? ` | Rating: ⭐ ${order.rating}` : ''}
                               </p>
@@ -1260,8 +1295,10 @@ export default function PelangganDashboard() {
 
                         <div className="text-[10px] text-slate-500 font-medium space-y-0.5">
                           <div>
-                            🔧 Jasa: {order.acDetail?.quantity} Unit x{' '}
-                            {order.acDetail?.serviceType === 'none' ? order.acDetail?.category : order.acDetail?.serviceType}
+                            🔧 Jasa: {Array.isArray(order.acDetail) ? 
+                              order.acDetail.map(s => `${s.quantity} Unit x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ') 
+                              : order.acDetail ? `${(order.acDetail as any).quantity} Unit x ${(order.acDetail as any).serviceType === 'none' ? (order.acDetail as any).category : (order.acDetail as any).serviceType}` 
+                              : ''}
                           </div>
                           <div>📅 Selesai: {order.scheduledDate}</div>
                           {order.status !== OrderStatus.DIBATALKAN && (
@@ -1691,6 +1728,32 @@ export default function PelangganDashboard() {
                     </div>
                   </div>
 
+                  <button
+                    type="button"
+                    onClick={handleAddServiceToCart}
+                    className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider cursor-pointer transition border border-indigo-200 mt-2 flex items-center justify-center gap-1"
+                  >
+                    <Plus size={14} /> Tambah Ke Daftar Layanan
+                  </button>
+
+                  {/* Cart Services List */}
+                  {cartServices.length > 0 && (
+                    <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2 shadow-sm">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Daftar Layanan Tersimpan:</span>
+                      {cartServices.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <div>
+                            <p className="font-bold text-slate-700">{item.quantity}x {item.serviceType === 'none' ? item.category : item.serviceType}</p>
+                            <p className="text-[9px] text-slate-500">{item.acType} - {formatRupiah(item.price * item.quantity)}</p>
+                          </div>
+                          <button type="button" onClick={() => handleRemoveServiceFromCart(idx)} className="text-rose-500 hover:bg-rose-100 p-1.5 rounded-md cursor-pointer transition">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Phone */}
                   <div>
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
@@ -1787,10 +1850,10 @@ export default function PelangganDashboard() {
 
                   {/* Billing Estimate */}
                   <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200 p-3.5 rounded-xl space-y-2">
-                    <span className="text-[8px] font-black text-indigo-700 uppercase tracking-widest block">Estimasi Biaya Jasa</span>
+                    <span className="text-[8px] font-black text-indigo-700 uppercase tracking-widest block">Estimasi Biaya Jasa (Sesuai Daftar)</span>
                     <div className="flex justify-between items-baseline">
                       <span className="text-[10px] text-slate-600">
-                        {quantity} Unit x {formatRupiah(currentServicePrice)}
+                        Total {cartServices.reduce((sum, item) => sum + item.quantity, 0)} Unit
                       </span>
                       <span className="text-lg font-black text-indigo-700 font-mono">{formatRupiah(estimatedCost)}</span>
                     </div>
@@ -1820,24 +1883,23 @@ export default function PelangganDashboard() {
               </div>
 
               <div className="bg-slate-50 border rounded-2xl p-4 space-y-2.5 text-xs text-slate-650">
-                <div className="flex justify-between">
-                  <span>Model AC:</span>
-                  <strong className="text-slate-800">{selectedModel}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Kategori Jasa:</span>
-                  <strong className="text-slate-800">
-                    {categories.find(c => c.id === selectedCategory)?.name || 'Inspeksi & Konsultasi'}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Jenis Layanan:</span>
-                  <strong className="text-indigo-700">{selectedService === 'none' ? 'Inspeksi & Konsultasi' : selectedService}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Jumlah Unit:</span>
-                  <strong className="text-slate-800 font-mono">{quantity} Unit</strong>
-                </div>
+                <div className="font-bold text-[10px] text-slate-400 uppercase tracking-wider mb-2">Rincian Layanan ({cartServices.length}):</div>
+                {cartServices.map((item, idx) => (
+                  <div key={idx} className="border-b border-slate-200/60 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
+                    <div className="flex justify-between">
+                      <span>Model AC:</span>
+                      <strong className="text-slate-800">{item.acType}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Layanan:</span>
+                      <strong className="text-indigo-700">{item.serviceType === 'none' ? item.category : item.serviceType}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Jumlah Unit:</span>
+                      <strong className="text-slate-800 font-mono">{item.quantity} Unit</strong>
+                    </div>
+                  </div>
+                ))}
                 <div className="flex justify-between border-t border-slate-200/60 pt-2">
                   <span>Tanggal Kunjungan:</span>
                   <strong className="text-slate-800">{date} ({time})</strong>
@@ -1862,7 +1924,7 @@ export default function PelangganDashboard() {
               <div className="bg-indigo-50 border border-indigo-150 p-4 rounded-2xl flex justify-between items-center">
                 <div>
                   <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block">Total Pembayaran</span>
-                  <span className="text-xs text-slate-500">{quantity} Unit x {formatRupiah(currentServicePrice)}</span>
+                  <span className="text-xs text-slate-500">{cartServices.reduce((sum, item) => sum + item.quantity, 0)} Unit Layanan</span>
                 </div>
                 <span className="text-lg font-black text-indigo-700 font-mono">{formatRupiah(estimatedCost)}</span>
               </div>

@@ -28,7 +28,7 @@ import dynamic from 'next/dynamic';
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
 export default function KaryawanDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert, appSettings } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert, appSettings, models } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
@@ -44,9 +44,7 @@ export default function KaryawanDashboard() {
 
   // Service editing states (CEK_LAYANAN stage)
   const [editingServiceOrderId, setEditingServiceOrderId] = useState<string | null>(null);
-  const [tempCategoryId, setTempCategoryId] = useState<string>('');
-  const [tempServiceId, setTempServiceId] = useState<string>('');
-  const [tempQuantity, setTempQuantity] = useState<number>(1);
+  const [editCartServices, setEditCartServices] = useState<{ category: string; serviceType: string; quantity: number; acType: string }[]>([]);
 
   // Addons states (PENGERJAAN stage)
   const [addonsUsed, setAddonsUsed] = useState<{ id: string; name: string; price: number; quantity: number; hpp?: number }[]>([]);
@@ -257,46 +255,100 @@ export default function KaryawanDashboard() {
   // Edit service details (CEK_LAYANAN stage)
   const handleStartEditingService = (order: any) => {
     setEditingServiceOrderId(order.id);
-    const currentCat = categories.find(c => c.name === order.acDetail.category) || categories[0];
-    setTempCategoryId(currentCat ? currentCat.id : '');
-    const currentSrv = services.find(s => s.name === order.acDetail.serviceType && s.categoryId === currentCat?.id) ||
-      services.find(s => s.categoryId === currentCat?.id);
-    setTempServiceId(currentSrv ? currentSrv.id : '');
-    setTempQuantity(order.acDetail.quantity || 1);
+    if (Array.isArray(order.acDetail) && order.acDetail.length > 0) {
+      setEditCartServices(order.acDetail.map((item: any) => ({
+        category: item.category || '',
+        serviceType: item.serviceType || '',
+        quantity: item.quantity || 1,
+        acType: item.acType || '',
+      })));
+    } else if (order.acDetail) {
+      setEditCartServices([{
+        category: (order.acDetail as any).category || '',
+        serviceType: (order.acDetail as any).serviceType || '',
+        quantity: (order.acDetail as any).quantity || 1,
+        acType: (order.acDetail as any).acType || '',
+      }]);
+    } else {
+      setEditCartServices([]);
+    }
+  };
+
+  const handleUpdateEditCart = (index: number, field: string, value: any) => {
+    const updated = [...editCartServices];
+    updated[index] = { ...updated[index], [field]: value };
+    if (field === 'category') {
+      const cat = categories.find(c => c.name === value);
+      if (cat) {
+        const subSrvs = services.filter(s => s.categoryId === cat.id);
+        updated[index].serviceType = subSrvs.length > 0 ? subSrvs[0].name : '';
+      }
+    }
+    setEditCartServices(updated);
+  };
+
+  const handleAddServiceToEditCart = () => {
+    const defaultCat = categories.length > 0 ? categories[0] : null;
+    const defaultSrv = defaultCat ? services.find(s => s.categoryId === defaultCat.id) : null;
+    setEditCartServices(prev => [
+      ...prev,
+      {
+        category: defaultCat ? defaultCat.name : '',
+        serviceType: defaultSrv ? defaultSrv.name : '',
+        quantity: 1,
+        acType: ''
+      }
+    ]);
+  };
+
+  const handleRemoveServiceFromEditCart = (index: number) => {
+    setEditCartServices(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveServiceUpdate = async (orderId: string) => {
-    const matchedCategory = categories.find(c => c.id === tempCategoryId);
-    const matchedService = services.find(s => s.id === tempServiceId);
-
-    if (!matchedCategory) {
-      alert('Kategori layanan tidak valid');
+    if (editCartServices.length === 0) {
+      alert('Harus ada minimal 1 layanan.');
       return;
     }
 
-    try {
-      const categoryName = matchedCategory.name;
-      const serviceTypeName = matchedCategory.hasServices && matchedService ? matchedService.name : 'none';
+    let newServiceCost = 0;
+    const formattedAcDetails = editCartServices.map(cartItem => {
       let unitPrice = 50000;
-      if (matchedCategory.hasServices && matchedService) {
-        unitPrice = matchedService.price;
+      let categoryName = cartItem.category;
+      let serviceTypeName = cartItem.serviceType || 'none';
+
+      const matchedCategory = categories.find(c => c.name === cartItem.category);
+      if (matchedCategory) {
+        categoryName = matchedCategory.name;
+        const matchedService = services.find(s => s.name === cartItem.serviceType && s.categoryId === matchedCategory.id);
+        if (matchedCategory.hasServices && matchedService) {
+          serviceTypeName = matchedService.name;
+          unitPrice = matchedService.price;
+        } else if (!matchedCategory.hasServices) {
+          serviceTypeName = 'none';
+        }
       }
-      const newServiceCost = unitPrice * tempQuantity;
 
-      const currentOrder = orders.find(o => o.id === orderId);
-      if (!currentOrder) return;
+      newServiceCost += unitPrice * cartItem.quantity;
 
+      return {
+        category: categoryName,
+        serviceType: serviceTypeName,
+        quantity: cartItem.quantity,
+        acType: cartItem.acType
+      };
+    });
+
+    const currentOrder = orders.find(o => o.id === orderId);
+    if (!currentOrder) return;
+
+    try {
       await api.updateOrder(orderId, {
-        acDetail: {
-          ...currentOrder.acDetail,
-          category: categoryName,
-          serviceType: serviceTypeName,
-          quantity: tempQuantity
-        },
+        acDetail: formattedAcDetails,
         serviceCost: newServiceCost,
         totalCost: newServiceCost,
         finalPrice: newServiceCost + (currentOrder.addonsCost || 0),
-        quantity: tempQuantity
+        quantity: formattedAcDetails.reduce((sum, item) => sum + item.quantity, 0)
       });
 
       setOrders(prevOrders =>
@@ -304,11 +356,11 @@ export default function KaryawanDashboard() {
           o.id === orderId
             ? {
               ...o,
-              acDetail: { ...o.acDetail, category: categoryName, serviceType: serviceTypeName, quantity: tempQuantity },
+              acDetail: formattedAcDetails,
               serviceCost: newServiceCost,
               totalCost: newServiceCost,
               finalPrice: newServiceCost + (o.addonsCost || 0),
-              quantity: tempQuantity
+              quantity: formattedAcDetails.reduce((sum, item) => sum + item.quantity, 0)
             }
             : o
         )
@@ -629,7 +681,9 @@ export default function KaryawanDashboard() {
                           <div>
                             <span className="text-[8.5px] font-mono font-bold text-slate-400 bg-slate-50 px-1 py-0.5 border rounded uppercase tracking-wider">{task.id}</span>
                             <h4 className="font-extrabold text-xs text-slate-850 mt-1 uppercase">
-                              {task.acDetail?.quantity || 0} Unit x {task.acDetail?.serviceType === 'none' ? task.acDetail?.category : task.acDetail?.serviceType}
+                              {Array.isArray(task.acDetail) 
+                                ? task.acDetail.map(s => `${s.quantity} Unit x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ')
+                                : task.acDetail ? `${(task.acDetail as any).quantity || 0} Unit x ${(task.acDetail as any).serviceType === 'none' ? (task.acDetail as any).category : (task.acDetail as any).serviceType}` : ''}
                             </h4>
                           </div>
                           <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${task.status === OrderStatus.DITUGASKAN ? 'bg-amber-50 border-amber-200 text-amber-800' :
@@ -711,86 +765,132 @@ export default function KaryawanDashboard() {
                                 </div>
 
                                 {editingServiceOrderId === task.id ? (
-                                  <div className="space-y-3 pt-1 text-[11px]">
-                                    <div>
-                                      <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">1. Kategori Jasa:</label>
-                                      <select
-                                        value={tempCategoryId}
-                                        onChange={(e) => {
-                                          setTempCategoryId(e.target.value);
-                                          const subSrvs = services.filter(s => s.categoryId === e.target.value);
-                                          if (subSrvs.length > 0) setTempServiceId(subSrvs[0].id);
-                                          else setTempServiceId('');
-                                        }}
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 font-extrabold text-xs text-slate-800 outline-none"
-                                      >
-                                        {categories.map(c => (
-                                          <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-
-                                    {categories.find(c => c.id === tempCategoryId)?.hasServices && (
-                                      <div>
-                                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">2. Jenis Jasa:</label>
-                                        <select
-                                          value={tempServiceId}
-                                          onChange={(e) => setTempServiceId(e.target.value)}
-                                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 font-bold text-xs text-slate-800 outline-none"
-                                        >
-                                          {services.filter(s => s.categoryId === tempCategoryId).map(s => (
-                                            <option key={s.id} value={s.id}>{s.name} ({formatRupiah(s.price)})</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    )}
-
-                                    <div className="flex justify-between items-end gap-3 pt-2.5 border-t border-amber-200/50">
-                                      <div className="space-y-1">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">3. Jumlah Unit:</span>
-                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2 h-9">
+                                  <div className="space-y-4 pt-2 text-[11px]">
+                                    {editCartServices.map((cartItem, cIdx) => (
+                                      <div key={cIdx} className="bg-white p-3 rounded-xl border border-slate-200 relative">
+                                        {editCartServices.length > 1 && (
                                           <button
-                                            onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))}
-                                            className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
+                                            onClick={() => handleRemoveServiceFromEditCart(cIdx)}
+                                            className="absolute -top-2 -right-2 bg-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white p-1.5 rounded-full transition shadow-sm"
                                           >
-                                            -
+                                            <X size={12} />
                                           </button>
-                                          <span className="text-xs font-mono font-black w-4 text-center">{tempQuantity}</span>
-                                          <button
-                                            onClick={() => setTempQuantity(tempQuantity + 1)}
-                                            className="text-slate-500 hover:text-slate-800 font-extrabold text-[12px] px-1.5 cursor-pointer"
-                                          >
-                                            +
-                                          </button>
+                                        )}
+                                        <div className="space-y-3">
+                                          <div>
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Kategori Jasa:</label>
+                                            <select
+                                              value={cartItem.category}
+                                              onChange={(e) => handleUpdateEditCart(cIdx, 'category', e.target.value)}
+                                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-bold text-xs text-slate-800 outline-none"
+                                            >
+                                              <option value="">-- Pilih Kategori --</option>
+                                              {categories.map(c => (
+                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                          {categories.find(c => c.name === cartItem.category)?.hasServices && (
+                                            <div>
+                                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Jenis Jasa:</label>
+                                              <select
+                                                value={cartItem.serviceType}
+                                                onChange={(e) => handleUpdateEditCart(cIdx, 'serviceType', e.target.value)}
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-bold text-xs text-slate-800 outline-none"
+                                              >
+                                                <option value="">-- Pilih Jasa --</option>
+                                                {services.filter(s => {
+                                                  const cat = categories.find(c => c.name === cartItem.category);
+                                                  return cat && s.categoryId === cat.id;
+                                                }).map(s => (
+                                                  <option key={s.id} value={s.name}>{s.name} ({formatRupiah(s.price)})</option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          )}
+                                          <div>
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tipe/Merek AC (Opsional):</label>
+                                            <select
+                                              value={cartItem.acType}
+                                              onChange={(e) => handleUpdateEditCart(cIdx, 'acType', e.target.value)}
+                                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-bold text-xs text-slate-800 outline-none"
+                                            >
+                                              <option value="">Umum / Tidak Diketahui</option>
+                                              {models.map(m => (
+                                                <option key={m.id} value={m.name}>{m.name}</option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Jumlah Unit:</label>
+                                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 h-7">
+                                              <button
+                                                onClick={() => handleUpdateEditCart(cIdx, 'quantity', Math.max(1, cartItem.quantity - 1))}
+                                                className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1 cursor-pointer"
+                                              >
+                                                -
+                                              </button>
+                                              <span className="text-xs font-mono font-black w-4 text-center">{cartItem.quantity}</span>
+                                              <button
+                                                onClick={() => handleUpdateEditCart(cIdx, 'quantity', cartItem.quantity + 1)}
+                                                className="text-slate-500 hover:text-slate-800 font-extrabold text-[12px] px-1 cursor-pointer"
+                                              >
+                                                +
+                                              </button>
+                                            </div>
+                                          </div>
                                         </div>
                                       </div>
+                                    ))}
 
-                                      <div className="flex items-center gap-1.5 shrink-0">
-                                        <button
-                                          onClick={() => setEditingServiceOrderId(null)}
-                                          className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[9.5px] px-3 py-2 rounded-xl uppercase cursor-pointer"
-                                        >
-                                          Batal
-                                        </button>
-                                        <button
-                                          onClick={() => handleSaveServiceUpdate(task.id)}
-                                          className="bg-amber-600 hover:bg-amber-700 text-white font-black text-[9.5px] px-3.5 py-2 rounded-xl uppercase cursor-pointer"
-                                        >
-                                          Simpan
-                                        </button>
+                                    <button
+                                      onClick={handleAddServiceToEditCart}
+                                      className="w-full border-2 border-dashed border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-bold text-[10px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
+                                    >
+                                      <Plus size={12} /> Tambah Layanan Lain
+                                    </button>
+
+                                    <div className="flex justify-end items-center gap-1.5 pt-3 border-t border-amber-200/50">
+                                      <button
+                                        onClick={() => setEditingServiceOrderId(null)}
+                                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[9.5px] px-3 py-2 rounded-xl uppercase cursor-pointer"
+                                      >
+                                        Batal
+                                      </button>
+                                      <button
+                                        onClick={() => handleSaveServiceUpdate(task.id)}
+                                        className="bg-amber-600 hover:bg-amber-700 text-white font-black text-[9.5px] px-3.5 py-2 rounded-xl uppercase cursor-pointer"
+                                      >
+                                        Simpan
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : Array.isArray(task.acDetail) ? (
+                                    <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-2">
+                                      {task.acDetail.map((item, idx) => (
+                                        <div key={idx} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                                          <div>Kategori: <strong className="text-slate-850 font-bold">{item.category}</strong></div>
+                                          <div>Layanan: <strong className="text-indigo-700 font-extrabold">{item.serviceType === 'none' ? 'Inspeksi' : item.serviceType}</strong></div>
+                                          <div className="font-mono text-[10px] mt-1 text-slate-500">
+                                            {item.quantity} Unit
+                                          </div>
+                                        </div>
+                                      ))}
+                                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
+                                        <span>Total Layanan</span>
+                                        <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
                                       </div>
                                     </div>
-                                  </div>
-                                ) : (
-                                  <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-1">
-                                    <div>Kategori: <strong className="text-slate-850 font-bold">{task.acDetail?.category}</strong></div>
-                                    <div>Layanan: <strong className="text-indigo-700 font-extrabold">{task.acDetail?.serviceType === 'none' ? 'Inspeksi' : task.acDetail?.serviceType}</strong></div>
-                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
-                                      <span>{task.acDetail?.quantity || 0} Unit x {formatRupiah((task.serviceCost || 0) / (task.acDetail?.quantity || 1))}</span>
-                                      <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
+                                  ) : (
+                                    <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-1">
+                                      <div>Kategori: <strong className="text-slate-850 font-bold">{(task.acDetail as any)?.category}</strong></div>
+                                      <div>Layanan: <strong className="text-indigo-700 font-extrabold">{(task.acDetail as any)?.serviceType === 'none' ? 'Inspeksi' : (task.acDetail as any)?.serviceType}</strong></div>
+                                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
+                                        <span>{(task.acDetail as any)?.quantity || 0} Unit x {formatRupiah((task.serviceCost || 0) / ((task.acDetail as any)?.quantity || 1))}</span>
+                                        <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
+                                  )}
                               </div>
 
                               {/* Photo BEFORE */}
@@ -976,7 +1076,9 @@ export default function KaryawanDashboard() {
                         </div>
 
                         <div className="text-[10px] text-slate-500 font-medium space-y-0.5">
-                          <div>🔧 Jasa: {task.acDetail?.quantity} Unit x {task.acDetail?.serviceType === 'none' ? task.acDetail?.category : task.acDetail?.serviceType}</div>
+                          <div>🔧 Jasa: {Array.isArray(task.acDetail) 
+                            ? task.acDetail.reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) + ' Unit'
+                            : `${(task.acDetail as any)?.quantity || 0} Unit x ${(task.acDetail as any)?.serviceType === 'none' ? (task.acDetail as any)?.category : (task.acDetail as any)?.serviceType}`}</div>
                           <div>📅 Selesai: {task.scheduledDate}</div>
                           {task.status !== OrderStatus.DIBATALKAN && (
                             <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
@@ -1306,7 +1408,9 @@ export default function KaryawanDashboard() {
               <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50">
 
                 <div className="bg-white border rounded-xl p-3 text-[10.5px] text-slate-600">
-                  <div>⚙️ Layanan: <strong>{activeWorkingTask.acDetail?.quantity || 0} Unit x {activeWorkingTask.acDetail?.serviceType === 'none' ? activeWorkingTask.acDetail?.category : activeWorkingTask.acDetail?.serviceType}</strong></div>
+                  <div>⚙️ Layanan: <strong>{Array.isArray(activeWorkingTask.acDetail) 
+                    ? activeWorkingTask.acDetail.reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) + ' Unit'
+                    : `${(activeWorkingTask.acDetail as any)?.quantity || 0} Unit x ${(activeWorkingTask.acDetail as any)?.serviceType === 'none' ? (activeWorkingTask.acDetail as any)?.category : (activeWorkingTask.acDetail as any)?.serviceType}`}</strong></div>
                 </div>
 
                 {/* Photo AFTER */}
