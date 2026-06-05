@@ -28,7 +28,7 @@ import dynamic from 'next/dynamic';
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
 export default function KaryawanDashboard() {
-  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert, appSettings, models } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, addons, services, categories, logout, showAlert, appSettings, models, servicePrices } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
@@ -321,11 +321,23 @@ export default function KaryawanDashboard() {
       if (matchedCategory) {
         categoryName = matchedCategory.name;
         const matchedService = services.find(s => s.name === cartItem.serviceType && s.categoryId === matchedCategory.id);
+        const matchModel = models.find(m => m.name === cartItem.acType);
+        
         if (matchedCategory.hasServices && matchedService) {
           serviceTypeName = matchedService.name;
-          unitPrice = matchedService.price;
+          if (matchModel) {
+            const priceEntry = servicePrices.find(sp => sp.serviceId === matchedService.id && sp.modelId === matchModel.id);
+            if (priceEntry) {
+              unitPrice = priceEntry.price;
+            } else {
+              unitPrice = matchedService.price; // fallback if no specific model price found
+            }
+          } else {
+             unitPrice = matchedService.price;
+          }
         } else if (!matchedCategory.hasServices) {
           serviceTypeName = 'none';
+          unitPrice = 50000; // Inspection price or default
         }
       }
 
