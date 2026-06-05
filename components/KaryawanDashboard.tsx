@@ -968,7 +968,7 @@ export default function KaryawanDashboard() {
                               </div>
                               <div className="flex justify-between items-center bg-white p-1.5 rounded-lg border">
                                 <span>Tagihan:</span>
-                                <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(task.totalCost || task.serviceCost || 0)}</strong>
+                                <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(task.finalPrice || ((task.serviceCost || 0) + (task.addonsCost || 0)) || task.totalCost || 0)}</strong>
                               </div>
 
                               {task.paymentMethod === 'CASH' || !task.paymentMethod ? (
