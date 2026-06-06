@@ -117,7 +117,7 @@ export default function KaryawanDashboard() {
     try {
       const businessName = appSettings?.business_name || 'CoolAir Pro';
       const businessLogo = appSettings?.business_logo || '';
-      
+
       const formatRupiahText = (num: any) => {
         if (!num && num !== 0 && num !== '0') return 'Rp0';
         return 'Rp' + Number(num || 0).toLocaleString('id-ID');
@@ -250,14 +250,6 @@ export default function KaryawanDashboard() {
               <div class="item-row">
                 <span>TOTAL AKHIR</span>
                 <span class="text-right font-mono" style="font-size: 11px;">${formatRupiahText(finalAmount)}</span>
-              </div>
-              <div class="item-row" style="margin-top: 2px; font-size: 8.5px;">
-                <span>Metode Bayar</span>
-                <span class="text-right">${task.paymentMethod === 'TRANSFER' ? 'TRANSFER' : 'TUNAI'}</span>
-              </div>
-              <div class="item-row" style="font-size: 8.5px;">
-                <span>Status</span>
-                <span class="text-right">${task.paymentStatus === 'PAID' ? 'LUNAS (PAID)' : 'MENUNGGU VERIFIKASI'}</span>
               </div>
             </div>
 
@@ -496,7 +488,7 @@ export default function KaryawanDashboard() {
         categoryName = matchedCategory.name;
         const matchedService = services.find(s => s.name === cartItem.serviceType && s.categoryId === matchedCategory.id);
         const matchModel = models.find(m => m.name === cartItem.acType);
-        
+
         if (matchedCategory.hasServices && matchedService) {
           serviceTypeName = matchedService.name;
           if (matchModel) {
@@ -507,7 +499,7 @@ export default function KaryawanDashboard() {
               unitPrice = matchedService.price; // fallback if no specific model price found
             }
           } else {
-             unitPrice = matchedService.price;
+            unitPrice = matchedService.price;
           }
         } else if (!matchedCategory.hasServices) {
           serviceTypeName = 'none';
@@ -867,7 +859,7 @@ export default function KaryawanDashboard() {
                           <div>
                             <span className="text-[8.5px] font-mono font-bold text-slate-400 bg-slate-50 px-1 py-0.5 border rounded uppercase tracking-wider">{task.id}</span>
                             <h4 className="font-extrabold text-xs text-slate-850 mt-1 uppercase">
-                              {Array.isArray(task.acDetail) 
+                              {Array.isArray(task.acDetail)
                                 ? task.acDetail.map(s => `${s.quantity} Unit x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ')
                                 : task.acDetail ? `${(task.acDetail as any).quantity || 0} Unit x ${(task.acDetail as any).serviceType === 'none' ? (task.acDetail as any).category : (task.acDetail as any).serviceType}` : ''}
                             </h4>
@@ -1052,31 +1044,31 @@ export default function KaryawanDashboard() {
                                     </div>
                                   </div>
                                 ) : Array.isArray(task.acDetail) ? (
-                                    <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-2">
-                                      {task.acDetail.map((item, idx) => (
-                                        <div key={idx} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
-                                          <div>Kategori: <strong className="text-slate-850 font-bold">{item.category}</strong></div>
-                                          <div>Layanan: <strong className="text-indigo-700 font-extrabold">{item.serviceType === 'none' ? 'Inspeksi' : item.serviceType}</strong></div>
-                                          <div className="font-mono text-[10px] mt-1 text-slate-500">
-                                            {item.quantity} Unit
-                                          </div>
+                                  <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-2">
+                                    {task.acDetail.map((item, idx) => (
+                                      <div key={idx} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                                        <div>Kategori: <strong className="text-slate-850 font-bold">{item.category}</strong></div>
+                                        <div>Layanan: <strong className="text-indigo-700 font-extrabold">{item.serviceType === 'none' ? 'Inspeksi' : item.serviceType}</strong></div>
+                                        <div className="font-mono text-[10px] mt-1 text-slate-500">
+                                          {item.quantity} Unit
                                         </div>
-                                      ))}
-                                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
-                                        <span>Total Layanan</span>
-                                        <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
                                       </div>
+                                    ))}
+                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
+                                      <span>Total Layanan</span>
+                                      <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
                                     </div>
-                                  ) : (
-                                    <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-1">
-                                      <div>Kategori: <strong className="text-slate-850 font-bold">{(task.acDetail as any)?.category}</strong></div>
-                                      <div>Layanan: <strong className="text-indigo-700 font-extrabold">{(task.acDetail as any)?.serviceType === 'none' ? 'Inspeksi' : (task.acDetail as any)?.serviceType}</strong></div>
-                                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
-                                        <span>{(task.acDetail as any)?.quantity || 0} Unit x {formatRupiah((task.serviceCost || 0) / ((task.acDetail as any)?.quantity || 1))}</span>
-                                        <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
-                                      </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-[10.5px] font-medium text-slate-600 bg-white/75 p-3 rounded-xl border border-amber-100/40 space-y-1">
+                                    <div>Kategori: <strong className="text-slate-850 font-bold">{(task.acDetail as any)?.category}</strong></div>
+                                    <div>Layanan: <strong className="text-indigo-700 font-extrabold">{(task.acDetail as any)?.serviceType === 'none' ? 'Inspeksi' : (task.acDetail as any)?.serviceType}</strong></div>
+                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100/70 font-mono text-[10px]">
+                                      <span>{(task.acDetail as any)?.quantity || 0} Unit x {formatRupiah((task.serviceCost || 0) / ((task.acDetail as any)?.quantity || 1))}</span>
+                                      <strong className="text-emerald-700 font-black text-[11px]">{formatRupiah(task.serviceCost || 0)}</strong>
                                     </div>
-                                  )}
+                                  </div>
+                                )}
                               </div>
 
                               {/* Photo BEFORE */}
@@ -1172,7 +1164,7 @@ export default function KaryawanDashboard() {
                               ) : (
                                 <div className="space-y-2.5 pt-1">
                                   <p className="text-[10px] text-indigo-800 leading-normal font-semibold">🏦 Pembayaran Transfer / QRIS. Unggah Bukti Transaksi:</p>
-                                  
+
                                   {paymentProofs[task.id] ? (
                                     <div className="space-y-2">
                                       <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 aspect-video max-h-40 flex items-center justify-center">
@@ -1189,7 +1181,7 @@ export default function KaryawanDashboard() {
                                           <X size={12} />
                                         </button>
                                       </div>
-                                      
+
                                       <button
                                         onClick={() => handleApproveTransferReceived(task.id)}
                                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] py-2 rounded-lg uppercase cursor-pointer"
@@ -1270,7 +1262,7 @@ export default function KaryawanDashboard() {
                         </div>
 
                         <div className="text-[10px] text-slate-500 font-medium space-y-0.5">
-                          <div>🔧 Jasa: {Array.isArray(task.acDetail) 
+                          <div>🔧 Jasa: {Array.isArray(task.acDetail)
                             ? task.acDetail.reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) + ' Unit'
                             : `${(task.acDetail as any)?.quantity || 0} Unit x ${(task.acDetail as any)?.serviceType === 'none' ? (task.acDetail as any)?.category : (task.acDetail as any)?.serviceType}`}</div>
                           <div>📅 Selesai: {task.scheduledDate}</div>
@@ -1610,7 +1602,7 @@ export default function KaryawanDashboard() {
               <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50">
 
                 <div className="bg-white border rounded-xl p-3 text-[10.5px] text-slate-600">
-                  <div>⚙️ Layanan: <strong>{Array.isArray(activeWorkingTask.acDetail) 
+                  <div>⚙️ Layanan: <strong>{Array.isArray(activeWorkingTask.acDetail)
                     ? activeWorkingTask.acDetail.reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) + ' Unit'
                     : `${(activeWorkingTask.acDetail as any)?.quantity || 0} Unit x ${(activeWorkingTask.acDetail as any)?.serviceType === 'none' ? (activeWorkingTask.acDetail as any)?.category : (activeWorkingTask.acDetail as any)?.serviceType}`}</strong></div>
                 </div>
