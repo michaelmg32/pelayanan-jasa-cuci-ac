@@ -21,13 +21,17 @@ import {
   Check,
   Loader,
   X,
-  MoreVertical
+  MoreVertical,
+  Search,
+  Edit,
+  UserCog,
 } from 'lucide-react';
+import { Role, User } from '@/types';
 
 export default function OwnerDashboard() {
-  const { activeUser, setActiveUser, orders, users, logout, appSettings, updateAppSettings } = useApp();
+  const { activeUser, setActiveUser, orders, users, setUsers, logout, appSettings, updateAppSettings } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const getLocalDateString = (d: Date = new Date()) => {
@@ -54,6 +58,15 @@ export default function OwnerDashboard() {
   const [saveProfileSuccess, setSaveProfileSuccess] = useState(false);
   const [profileErrorMsg, setProfileErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // User Management States
+  const [userSearch, setUserSearch] = useState('');
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editRole, setEditRole] = useState<Role>(Role.USER);
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editStatus, setEditStatus] = useState<string>('active');
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Activity Logs States
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
@@ -219,6 +232,55 @@ export default function OwnerDashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // User Actions
+  const handleSaveUserEdit = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      const targetUser = users.find(u => u.id === userId);
+      if (!targetUser) {
+        setErrorMsg('User tidak ditemukan');
+        return;
+      }
+
+      const updatePayload = {
+        name: targetUser.name,
+        email: targetUser.email,
+        role: editRole,
+        phone: editPhone,
+        status: editStatus,
+      };
+
+      await api.updateUser(userId, updatePayload);
+
+      // Update local state
+      const updatedUser = users.find(u => u.id === userId);
+      if (updatedUser) {
+        updatedUser.role = editRole;
+        updatedUser.phone = editPhone;
+        updatedUser.address = editAddress;
+        updatedUser.status = editStatus;
+        setUsers([...users]);
+      }
+
+      setErrorMsg('');
+      setEditingUserId(null);
+      alert('✅ Data pengguna berhasil diperbarui');
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      setErrorMsg(error?.message || 'Gagal memperbarui data pengguna');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startEditUser = (target: User) => {
+    setEditingUserId(target.id);
+    setEditRole(target.role);
+    setEditPhone(target.phone || '');
+    setEditAddress(target.address || '');
+    setEditStatus(target.status || 'active');
   };
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -400,6 +462,16 @@ export default function OwnerDashboard() {
               >
                 <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'} />
                 <span>Profil Saya</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('users');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'users' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Manajemen Pengguna</span>
               </button>
               <button
                 onClick={() => {
@@ -968,7 +1040,160 @@ export default function OwnerDashboard() {
             )}
           </div>
         )}
+
+        {/* ===================== TAB: USER MANAGEMENT ===================== */}
+        {activeTab === 'users' && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-4 shadow-sm">
+            <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <h3 className="font-extrabold text-sm uppercase text-slate-800">Manajemen Akses & Pengguna</h3>
+                <p className="text-[11px] text-slate-400 mt-1 font-medium">Ubah peran (role) dan status keaktifan pengguna</p>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari user..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
+              {users.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
+                <div key={u.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-650 text-white font-bold flex items-center justify-center text-xs uppercase">
+                        {u.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
+                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                            u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
+                            u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                            'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}>
+                            {u.role}
+                          </span>
+                          {u.role === Role.STAFF && (
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                              u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' :
+                              u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                              'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}>
+                              {u.status === 'inactive' ? 'MENUNGGU VERIFIKASI' :
+                               u.status === 'archived' ? 'DIARSIPKAN (NONAKTIF)' :
+                               'AKTIF'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-450 font-semibold mt-1">{u.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {u.id !== activeUser.id && (
+                      <button
+                        type="button"
+                        onClick={() => startEditUser(u)}
+                        className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
+                      >
+                        <Edit size={12} /> Edit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* ===================== EDIT USER MODAL ===================== */}
+      {editingUserId && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left animate-fadeIn">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+              <div>
+                <h4 className="font-black text-xs uppercase tracking-wide">Edit Profil Pengguna</h4>
+                <p className="text-[9.5px] text-slate-400 mt-1">{users.find(u => u.id === editingUserId)?.name}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingUserId(null);
+                  setErrorMsg('');
+                }}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
+                disabled={isLoading}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Role</label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value as Role)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                  disabled={isLoading}
+                >
+                  <option value={Role.USER}>Pelanggan</option>
+                  <option value={Role.STAFF}>Staff/Teknisi</option>
+                  <option value={Role.ADMIN}>Admin</option>
+                  <option value={Role.OWNER}>Owner</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Status Akun</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                  disabled={isLoading}
+                >
+                  <option value="active">Aktif</option>
+                  <option value="inactive">Menunggu Verifikasi (Inactive)</option>
+                  <option value="archived">Diarsipkan (Archived / Nonaktif)</option>
+                </select>
+              </div>
+
+              {errorMsg && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-[10px] p-2 rounded-lg font-medium">
+                  {errorMsg}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditingUserId(null);
+                    setErrorMsg('');
+                  }}
+                  disabled={isLoading}
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 disabled:bg-slate-100 text-slate-800 font-black text-xs px-4 py-2.5 rounded-xl uppercase transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleSaveUserEdit(editingUserId)}
+                  disabled={isLoading}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-black text-xs px-4 py-2.5 rounded-xl uppercase transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {isLoading && <Loader size={14} className="animate-spin" />}
+                  {isLoading ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal */}
       {isSettingsOpen && (

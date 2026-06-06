@@ -738,6 +738,13 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
       updateValues.push(phone || null);
     }
     if (role) {
+      const [currentUserRows] = await connection.query('SELECT role FROM users WHERE id = ?', [id]);
+      if (currentUserRows.length > 0 && currentUserRows[0].role !== role) {
+        if (req.user.role !== 'owner') {
+          connection.release();
+          return res.status(403).json({ error: 'Hanya Owner yang diperbolehkan mengelola/mengubah peran (role) pengguna.' });
+        }
+      }
       updateFields.push('role = ?');
       updateValues.push(role);
     }
