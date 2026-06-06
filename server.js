@@ -153,7 +153,7 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN invoiceSent BOOLEAN DEFAULT FALSE");
       console.log("✅ Added invoiceSent field to 'orders' table in database");
     }
- 
+
     // Auto-migration: Add paymentProof field to 'orders' table
     const [paymentProofCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'paymentProof'");
     if (paymentProofCols.length === 0) {
@@ -300,7 +300,7 @@ const initializeDatabaseSettings = async () => {
         await connection.query("ALTER TABLE ac_services DROP COLUMN price");
         console.log("✅ Dropped 'price' column from 'ac_services'");
       }
-    } catch(e) {
+    } catch (e) {
       console.log("⚠️ Could not drop columns from ac_services (might be due to constraints):", e.message);
     }
 
@@ -806,7 +806,7 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
 // Endpoint untuk aktivasi user (karyawan) oleh admin
 app.put('/api/users/:id/activate', verifyToken, async (req, res) => {
   const { id } = req.params;
-  
+
   if (req.user.role !== 'admin' && req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Hanya Admin atau Owner yang dapat mengaktifkan pengguna.' });
   }
@@ -814,23 +814,23 @@ app.put('/api/users/:id/activate', verifyToken, async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    
+
     // Check if user exists
     const [users] = await connection.query('SELECT name, role FROM users WHERE id = ?', [id]);
     if (users.length === 0) {
       connection.release();
       return res.status(404).json({ error: 'User tidak ditemukan.' });
     }
-    
+
     const user = users[0];
-    
+
     // Update status to active
     await connection.query("UPDATE users SET status = 'active' WHERE id = ?", [id]);
-    
+
     connection.release();
-    
+
     await logActivity(req, 'Mengaktifkan Karyawan', `Mengaktifkan akun karyawan: ${user.name} (${id})`);
-    
+
     res.json({ message: 'Akun berhasil diaktifkan.', id, name: user.name, status: 'active' });
   } catch (error) {
     if (connection) connection.release();
@@ -1911,7 +1911,7 @@ app.post('/api/service-prices/bulk', async (req, res) => {
 
     await connection.commit();
     connection.release();
-    
+
     await logActivity(req, 'Mengatur Harga Layanan', `Mengatur harga per model untuk layanan ID: ${serviceId}`);
     res.json({ success: true, message: 'Harga layanan berhasil diperbarui' });
   } catch (error) {
