@@ -40,7 +40,8 @@ import {
   MoreVertical,
   BarChart2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download,
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
@@ -449,6 +450,118 @@ export default function AdminDashboard() {
   const formatRupiah = (num: any) => {
     if (!num && num !== 0 && num !== '0') return 'Rp0';
     return 'Rp' + Number(num || 0).toLocaleString('id-ID');
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const exportOrders = orders.filter(o => {
+        if (jobsStartDate || jobsEndDate) {
+          const orderDateStr = o.scheduledDate || o.createdAt;
+          if (orderDateStr) {
+            const orderDate = new Date(orderDateStr).toISOString().split('T')[0];
+            if (jobsStartDate && orderDate < jobsStartDate) return false;
+            if (jobsEndDate && orderDate > jobsEndDate) return false;
+          }
+        }
+        return true;
+      });
+
+      if (exportOrders.length === 0) {
+        alert('⚠️ Tidak ada pesanan untuk diekspor pada rentang tanggal yang dipilih.');
+        return;
+      }
+
+      const headers = [
+        'ID Pesanan',
+        'Tanggal Jadwal',
+        'Waktu Jadwal',
+        'Status Pesanan',
+        'Nama Pelanggan',
+        'No. WA Pelanggan',
+        'Alamat',
+        'Rincian Jasa AC',
+        'Sparepart/Addons Terpakai',
+        'Biaya Jasa (Rp)',
+        'Biaya Sparepart (Rp)',
+        'Total Biaya (Rp)',
+        'Metode Pembayaran',
+        'Status Pembayaran',
+        'Teknisi',
+        'Catatan Pengerjaan',
+        'Rating (Bintang)',
+        'Ulasan Umpan Balik',
+        'Tanggal Dibuat',
+        'Alasan Batal'
+      ];
+
+      const escapeCSV = (val: any) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val);
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
+      const rows = exportOrders.map(o => {
+        const acDetailStr = Array.isArray(o.acDetail)
+          ? o.acDetail.map(s => `${s.quantity}x ${s.serviceType === 'none' ? s.category : s.serviceType} (${s.acType || ''})`).join('; ')
+          : o.acDetail ? `${(o.acDetail as any).quantity || 1}x ${(o.acDetail as any).serviceType === 'none' ? (o.acDetail as any).category : (o.acDetail as any).serviceType} (${(o.acDetail as any).acType || ''})` : '';
+
+        const addonsStr = (o.addonsUsed || [])
+          .map(addon => `${addon.quantity}x ${addon.name} (@Rp${addon.price.toLocaleString('id-ID')})`)
+          .join('; ');
+
+        return [
+          escapeCSV(o.id),
+          escapeCSV(o.scheduledDate),
+          escapeCSV(o.scheduledTime),
+          escapeCSV(o.status.replace('_', ' ')),
+          escapeCSV(o.customerName),
+          escapeCSV(o.customerPhone),
+          escapeCSV(o.address),
+          escapeCSV(acDetailStr),
+          escapeCSV(addonsStr),
+          o.serviceCost || 0,
+          o.addonsCost || 0,
+          o.finalPrice || o.totalCost || ((o.serviceCost || 0) + (o.addonsCost || 0)) || 0,
+          escapeCSV(o.paymentMethod || 'TUNAI'),
+          escapeCSV(o.paymentStatus || 'PAID'),
+          escapeCSV(o.assignedEmployeeName || '-'),
+          escapeCSV(o.completionNotes || '-'),
+          o.rating !== undefined ? o.rating : '-',
+          escapeCSV(o.ratingNotes || '-'),
+          escapeCSV(o.createdAt ? new Date(o.createdAt).toLocaleString('id-ID') : ''),
+          escapeCSV(o.cancelReason || '-')
+        ];
+      });
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(r => r.join(','))
+      ].join('\n');
+
+      const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      
+      const dateRangeStr = jobsStartDate && jobsEndDate
+        ? `_${jobsStartDate}_sd_${jobsEndDate}`
+        : jobsStartDate
+          ? `_dari_${jobsStartDate}`
+          : jobsEndDate
+            ? `_hingga_${jobsEndDate}`
+            : '_semua_tanggal';
+      
+      link.setAttribute('download', `Laporan_Pesanan${dateRangeStr}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert(`✅ Berhasil mengekspor ${exportOrders.length} pesanan ke file CSV.`);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('❌ Gagal mengekspor laporan. Silakan coba lagi.');
+    }
   };
 
   // Filter orders according to selection
@@ -1163,7 +1276,7 @@ export default function AdminDashboard() {
                   className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm pl-9 pr-4 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
                 />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                 <input
                   type="date"
                   value={jobsStartDate}
@@ -1177,6 +1290,14 @@ export default function AdminDashboard() {
                   onChange={(e) => setJobsEndDate(e.target.value)}
                   className="bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
                 />
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 uppercase shadow-sm cursor-pointer whitespace-nowrap"
+                  title="Ekspor laporan pesanan ke format CSV"
+                >
+                  <Download size={13} /> Ekspor CSV
+                </button>
               </div>
             </div>
 
