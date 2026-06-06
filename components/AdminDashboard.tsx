@@ -393,9 +393,31 @@ export default function AdminDashboard() {
     onConfirm: () => { }
   });
 
+  // Timezone-safe local date formatter helper
+  const getLocalDateOnly = (dateInput: any) => {
+    if (!dateInput) return '';
+    if (dateInput instanceof Date) {
+      const year = dateInput.getFullYear();
+      const month = String(dateInput.getMonth() + 1).padStart(2, '0');
+      const day = String(dateInput.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    const str = String(dateInput).trim();
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match && !str.includes('T') && !str.endsWith('Z')) {
+      return match[0];
+    }
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Performance State
-  const [performanceDate, setPerformanceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [performanceEndDate, setPerformanceEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [performanceDate, setPerformanceDate] = useState(getLocalDateOnly(new Date()));
+  const [performanceEndDate, setPerformanceEndDate] = useState(getLocalDateOnly(new Date()));
   const [expandedPerformanceStaffId, setExpandedPerformanceStaffId] = useState<string | null>(null);
 
   // Master Data Editing State
@@ -456,9 +478,9 @@ export default function AdminDashboard() {
     try {
       const exportOrders = orders.filter(o => {
         if (jobsStartDate || jobsEndDate) {
-          const orderDateStr = o.scheduledDate || o.createdAt;
+          const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
           if (orderDateStr) {
-            const orderDate = new Date(orderDateStr).toISOString().split('T')[0];
+            const orderDate = getLocalDateOnly(orderDateStr);
             if (jobsStartDate && orderDate < jobsStartDate) return false;
             if (jobsEndDate && orderDate > jobsEndDate) return false;
           }
@@ -580,9 +602,9 @@ export default function AdminDashboard() {
 
     // 3. Date Range Filter
     if (jobsStartDate || jobsEndDate) {
-      const orderDateStr = o.scheduledDate || o.createdAt;
+      const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
       if (orderDateStr) {
-        const orderDate = new Date(orderDateStr).toISOString().split('T')[0];
+        const orderDate = getLocalDateOnly(orderDateStr);
         if (jobsStartDate && orderDate < jobsStartDate) return false;
         if (jobsEndDate && orderDate > jobsEndDate) return false;
       }
@@ -2094,7 +2116,7 @@ export default function AdminDashboard() {
                 const staffOrders = orders.filter(o => {
                   if (o.assignedTo !== staff.id || o.status !== OrderStatus.SELESAI) return false;
                   const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
-                  const orderDate = new Date(orderDateStr).toISOString().split('T')[0];
+                  const orderDate = getLocalDateOnly(orderDateStr);
                   return orderDate >= performanceDate && orderDate <= performanceEndDate;
                 });
 
