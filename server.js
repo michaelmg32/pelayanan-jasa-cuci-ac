@@ -98,6 +98,27 @@ const initializeDatabaseSettings = async () => {
       console.log("✅ Added 'photo' column to 'users' table in database");
     }
 
+    // Auto-migration: Check if 'ktpPhoto' column exists in 'users' table, if not add it
+    const [ktpCols] = await connection.query("SHOW COLUMNS FROM users LIKE 'ktpPhoto'");
+    if (ktpCols.length === 0) {
+      await connection.query("ALTER TABLE users ADD COLUMN ktpPhoto LONGTEXT NULL");
+      console.log("✅ Added 'ktpPhoto' column to 'users' table in database");
+    }
+
+    // Auto-migration: Check if 'selfiePhoto' column exists in 'users' table, if not add it
+    const [selfieCols] = await connection.query("SHOW COLUMNS FROM users LIKE 'selfiePhoto'");
+    if (selfieCols.length === 0) {
+      await connection.query("ALTER TABLE users ADD COLUMN selfiePhoto LONGTEXT NULL");
+      console.log("✅ Added 'selfiePhoto' column to 'users' table in database");
+    }
+
+    // Auto-migration: Check if 'status' column exists in 'users' table, if not add it
+    const [statusCols] = await connection.query("SHOW COLUMNS FROM users LIKE 'status'");
+    if (statusCols.length === 0) {
+      await connection.query("ALTER TABLE users ADD COLUMN status VARCHAR(50) DEFAULT 'active'");
+      console.log("✅ Added 'status' column to 'users' table in database");
+    }
+
     // Auto-migration: Check if 'addonsUsed' column exists in 'orders' table, if not add it
     const [orderCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'addonsUsed'");
     if (orderCols.length === 0) {
@@ -459,6 +480,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
+    // Check status
+    if (user.status === 'inactive') {
+      return res.status(403).json({ error: 'Akun Anda belum aktif. Silakan tunggu verifikasi admin.' });
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -479,7 +505,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Google Login endpoint
 app.post('/api/auth/google', async (req, res) => {
-  const { credential } = req.body;
+  const { credential, role } = req.body;
   try {
     if (!credential) {
       return res.status(400).json({ error: 'Google credential required' });
@@ -500,7 +526,12 @@ app.post('/api/auth/google', async (req, res) => {
 
     let user;
     if (users.length === 0) {
-      // User doesn't exist, create them
+      if (role === 'karyawan') {
+        connection.release();
+        return res.json({ isNewEmployee: true, email, name });
+      }
+
+      // User doesn't exist, create them as customer (pelanggan)
       const newId = `usr_google_${Date.now()}`;
 
       // Generate dummy password for Google users
@@ -508,13 +539,17 @@ app.post('/api/auth/google', async (req, res) => {
       const dummyPassword = await bcryptjs.hash(Math.random().toString(36), salt);
 
       await connection.query(
-        'INSERT INTO users (id, name, email, role, password) VALUES (?, ?, ?, ?, ?)',
+        "INSERT INTO users (id, name, email, role, password, status) VALUES (?, ?, ?, ?, ?, 'active')",
         [newId, name, email, 'pelanggan', dummyPassword]
       );
 
-      user = { id: newId, name, email, role: 'pelanggan' };
+      user = { id: newId, name, email, role: 'pelanggan', status: 'active' };
     } else {
       user = users[0];
+      if (user.status === 'inactive') {
+        connection.release();
+        return res.status(403).json({ error: 'Akun Anda belum aktif. Silakan tunggu verifikasi admin.' });
+      }
     }
 
     connection.release();
@@ -538,13 +573,34 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// Register endpoint (for customers)
+// Register endpoint
 app.post('/api/auth/register', async (req, res) => {
-  const { id, name, email, phone, address, password, role } = req.body;
+  const { id, name, email, phone, address, password, role, ktpPhoto, selfiePhoto } = req.body;
   try {
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name required' });
     }
+
+    const registrationRole = role || 'pelanggan';
+    const isEmployee = registrationRole === 'karyawan';
+
+    // Additional validations for employees
+    if (isEmployee) {
+      if (!phone) {
+        return res.status(400).json({ error: 'Nomor WhatsApp wajib diisi.' });
+      }
+      if (!address) {
+        return res.status(400).json({ error: 'Alamat wajib diisi.' });
+      }
+      if (!ktpPhoto) {
+        return res.status(400).json({ error: 'Foto KTP wajib diunggah.' });
+      }
+      if (!selfiePhoto) {
+        return res.status(400).json({ error: 'Foto Selfie wajib diunggah.' });
+      }
+    }
+
+    const status = isEmployee ? 'inactive' : 'active';
 
     // Hash password
     const salt = await bcryptjs.genSalt(10);
@@ -556,21 +612,39 @@ app.post('/api/auth/register', async (req, res) => {
     const [existingUsers] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existingUsers.length > 0) {
       connection.release();
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ error: 'Email sudah terdaftar.' });
     }
 
     // Insert new user
     const newId = id || `usr_${Date.now()}`;
     await connection.query(
-      'INSERT INTO users (id, name, email, phone, role, password) VALUES (?, ?, ?, ?, ?, ?)',
-      [newId, name, email, phone || null, role || 'pelanggan', hashedPassword]
+      'INSERT INTO users (id, name, email, phone, address, role, password, ktpPhoto, selfiePhoto, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        newId,
+        name,
+        email,
+        phone || null,
+        address || null,
+        registrationRole,
+        hashedPassword,
+        ktpPhoto || null,
+        selfiePhoto || null,
+        status
+      ]
     );
 
     connection.release();
 
+    if (status === 'inactive') {
+      return res.status(201).json({
+        message: 'Registrasi berhasil! Akun Karyawan Anda sedang menunggu verifikasi admin.',
+        status: 'inactive'
+      });
+    }
+
     // Generate JWT token
     const token = jwt.sign(
-      { id: newId, email, role: role || 'pelanggan' },
+      { id: newId, email, role: registrationRole },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRY }
     );
@@ -582,7 +656,9 @@ app.post('/api/auth/register', async (req, res) => {
         name,
         email,
         phone: phone || null,
-        role: role || 'pelanggan'
+        address: address || null,
+        role: registrationRole,
+        status
       }
     });
   } catch (error) {
@@ -600,7 +676,7 @@ app.post('/api/auth/logout', verifyToken, (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT id, name, email, phone, role, photo, createdAt FROM users');
+    const [users] = await connection.query('SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt FROM users');
     connection.release();
     res.json(users);
   } catch (error) {
@@ -696,7 +772,7 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
 
     await logActivity(req, 'Memperbarui Pengguna', `Memperbarui data pengguna ID: ${id}`);
 
-    const [user] = await connection.query('SELECT id, name, email, phone, role, address, lat, lng, photo FROM users WHERE id = ?', [id]);
+    const [user] = await connection.query('SELECT id, name, email, phone, role, address, lat, lng, photo, ktpPhoto, selfiePhoto, status FROM users WHERE id = ?', [id]);
     connection.release();
 
     if (user.length === 0) {
@@ -706,6 +782,42 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
     res.json(user[0]);
   } catch (error) {
     console.error('Error updating user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint untuk aktivasi user (karyawan) oleh admin
+app.put('/api/users/:id/activate', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Hanya Admin atau Owner yang dapat mengaktifkan pengguna.' });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // Check if user exists
+    const [users] = await connection.query('SELECT name, role FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'User tidak ditemukan.' });
+    }
+    
+    const user = users[0];
+    
+    // Update status to active
+    await connection.query("UPDATE users SET status = 'active' WHERE id = ?", [id]);
+    
+    connection.release();
+    
+    await logActivity(req, 'Mengaktifkan Karyawan', `Mengaktifkan akun karyawan: ${user.name} (${id})`);
+    
+    res.json({ message: 'Akun berhasil diaktifkan.', id, name: user.name, status: 'active' });
+  } catch (error) {
+    if (connection) connection.release();
+    console.error('Error activating user:', error);
     res.status(500).json({ error: error.message });
   }
 });

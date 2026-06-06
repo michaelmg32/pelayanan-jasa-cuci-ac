@@ -31,6 +31,9 @@ export interface User {
   lng?: number;
   photoUrl?: string;
   photo?: string;
+  ktpPhoto?: string;
+  selfiePhoto?: string;
+  status?: string;
 }
 
 export interface ACModel {

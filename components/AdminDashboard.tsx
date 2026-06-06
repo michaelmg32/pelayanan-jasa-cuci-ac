@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   } = useApp();
   const alert = showAlert;
   const [inspectedPhoto, setInspectedPhoto] = useState<string | null>(null);
+  const [verifyingUser, setVerifyingUser] = useState<User | null>(null);
 
   // Extract staff members from users and sort by rating & jobs done
   const staffList = users.filter(u => u.role === Role.STAFF);
@@ -681,6 +682,22 @@ export default function AdminDashboard() {
       console.error('Error updating user:', error);
       const errorMsg = error?.message || 'Gagal memperbarui data pengguna';
       setErrorMsg(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleActivateUser = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      const res = await api.activateUser(userId);
+      alert(`✅ Akun Karyawan ${res.name} berhasil diaktifkan!`);
+      // Update local users state
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'active' } : u));
+      setVerifyingUser(null);
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ Gagal mengaktifkan user: ${error?.message || error}`);
     } finally {
       setIsLoading(false);
     }
@@ -1876,20 +1893,36 @@ export default function AdminDashboard() {
                             }`}>
                             {u.role}
                           </span>
+                          {u.role === Role.STAFF && (
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                              {u.status === 'inactive' ? 'MENUNGGU VERIFIKASI' : 'AKTIF'}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-slate-400 font-semibold mt-1">{u.email}</p>
                       </div>
                     </div>
                   </div>
-                  {u.role !== Role.OWNER && u.role !== Role.ADMIN && (
-                    <button
-                      type="button"
-                      onClick={() => startEditUser(u)}
-                      className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
-                    >
-                      <Edit size={12} /> Edit
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {u.role === Role.STAFF && u.status === 'inactive' && (
+                      <button
+                        type="button"
+                        onClick={() => setVerifyingUser(u)}
+                        className="bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-700 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
+                      >
+                        <ShieldCheck size={12} /> Verifikasi
+                      </button>
+                    )}
+                    {u.role !== Role.OWNER && u.role !== Role.ADMIN && (
+                      <button
+                        type="button"
+                        onClick={() => startEditUser(u)}
+                        className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
+                      >
+                        <Edit size={12} /> Edit
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -3475,6 +3508,112 @@ export default function AdminDashboard() {
               <X size={20} />
             </button>
             <img src={inspectedPhoto} alt="Inspected Photo" className="w-full h-auto rounded-2xl shadow-2xl border-4 border-white" />
+          </div>
+        </div>
+      )}
+
+      {/* EMPLOYEE VERIFICATION MODAL */}
+      {verifyingUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl text-left max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <div>
+                <h4 className="font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5"><ShieldCheck size={14} className="text-amber-400" /> Verifikasi Dokumen Karyawan</h4>
+                <p className="text-[10px] text-slate-400 mt-1">Tinjau data KTP & Selfie Karyawan baru</p>
+              </div>
+              <button
+                onClick={() => setVerifyingUser(null)}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-800 transition cursor-pointer"
+                disabled={isLoading}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto flex-grow">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+                <div className="grid grid-cols-3 text-xs gap-y-2.5">
+                  <span className="font-bold text-slate-400">Nama:</span>
+                  <span className="col-span-2 font-extrabold text-slate-800">{verifyingUser.name}</span>
+
+                  <span className="font-bold text-slate-400">Email:</span>
+                  <span className="col-span-2 font-mono font-bold text-slate-700 text-[11px] break-all">{verifyingUser.email}</span>
+
+                  <span className="font-bold text-slate-400">WhatsApp:</span>
+                  <span className="col-span-2 font-black text-slate-800">{verifyingUser.phone || '-'}</span>
+
+                  <span className="font-bold text-slate-400">Alamat:</span>
+                  <span className="col-span-2 font-bold text-slate-600 leading-relaxed text-[11px]">{verifyingUser.address || '-'}</span>
+                </div>
+              </div>
+
+              {/* Photos Section */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5 text-center">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Foto KTP</span>
+                  {verifyingUser.ktpPhoto ? (
+                    <div 
+                      onClick={() => setInspectedPhoto(verifyingUser.ktpPhoto!)}
+                      className="border border-slate-200 rounded-2xl overflow-hidden aspect-video bg-slate-100 cursor-pointer shadow-sm hover:shadow transition relative group"
+                    >
+                      <img src={verifyingUser.ktpPhoto} alt="KTP" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition duration-200">
+                        Klik untuk Zoom
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border border-dashed border-slate-300 rounded-2xl aspect-video bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                      Foto KTP Tidak Ada
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 text-center">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Foto Selfie</span>
+                  {verifyingUser.selfiePhoto ? (
+                    <div 
+                      onClick={() => setInspectedPhoto(verifyingUser.selfiePhoto!)}
+                      className="border border-slate-200 rounded-2xl overflow-hidden aspect-video bg-slate-100 cursor-pointer shadow-sm hover:shadow transition relative group"
+                    >
+                      <img src={verifyingUser.selfiePhoto} alt="Selfie" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition duration-200">
+                        Klik untuk Zoom
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border border-dashed border-slate-300 rounded-2xl aspect-video bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                      Foto Selfie Tidak Ada
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2.5 shrink-0">
+              <button
+                onClick={() => setVerifyingUser(null)}
+                disabled={isLoading}
+                className="flex-1 bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-50 text-slate-700 text-xs font-black py-2.5 rounded-xl uppercase transition cursor-pointer text-center"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={() => handleActivateUser(verifyingUser.id)}
+                disabled={isLoading}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 disabled:opacity-50 text-white text-xs font-black py-2.5 rounded-xl uppercase transition shadow-md shadow-emerald-500/15 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader size={13} className="animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <Check size={13} /> Setujui & Aktifkan
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -130,6 +130,25 @@ export const updateUser = async (userId: string, userData: any) => {
   }
 };
 
+export const activateUser = async (userId: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/activate`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Gagal mengaktifkan pengguna: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error activating user:', error);
+    throw error;
+  }
+};
+
 export const updatePassword = async (userId: string, passwordData: { oldPassword: string, newPassword: string }) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users/${userId}/password`, {
