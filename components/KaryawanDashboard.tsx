@@ -22,6 +22,7 @@ import {
   Check,
   MoreVertical,
   LogOut,
+  Printer,
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
@@ -110,6 +111,179 @@ export default function KaryawanDashboard() {
 
   const formatRupiah = (num: any) => {
     return 'Rp' + Number(num || 0).toLocaleString('id-ID');
+  };
+
+  const handlePrintReceipt = (task: any) => {
+    try {
+      const businessName = appSettings?.business_name || 'CoolAir Pro';
+      const businessLogo = appSettings?.business_logo || '';
+      
+      const formatRupiahText = (num: any) => {
+        if (!num && num !== 0 && num !== '0') return 'Rp0';
+        return 'Rp' + Number(num || 0).toLocaleString('id-ID');
+      };
+
+      const finalAmount = task.finalPrice || ((task.serviceCost || 0) + (task.addonsCost || 0)) || task.totalCost || 0;
+
+      // Build acDetails HTML safely
+      let acDetailsList = '';
+      if (Array.isArray(task.acDetail)) {
+        acDetailsList = task.acDetail.map((ac: any) => {
+          const typeStr = ac.acType || '';
+          const catStr = ac.category || '';
+          const svcStr = ac.serviceType === 'none' ? '' : ` (${ac.serviceType})`;
+          return `
+            <div class="item-row">
+              <span>${ac.quantity}x ${catStr}${svcStr}</span>
+            </div>
+            <div class="item-sub" style="padding-left: 10px; font-size: 8.5px; color: #555; margin-bottom: 4px;">
+              Tipe: ${typeStr}
+            </div>
+          `;
+        }).join('');
+      } else if (task.acDetail) {
+        const ac = task.acDetail as any;
+        const typeStr = ac.acType || '';
+        const catStr = ac.category || '';
+        const svcStr = ac.serviceType === 'none' ? '' : ` (${ac.serviceType})`;
+        acDetailsList = `
+          <div class="item-row">
+            <span>${ac.quantity || 1}x ${catStr}${svcStr}</span>
+          </div>
+          <div class="item-sub" style="padding-left: 10px; font-size: 8.5px; color: #555; margin-bottom: 4px;">
+            Tipe: ${typeStr}
+          </div>
+        `;
+      }
+
+      // Build addons HTML
+      const addonsList = (task.addonsUsed || []).map((addon: any) => {
+        return `
+          <div class="item-row">
+            <span>${addon.quantity}x ${addon.name}</span>
+            <span class="text-right font-mono">${formatRupiahText(addon.price * addon.quantity)}</span>
+          </div>
+          <div style="font-size: 8.5px; padding-left: 10px; color: #555; margin-bottom: 2px;">
+            @ ${formatRupiahText(addon.price)}
+          </div>
+        `;
+      }).join('');
+
+      const printWindow = window.open('', '_blank', 'width=350,height=600');
+      if (!printWindow) {
+        alert('❌ Gagal membuka jendela cetak. Pastikan pop-up browser tidak diblokir.');
+        return;
+      }
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Cetak Nota - ${task.id}</title>
+            <style>
+              @page {
+                size: 58mm auto;
+                margin: 0;
+              }
+              body {
+                width: 48mm; /* printable width on standard 58mm printer */
+                margin: 0 auto;
+                padding: 10px 2px 20px 2px;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 10px;
+                line-height: 1.3;
+                color: #000;
+                background-color: #fff;
+              }
+              .text-center { text-align: center; }
+              .text-right { text-align: right; }
+              .bold { font-weight: bold; }
+              .divider { border-top: 1px dashed #000; margin: 6px 0; }
+              .double-divider { border-top: 1px double #000; margin: 6px 0; }
+              .item-row { display: flex; justify-content: space-between; align-items: flex-start; }
+              .header-title { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+              .header-subtitle { font-size: 8.5px; margin-bottom: 4px; }
+              .receipt-info { font-size: 9px; margin-bottom: 8px; }
+              .totals-section { font-size: 9.5px; }
+              .footer { font-size: 8.5px; margin-top: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="text-center">
+              ${businessLogo ? `<img src="${businessLogo}" style="max-height: 35px; max-width: 100%; margin-bottom: 4px; filter: grayscale(100%);" />` : ''}
+              <div class="header-title">${businessName}</div>
+              <div class="header-subtitle">Layanan AC Profesional & Terpercaya</div>
+              <div class="divider"></div>
+            </div>
+
+            <div class="receipt-info">
+              <div><strong>Nota ID :</strong> ${task.id}</div>
+              <div><strong>Tanggal :</strong> ${task.scheduledDate} ${task.scheduledTime}</div>
+              <div><strong>Teknisi :</strong> ${task.assignedEmployeeName || '-'}</div>
+              <div class="divider"></div>
+              <div><strong>Pelanggan:</strong> ${task.customerName}</div>
+              <div><strong>No. Telp :</strong> ${task.customerPhone}</div>
+              <div style="word-break: break-word;"><strong>Alamat   :</strong> ${task.address}</div>
+            </div>
+
+            <div class="double-divider"></div>
+            <div class="bold" style="font-size: 9px; margin-bottom: 4px;">Rincian Layanan:</div>
+            ${acDetailsList || '<div style="font-style: italic;">Tidak ada detail layanan</div>'}
+            
+            <div class="item-row font-mono bold" style="margin-top: 4px;">
+              <span>Total Jasa AC</span>
+              <span class="text-right">${formatRupiahText(task.serviceCost)}</span>
+            </div>
+
+            ${addonsList ? `
+              <div class="divider"></div>
+              <div class="bold" style="font-size: 9px; margin-bottom: 4px;">Sparepart / Addons:</div>
+              ${addonsList}
+              <div class="item-row font-mono bold" style="margin-top: 4px;">
+                <span>Total Sparepart</span>
+                <span class="text-right">${formatRupiahText(task.addonsCost)}</span>
+              </div>
+            ` : ''}
+
+            <div class="double-divider"></div>
+
+            <div class="totals-section bold">
+              <div class="item-row">
+                <span>TOTAL AKHIR</span>
+                <span class="text-right font-mono" style="font-size: 11px;">${formatRupiahText(finalAmount)}</span>
+              </div>
+              <div class="item-row" style="margin-top: 2px; font-size: 8.5px;">
+                <span>Metode Bayar</span>
+                <span class="text-right">${task.paymentMethod === 'TRANSFER' ? 'TRANSFER' : 'TUNAI'}</span>
+              </div>
+              <div class="item-row" style="font-size: 8.5px;">
+                <span>Status</span>
+                <span class="text-right">${task.paymentStatus === 'PAID' ? 'LUNAS (PAID)' : 'MENUNGGU VERIFIKASI'}</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="text-center footer">
+              <div>Terima kasih atas kunjungan Anda</div>
+              <div>Hubungi kami kembali untuk perawatan AC berkala</div>
+              <div style="margin-top: 4px; font-size: 7px; color: #555;">Dicetak otomatis oleh Aplikasi</div>
+            </div>
+            
+            <script>
+              window.onload = function() {
+                window.print();
+                setTimeout(function() {
+                  window.close();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (error) {
+      console.error('Print receipt error:', error);
+      alert('❌ Gagal mencetak nota. Silakan coba lagi.');
+    }
   };
 
   // ==================== HANDLERS ====================
@@ -971,6 +1145,14 @@ export default function KaryawanDashboard() {
                                 <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(task.finalPrice || ((task.serviceCost || 0) + (task.addonsCost || 0)) || task.totalCost || 0)}</strong>
                               </div>
 
+                              <button
+                                type="button"
+                                onClick={() => handlePrintReceipt(task)}
+                                className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold text-[10px] py-2 rounded-lg uppercase tracking-wide cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95"
+                              >
+                                <Printer size={13} /> Cetak Nota (58mm)
+                              </button>
+
                               {task.paymentMethod === 'CASH' || !task.paymentMethod ? (
                                 <div className="space-y-1.5 pt-1">
                                   <p className="text-[10px] text-amber-800 leading-normal font-semibold">⚠️ Pembayaran Tunai. Konfirmasi kelayakan uang?</p>
@@ -1129,6 +1311,14 @@ export default function KaryawanDashboard() {
                             </div>
                           </div>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() => handlePrintReceipt(task)}
+                          className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-extrabold text-[9.5px] py-2 rounded-lg uppercase tracking-wide cursor-pointer flex items-center justify-center gap-1 transition"
+                        >
+                          <Printer size={12} /> Cetak Ulang Nota (58mm)
+                        </button>
                       </div>
                     ))}
                   </div>

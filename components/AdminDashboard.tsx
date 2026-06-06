@@ -377,6 +377,7 @@ export default function AdminDashboard() {
   const [editRole, setEditRole] = useState<Role>(Role.USER);
   const [editPhone, setEditPhone] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editStatus, setEditStatus] = useState<string>('active');
 
   // Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -661,6 +662,7 @@ export default function AdminDashboard() {
         email: targetUser.email, // Send existing email (required by backend)
         role: editRole,
         phone: editPhone,
+        status: editStatus,
         // Note: address is not stored in database yet
       };
 
@@ -672,6 +674,7 @@ export default function AdminDashboard() {
         updatedUser.role = editRole;
         updatedUser.phone = editPhone;
         updatedUser.address = editAddress;
+        updatedUser.status = editStatus;
         setUsers([...users]);
       }
 
@@ -712,6 +715,7 @@ export default function AdminDashboard() {
     setEditRole(target.role);
     setEditPhone(target.phone || '');
     setEditAddress(target.address || '');
+    setEditStatus(target.status || 'active');
   };
 
   // Master Data handlers - CREATE/UPDATE MODELS
@@ -1894,8 +1898,14 @@ export default function AdminDashboard() {
                             {u.role}
                           </span>
                           {u.role === Role.STAFF && (
-                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
-                              {u.status === 'inactive' ? 'MENUNGGU VERIFIKASI' : 'AKTIF'}
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                              u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' :
+                              u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                              'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}>
+                              {u.status === 'inactive' ? 'MENUNGGU VERIFIKASI' :
+                               u.status === 'archived' ? 'DIARSIPKAN (NONAKTIF)' :
+                               'AKTIF'}
                             </span>
                           )}
                         </div>
@@ -2983,6 +2993,20 @@ export default function AdminDashboard() {
                   <option value={Role.USER}>Pelanggan</option>
                   <option value={Role.STAFF}>Staff/Teknisi</option>
                   <option value={Role.ADMIN}>Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Status Akun</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                  disabled={isLoading}
+                >
+                  <option value="active">Aktif</option>
+                  <option value="inactive">Menunggu Verifikasi (Inactive)</option>
+                  <option value="archived">Diarsipkan (Archived / Nonaktif)</option>
                 </select>
               </div>
 

@@ -481,7 +481,10 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Check status
-    if (user.status === 'inactive') {
+    if (user.status !== 'active') {
+      if (user.status === 'archived') {
+        return res.status(403).json({ error: 'Akun Anda telah dinonaktifkan (diarsipkan). Silakan hubungi admin.' });
+      }
       return res.status(403).json({ error: 'Akun Anda belum aktif. Silakan tunggu verifikasi admin.' });
     }
 
@@ -546,8 +549,11 @@ app.post('/api/auth/google', async (req, res) => {
       user = { id: newId, name, email, role: 'pelanggan', status: 'active' };
     } else {
       user = users[0];
-      if (user.status === 'inactive') {
+      if (user.status !== 'active') {
         connection.release();
+        if (user.status === 'archived') {
+          return res.status(403).json({ error: 'Akun Anda telah dinonaktifkan (diarsipkan). Silakan hubungi admin.' });
+        }
         return res.status(403).json({ error: 'Akun Anda belum aktif. Silakan tunggu verifikasi admin.' });
       }
     }
@@ -711,7 +717,7 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const { name, email, phone, role, password, address, photo } = req.body;
+  const { name, email, phone, role, password, address, photo, status } = req.body;
   try {
     const connection = await pool.getConnection();
 
@@ -758,6 +764,10 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
     if (photo !== undefined) {
       updateFields.push('photo = ?');
       updateValues.push(photo);
+    }
+    if (status !== undefined) {
+      updateFields.push('status = ?');
+      updateValues.push(status);
     }
 
     if (updateFields.length === 0) {
