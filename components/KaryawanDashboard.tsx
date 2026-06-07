@@ -1100,13 +1100,30 @@ export default function KaryawanDashboard() {
                                 </div>
                               </div>
 
-                              <button
-                                onClick={() => handleStartRepairAndWash(task.id)}
-                                disabled={!photoBeforeUrl}
-                                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-extrabold text-xs py-2.5 rounded-xl uppercase tracking-wider cursor-pointer disabled:cursor-not-allowed"
-                              >
-                                Konfirmasi Selesai Ulasan & Mulai Kerja
-                              </button>
+                              {task.workerCancelReason ? (
+                                <div className="bg-amber-100 text-amber-800 p-3 rounded-xl text-xs font-bold text-center border border-amber-300 mt-3">
+                                  ⏳ Menunggu verifikasi admin untuk pembatalan...
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleStartRepairAndWash(task.id)}
+                                    disabled={!photoBeforeUrl}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-extrabold text-xs py-2.5 rounded-xl uppercase tracking-wider cursor-pointer disabled:cursor-not-allowed mb-2"
+                                  >
+                                    Konfirmasi Selesai Ulasan & Mulai Kerja
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setActiveCancelOrderId(task.id);
+                                      setCancelReasonText('');
+                                    }}
+                                    className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-[10px] py-2 rounded-xl uppercase tracking-wider cursor-pointer transition"
+                                  >
+                                    Ajukan Pembatalan (Ada Kendala)
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
 

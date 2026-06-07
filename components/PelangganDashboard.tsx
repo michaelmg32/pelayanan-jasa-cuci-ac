@@ -574,6 +574,29 @@ export default function PelangganDashboard() {
     }
   };
 
+  // Handle customer approve worker cancel request
+  const handleApproveWorkerCancel = async (orderId: string, reason: string) => {
+    try {
+      setIsLoading(true);
+      const updatedOrder = {
+        status: OrderStatus.DIBATALKAN,
+        cancelReason: `Dibatalkan Pelanggan (Kendala Teknisi: ${reason})`,
+        workerCancelReason: null
+      };
+      
+      await api.updateOrder(orderId, updatedOrder as any);
+      
+      const updatedOrders = await api.fetchOrders();
+      setOrders(updatedOrders);
+      setIsLoading(false);
+      alert('✓ Pembatalan oleh teknisi telah disetujui.');
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Approve cancel error:', error);
+      alert('❌ Gagal menyetujui pembatalan: ' + error.message);
+    }
+  };
+
   // Handle payment method selection
   const handlePaymentMethodSelect = async (orderId: string, method: 'CASH' | 'TRANSFER') => {
     setOrderPaymentMethods(prev => ({ ...prev, [orderId]: method }));
@@ -845,6 +868,31 @@ export default function PelangganDashboard() {
                                   className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-[9.5px] font-black py-2 rounded-lg transition uppercase tracking-wider cursor-pointer shadow-sm"
                                 >
                                   Tolak (Batalkan Pesanan)
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Worker Cancel Verification */}
+                          {order.workerCancelReason && (
+                            <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl text-left space-y-2 mt-2">
+                              <div className="flex gap-2 items-start text-rose-800">
+                                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[10px] font-black uppercase tracking-wider block">Teknisi Mengajukan Pembatalan</span>
+                                  <p className="text-[10px] mt-0.5 font-medium leading-relaxed">
+                                    Alasan: <br />
+                                    <strong>{order.workerCancelReason}</strong>
+                                  </p>
+                                  <p className="text-[9px] mt-1 text-rose-600 italic">Harap verifikasi jika Anda setuju untuk membatalkan pesanan ini.</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 mt-2 pt-2 border-t border-rose-200/60">
+                                <button
+                                  onClick={() => handleApproveWorkerCancel(order.id, order.workerCancelReason!)}
+                                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-[9.5px] font-black py-2 rounded-lg transition uppercase tracking-wider cursor-pointer shadow-sm"
+                                >
+                                  Setujui Batal
                                 </button>
                               </div>
                             </div>
