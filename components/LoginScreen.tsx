@@ -490,7 +490,6 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                     onError={() => setErrorMsg('Login dengan Google gagal.')}
                     theme="filled_blue"
                     shape="pill"
-                    width="100%"
                   />
                 </GoogleOAuthProvider>
               </div>
@@ -712,7 +711,6 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                     onError={() => setErrorMsg('Login dengan Google gagal.')}
                     theme="filled_blue"
                     shape="pill"
-                    width="100%"
                   />
                 </GoogleOAuthProvider>
               </div>

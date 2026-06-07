@@ -25,7 +25,7 @@ export const getAuthHeaders = () => {
     const cookies = document.cookie.split(';');
     const tokenCookie = cookies.find(c => c.trim().startsWith('auth_token='));
     if (tokenCookie) {
-      const token = tokenCookie.split('=')[1];
+      const token = tokenCookie.trim().substring(11); // 'auth_token='.length === 11
       headers['Authorization'] = `Bearer ${token}`;
     } else {
       headers['Authorization'] = 'Bearer dummy-jwt-token-123';
