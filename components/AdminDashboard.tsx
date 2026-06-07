@@ -66,7 +66,7 @@ export default function AdminDashboard() {
   const [verifyingUser, setVerifyingUser] = useState<User | null>(null);
 
   // Extract staff members from users and sort by rating & jobs done
-  const staffList = users.filter(u => u.role === Role.STAFF);
+  const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active');
   const sortedStaffList = useMemo(() => {
     return staffList.map(staff => {
       const staffOrders = orders.filter(o => o.assignedTo === staff.id && o.status === OrderStatus.SELESAI);
@@ -2111,7 +2111,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-5">
-              {users.filter(u => u.role === Role.STAFF).map(staff => {
+              {users.filter(u => u.role === Role.STAFF && u.status === 'active').map(staff => {
                 // Filter orders for this staff
                 const staffOrders = orders.filter(o => {
                   if (o.assignedTo !== staff.id || o.status !== OrderStatus.SELESAI) return false;
@@ -2222,7 +2222,7 @@ export default function AdminDashboard() {
                 );
               })}
 
-              {users.filter(u => u.role === Role.STAFF).length === 0 && (
+              {users.filter(u => u.role === Role.STAFF && u.status === 'active').length === 0 && (
                 <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center">
                   <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                     <UserIcon size={28} className="text-slate-300" />

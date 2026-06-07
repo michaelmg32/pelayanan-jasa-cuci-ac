@@ -981,7 +981,7 @@ export default function KaryawanDashboard() {
                                                   const cat = categories.find(c => c.name === cartItem.category);
                                                   return cat && s.categoryId === cat.id;
                                                 }).map(s => (
-                                                  <option key={s.id} value={s.name}>{s.name} ({formatRupiah(s.price)})</option>
+                                                  <option key={s.id} value={s.name}>{s.name}</option>
                                                 ))}
                                               </select>
                                             </div>
