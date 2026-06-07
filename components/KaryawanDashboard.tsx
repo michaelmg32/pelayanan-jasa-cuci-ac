@@ -23,6 +23,7 @@ import {
   MoreVertical,
   LogOut,
   Printer,
+  FileText,
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
@@ -35,6 +36,7 @@ export default function KaryawanDashboard() {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
 
   // Work panel modal
   const [activeWorkingTask, setActiveWorkingTask] = useState<any | null>(null);
@@ -1266,7 +1268,11 @@ export default function KaryawanDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {completedTasks.map(task => (
-                      <div key={task.id} className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+                      <div 
+                        key={task.id} 
+                        className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 cursor-pointer hover:shadow-md transition"
+                        onClick={() => setSelectedHistoryOrder(task)}
+                      >
                         <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
                           <div>
                             <span className="text-[8px] font-mono text-slate-400 font-bold block">{task.id}</span>
@@ -1323,7 +1329,7 @@ export default function KaryawanDashboard() {
 
                         <button
                           type="button"
-                          onClick={() => handlePrintReceipt(task)}
+                          onClick={(e) => { e.stopPropagation(); handlePrintReceipt(task); }}
                           className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-extrabold text-[9.5px] py-2 rounded-lg uppercase tracking-wide cursor-pointer flex items-center justify-center gap-1 transition"
                         >
                           <Printer size={12} /> Cetak Ulang Nota (58mm)
@@ -1799,6 +1805,138 @@ export default function KaryawanDashboard() {
             }}
             onCancel={() => setShowProfileMapPicker(false)}
           />
+        </div>
+      )}
+
+      {/* ORDER DETAIL MODAL */}
+      {selectedHistoryOrder && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setSelectedHistoryOrder(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="p-4 bg-emerald-600 text-white flex justify-between items-center shrink-0">
+              <div>
+                <h4 className="font-black text-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText size={16} /> Detail Pesanan
+                </h4>
+                <p className="text-[10px] text-emerald-200 mt-0.5 font-mono">{selectedHistoryOrder.id}</p>
+              </div>
+              <button onClick={() => setSelectedHistoryOrder(null)} className="p-1 hover:bg-emerald-500 rounded-full transition cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4 text-slate-700 text-xs">
+              
+              {/* Header Status */}
+              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">Status Pesanan</span>
+                  <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded mt-1 inline-block ${selectedHistoryOrder.status === OrderStatus.DIBATALKAN ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                    {selectedHistoryOrder.status === OrderStatus.DIBATALKAN ? 'DIBATALKAN' : 'SELESAI'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">Tanggal Selesai</span>
+                  <span className="font-bold text-slate-700 mt-1 block">{selectedHistoryOrder.completedAt ? new Date(selectedHistoryOrder.completedAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : selectedHistoryOrder.scheduledDate}</span>
+                </div>
+              </div>
+
+              {/* Worker / Customer Info */}
+              <div className="space-y-1">
+                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Pelanggan</span>
+                <div className="font-bold bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <UserIcon size={14} className="text-slate-400" />
+                    {selectedHistoryOrder.customerName}
+                  </div>
+                  <div className="flex items-start gap-2 mt-1 text-[10.5px] font-medium text-slate-500">
+                    <MapPin size={12} className="text-slate-400 shrink-0 mt-0.5" />
+                    <span className="line-clamp-2">{selectedHistoryOrder.address}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Items */}
+              <div className="space-y-2">
+                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Detail Jasa AC</span>
+                <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl space-y-2">
+                  {Array.isArray(selectedHistoryOrder.acDetail) ? (
+                    selectedHistoryOrder.acDetail.map((detail: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center border-b border-slate-200/60 pb-2 last:border-0 last:pb-0">
+                        <div>
+                          <span className="font-bold text-slate-800">{detail.serviceType === 'none' ? detail.category : detail.serviceType}</span>
+                          <span className="block text-[10px] text-slate-500 mt-0.5">{detail.acType}</span>
+                        </div>
+                        <span className="font-black text-slate-700">{detail.quantity} Unit</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-slate-800">{(selectedHistoryOrder.acDetail as any)?.serviceType === 'none' ? (selectedHistoryOrder.acDetail as any)?.category : (selectedHistoryOrder.acDetail as any)?.serviceType}</span>
+                        <span className="block text-[10px] text-slate-500 mt-0.5">{(selectedHistoryOrder.acDetail as any)?.acType}</span>
+                      </div>
+                      <span className="font-black text-slate-700">{(selectedHistoryOrder.acDetail as any)?.quantity} Unit</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Addons Used */}
+              {selectedHistoryOrder.addonsUsed && selectedHistoryOrder.addonsUsed.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Perlengkapan Tambahan</span>
+                  <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl space-y-1.5">
+                    {selectedHistoryOrder.addonsUsed.map((ad: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-[10.5px]">
+                        <span className="text-amber-800 font-medium">🔧 {ad.name} ({ad.quantity}x)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Costs */}
+              <div className="space-y-1 pt-2 border-t border-slate-100">
+                <div className="flex justify-between text-[11px] text-slate-600">
+                  <span>Biaya Jasa</span>
+                  <span className="font-mono">{formatRupiah(selectedHistoryOrder.serviceCost)}</span>
+                </div>
+                {selectedHistoryOrder.addonsCost > 0 && (
+                  <div className="flex justify-between text-[11px] text-slate-600 mt-1">
+                    <span>Biaya Perlengkapan Tambahan</span>
+                    <span className="font-mono">{formatRupiah(selectedHistoryOrder.addonsCost)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-black text-emerald-700 text-sm mt-2 pt-2 border-t border-slate-200">
+                  <span>Total Harga Layanan</span>
+                  <span className="font-mono">{formatRupiah(Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0))}</span>
+                </div>
+              </div>
+
+              {/* Notes & Rating */}
+              {selectedHistoryOrder.completionNotes && (
+                <div className="space-y-1 pt-2">
+                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Catatan Anda</span>
+                  <p className="italic text-slate-600 bg-slate-50 p-2 rounded-lg text-[10.5px] border border-slate-100">"{selectedHistoryOrder.completionNotes}"</p>
+                </div>
+              )}
+
+              {selectedHistoryOrder.cancelReason && (
+                <div className="space-y-1 pt-2">
+                  <span className="text-[9px] font-black uppercase text-red-400 tracking-wider">Alasan Batal</span>
+                  <p className="text-red-700 bg-red-50 p-2 rounded-lg text-[10.5px] border border-red-100 font-bold">"{selectedHistoryOrder.cancelReason}"</p>
+                </div>
+              )}
+
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
+              <button
+                onClick={() => setSelectedHistoryOrder(null)}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

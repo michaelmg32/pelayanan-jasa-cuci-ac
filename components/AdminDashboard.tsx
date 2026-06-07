@@ -372,6 +372,7 @@ export default function AdminDashboard() {
   const [jobsSearch, setJobsSearch] = useState('');
   const [jobsStartDate, setJobsStartDate] = useState('');
   const [jobsEndDate, setJobsEndDate] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Editing User state
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -600,15 +601,7 @@ export default function AdminDashboard() {
       if (!matchName && !matchPhone && !matchId) return false;
     }
 
-    // 3. Date Range Filter
-    if (jobsStartDate || jobsEndDate) {
-      const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
-      if (orderDateStr) {
-        const orderDate = getLocalDateOnly(orderDateStr);
-        if (jobsStartDate && orderDate < jobsStartDate) return false;
-        if (jobsEndDate && orderDate > jobsEndDate) return false;
-      }
-    }
+    // 3. Date Range Filter removed from UI list filter
 
     return true;
   }).sort((a, b) => {
@@ -1299,22 +1292,9 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                <input
-                  type="date"
-                  value={jobsStartDate}
-                  onChange={(e) => setJobsStartDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
-                />
-                <span className="text-slate-400 font-bold text-xs">S/D</span>
-                <input
-                  type="date"
-                  value={jobsEndDate}
-                  onChange={(e) => setJobsEndDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-lg focus:border-indigo-500 focus:bg-white outline-none transition"
-                />
                 <button
                   type="button"
-                  onClick={handleExportCSV}
+                  onClick={() => setShowExportModal(true)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 uppercase shadow-sm cursor-pointer whitespace-nowrap"
                   title="Ekspor laporan pesanan ke format CSV"
                 >
@@ -3776,6 +3756,65 @@ export default function AdminDashboard() {
                     <Check size={13} /> Setujui & Aktifkan
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export CSV Date Range Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
+            <div className="p-4 bg-emerald-600 text-white flex justify-between items-center">
+              <div>
+                <h4 className="font-extrabold text-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <Download size={16} /> Ekspor Data CSV
+                </h4>
+                <p className="text-[10px] text-emerald-100 mt-0.5">Pilih rentang waktu data yang ingin diunduh</p>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="p-1 hover:bg-emerald-500 rounded-full transition cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={jobsStartDate}
+                  onChange={(e) => setJobsStartDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2.5 rounded-xl focus:border-emerald-500 focus:bg-white outline-none transition"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tanggal Akhir</label>
+                <input
+                  type="date"
+                  value={jobsEndDate}
+                  onChange={(e) => setJobsEndDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-3 py-2.5 rounded-xl focus:border-emerald-500 focus:bg-white outline-none transition"
+                />
+              </div>
+              <p className="text-[9.5px] text-slate-500 italic text-center mt-2">
+                Kosongkan tanggal jika ingin mengunduh seluruh data pesanan.
+              </p>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2.5">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-black py-2.5 rounded-xl uppercase transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  handleExportCSV();
+                  setShowExportModal(false);
+                }}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black py-2.5 rounded-xl uppercase transition shadow-md shadow-emerald-600/20 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Download size={13} /> Unduh CSV
               </button>
             </div>
           </div>
