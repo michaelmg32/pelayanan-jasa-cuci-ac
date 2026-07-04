@@ -392,25 +392,46 @@ app.put('/api/settings', verifyToken, async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    if (business_name !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_name', business_name, region_id, business_name]);
+    
+    const updates = [];
+    if (!region_id) {
+      // Pusat only
+      if (business_name !== undefined) updates.push({ key: 'business_name', val: business_name });
+      if (business_logo !== undefined) updates.push({ key: 'business_logo', val: business_logo });
+    } else {
+      // Cabang only
+      if (bank_name !== undefined) updates.push({ key: 'bank_name', val: bank_name });
+      if (bank_account_number !== undefined) updates.push({ key: 'bank_account_number', val: bank_account_number });
+      if (bank_account_holder !== undefined) updates.push({ key: 'bank_account_holder', val: bank_account_holder });
+      if (qris_image !== undefined) updates.push({ key: 'qris_image', val: qris_image });
     }
-    if (business_logo !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_logo', business_logo, region_id, business_logo]);
+
+    for (const u of updates) {
+      if (region_id === null) {
+        const [existing] = await connection.query('SELECT id FROM settings WHERE key_name = ? AND region_id IS NULL', [u.key]);
+        if (existing.length > 0) {
+          await connection.query('UPDATE settings SET value = ? WHERE key_name = ? AND region_id IS NULL', [u.val, u.key]);
+        } else {
+          await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, NULL)', [u.key, u.val]);
+        }
+      } else {
+        const [existing] = await connection.query('SELECT id FROM settings WHERE key_name = ? AND region_id = ?', [u.key, region_id]);
+        if (existing.length > 0) {
+          await connection.query('UPDATE settings SET value = ? WHERE key_name = ? AND region_id = ?', [u.val, u.key, region_id]);
+        } else {
+          await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?)', [u.key, u.val, region_id]);
+        }
+      }
     }
-    if (bank_name !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_name', bank_name, region_id, bank_name]);
-    }
-    if (bank_account_number !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_number', bank_account_number, region_id, bank_account_number]);
-    }
-    if (bank_account_holder !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_holder', bank_account_holder, region_id, bank_account_holder]);
-    }
-    if (qris_image !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['qris_image', qris_image, region_id, qris_image]);
-    }
+
     res.json({ message: 'Settings updated successfully' });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
   } catch (error) {
     console.error('Error updating settings:', error);
     res.status(500).json({ error: error.message });

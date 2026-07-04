@@ -485,7 +485,7 @@ export default function OwnerDashboard() {
                 className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'users' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
               >
                 <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Manajemen Akses & Cabang</span>
+                <span>Akses Pengguna</span>
               </button>
                 
               <button
@@ -1062,7 +1062,7 @@ export default function OwnerDashboard() {
             <div className="space-y-4">
               <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="font-extrabold text-sm uppercase text-slate-800">Manajemen Akses & Cabang</h3>
+                  <h3 className="font-extrabold text-sm uppercase text-slate-800">Akses Pengguna</h3>
                   <p className="text-[11px] text-slate-400 mt-1 font-medium">Kelola wilayah cabang dan pengguna yang bertugas</p>
                 </div>
                 
@@ -1332,146 +1332,146 @@ export default function OwnerDashboard() {
             </div>
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-              {/* Nama Usaha */}
-              {!activeUser?.region_id && (
-<>
-<div className="space-y-1">
-                <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
-                  placeholder="Masukkan nama usaha..."
-                />
-              </div>
-
-              {/* Logo Usaha */}
-              <div className="space-y-2">
-                <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
-
-                {/* Logo Preview */}
-                <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
-                    {editLogo ? (
-                      <img src={editLogo} alt="Logo Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] font-bold">No Logo</span>
-                    )}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="text-[10px] text-slate-600 font-bold block">Pratinjau Logo</span>
-                    <span className="text-[8px] text-slate-400 block">Akan digunakan sebagai favicon dan logo aplikasi</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar (Base64)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: Menggunakan URL Gambar</span>
-                  <input
-                    type="text"
-                    value={editLogo}
-                    onChange={(e) => setEditLogo(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                    placeholder="https://example.com/logo.png"
-                  />
-                </div>
-              </div>
-
-              {/* Rekening Bank Manual & QRIS */}
-              {activeUser?.region_id && (
-<div className="border-t border-slate-100 pt-3 space-y-3">
-                <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
-                    <input
-                      type="text"
-                      value={editBankName}
-                      onChange={(e) => setEditBankName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                      placeholder="e.g. Bank BCA"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
-                    <input
-                      type="text"
-                      value={editBankAccountNumber}
-                      onChange={(e) => setEditBankAccountNumber(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                      placeholder="e.g. 123456789"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
-                  <input
-                    type="text"
-                    value={editBankAccountHolder}
-                    onChange={(e) => setEditBankAccountHolder(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                    placeholder="e.g. Sugar AC PT"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
-
-                  {/* QRIS Preview */}
-                  <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
-                      {editQrisImage ? (
-                        <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-[10px] font-bold">No QRIS</span>
-                      )}
+                {!activeUser?.region_id ? (
+                  <>
+                    {/* Nama Usaha */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
+                        placeholder="Masukkan nama usaha..."
+                      />
                     </div>
-                    <div className="flex-grow text-left">
-                      <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
-                      <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
+      
+                    {/* Logo Usaha */}
+                    <div className="space-y-2">
+                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
+      
+                      {/* Logo Preview */}
+                      <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
+                          {editLogo ? (
+                            <img src={editLogo} alt="Logo Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold">No Logo</span>
+                          )}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <span className="text-[10px] text-slate-600 font-bold block">Pratinjau Logo</span>
+                          <span className="text-[8px] text-slate-400 block">Akan digunakan sebagai favicon dan logo aplikasi</span>
+                        </div>
+                      </div>
+      
+                      <div className="space-y-1.5">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar (Base64)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                        />
+                      </div>
+      
+                      <div className="space-y-1">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: Menggunakan URL Gambar</span>
+                        <input
+                          type="text"
+                          value={editLogo}
+                          onChange={(e) => setEditLogo(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="https://example.com/logo.png"
+                        />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleQrisFileChange}
-                      className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
-                    <input
-                      type="text"
-                      value={editQrisImage}
-                      onChange={(e) => setEditQrisImage(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                      placeholder="https://example.com/qris.png"
-                    />
-                  </div>
-                </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Rekening Bank Manual & QRIS */}
+                    <div className="border-t border-slate-100 pt-3 space-y-3">
+                      <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
+      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
+                          <input
+                            type="text"
+                            value={editBankName}
+                            onChange={(e) => setEditBankName(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                            placeholder="e.g. Bank BCA"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
+                          <input
+                            type="text"
+                            value={editBankAccountNumber}
+                            onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                            placeholder="e.g. 123456789"
+                          />
+                        </div>
+                      </div>
+      
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
+                        <input
+                          type="text"
+                          value={editBankAccountHolder}
+                          onChange={(e) => setEditBankAccountHolder(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="e.g. Sugar AC PT"
+                        />
+                      </div>
+      
+                      <div className="space-y-2">
+                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
+      
+                        {/* QRIS Preview */}
+                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
+                            {editQrisImage ? (
+                              <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold">No QRIS</span>
+                            )}
+                          </div>
+                          <div className="flex-grow text-left">
+                            <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
+                            <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
+                          </div>
+                        </div>
+      
+                        <div className="space-y-1.5">
+                          <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleQrisFileChange}
+                            className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                          />
+                        </div>
+      
+                        <div className="space-y-1">
+                          <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
+                          <input
+                            type="text"
+                            value={editQrisImage}
+                            onChange={(e) => setEditQrisImage(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                            placeholder="https://example.com/qris.png"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-)}
-</>
-)}
-            </div>
-
-            {/* Actions */}
+  
+              {/* Actions */}
             <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setIsSettingsOpen(false)}
