@@ -1712,10 +1712,28 @@ export default function PelangganDashboard() {
               {/* Modal Content */}
               <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50">
                 <form onSubmit={handlePreSubmitOrder} className="space-y-4">
+                  {/* Region Selection */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                      1. Pilih Wilayah / Cabang
+                    </label>
+                    <select
+                      value={selectedRegionId}
+                      onChange={e => setSelectedRegionId(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                    >
+                      {regions && regions.map(r => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Model Selection */}
                   <div>
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                      1. Tipe AC / Model
+                      2. Tipe AC / Model
                     </label>
                     <select
                       value={selectedModel}
