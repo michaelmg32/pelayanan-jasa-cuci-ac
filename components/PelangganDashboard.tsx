@@ -670,7 +670,7 @@ export default function PelangganDashboard() {
           {/* Logo, Business Name & Slogan */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
-              {appSettings?.business_logo ? (
+              {(appSettings?.[selectedRegionId || 'GLOBAL']?.business_logo || appSettings?.['GLOBAL']?.business_logo) ? (
                 <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -679,7 +679,7 @@ export default function PelangganDashboard() {
               )}
             </div>
             <div className="text-left">
-              <h1 className="text-sm font-black leading-none">{appSettings?.business_name || 'Sugar AC'}</h1>
+              <h1 className="text-sm font-black leading-none">{(appSettings?.[selectedRegionId || 'GLOBAL']?.business_name || appSettings?.['GLOBAL']?.business_name) || 'Sugar AC'}</h1>
               <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional</p>
             </div>
           </div>
@@ -1107,24 +1107,24 @@ export default function PelangganDashboard() {
                                   </div>
 
                                   {/* Pilihan Transfer Manual (Norek & QRIS) */}
-                                  {(appSettings?.bank_name || appSettings?.qris_image) && (
+                                  {((appSettings?.[selectedRegionId || 'GLOBAL']?.bank_name || appSettings?.['GLOBAL']?.bank_name) || (appSettings?.[selectedRegionId || 'GLOBAL']?.qris_image || appSettings?.['GLOBAL']?.qris_image)) && (
                                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3">
                                       <div className="text-[8px] font-black uppercase text-indigo-650 tracking-wider">
                                         PILIHAN TRANSFER LANGSUNG (MANUAL)
                                       </div>
 
-                                      {appSettings?.bank_name && (
+                                      {(appSettings?.[selectedRegionId || 'GLOBAL']?.bank_name || appSettings?.['GLOBAL']?.bank_name) && (
                                         <div className="space-y-1 bg-white border border-slate-150 rounded-xl p-3 shadow-xs text-left relative group">
                                           <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
                                             Transfer Bank
                                           </div>
                                           <div className="text-xs font-black text-slate-800 flex justify-between items-center mt-1">
-                                            <span>{appSettings.bank_name}</span>
+                                            <span>{(appSettings?.[selectedRegionId || 'GLOBAL']?.bank_name || appSettings?.['GLOBAL']?.bank_name)}</span>
                                             <button
                                               onClick={() => {
-                                                if (appSettings.bank_account_number) {
-                                                  navigator.clipboard.writeText(appSettings.bank_account_number);
-                                                  alert(`✓ Nomor rekening ${appSettings.bank_account_number} berhasil disalin!`);
+                                                if ((appSettings?.[selectedRegionId || 'GLOBAL']?.bank_account_number || appSettings?.['GLOBAL']?.bank_account_number)) {
+                                                  navigator.clipboard.writeText((appSettings?.[selectedRegionId || 'GLOBAL']?.bank_account_number || appSettings?.['GLOBAL']?.bank_account_number));
+                                                  alert(`✓ Nomor rekening ${(appSettings?.[selectedRegionId || 'GLOBAL']?.bank_account_number || appSettings?.['GLOBAL']?.bank_account_number)} berhasil disalin!`);
                                                 }
                                               }}
                                               className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[8.5px] font-extrabold px-2 py-1 rounded transition cursor-pointer flex items-center gap-1 shrink-0"
@@ -1134,22 +1134,22 @@ export default function PelangganDashboard() {
                                             </button>
                                           </div>
                                           <div className="font-mono text-sm font-black text-indigo-700 mt-1 select-all">
-                                            {appSettings.bank_account_number}
+                                            {(appSettings?.[selectedRegionId || 'GLOBAL']?.bank_account_number || appSettings?.['GLOBAL']?.bank_account_number)}
                                           </div>
                                           <div className="text-[9.5px] font-semibold text-slate-500 mt-0.5">
-                                            a.n. {appSettings.bank_account_holder}
+                                            a.n. {(appSettings?.[selectedRegionId || 'GLOBAL']?.bank_account_holder || appSettings?.['GLOBAL']?.bank_account_holder)}
                                           </div>
                                         </div>
                                       )}
 
-                                      {appSettings?.qris_image && (
+                                      {(appSettings?.[selectedRegionId || 'GLOBAL']?.qris_image || appSettings?.['GLOBAL']?.qris_image) && (
                                         <div className="bg-white border border-slate-150 rounded-xl p-3 shadow-xs text-center space-y-2">
                                           <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-left">
                                             Pembayaran QRIS
                                           </div>
                                           <div className="flex justify-center py-1">
                                             <img
-                                              src={appSettings.qris_image}
+                                              src={(appSettings?.[selectedRegionId || 'GLOBAL']?.qris_image || appSettings?.['GLOBAL']?.qris_image)}
                                               alt="QRIS Code"
                                               className="w-40 h-40 object-contain border border-slate-200 rounded-lg shadow-sm"
                                             />

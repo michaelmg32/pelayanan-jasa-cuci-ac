@@ -32,14 +32,7 @@ interface AppContextType {
   
   isLoading: boolean;
   dbConnected: boolean;
-  appSettings: { 
-    business_name: string; 
-    business_logo: string;
-    bank_name?: string;
-    bank_account_number?: string;
-    bank_account_holder?: string;
-    qris_image?: string;
-  };
+  appSettings: any;
   updateAppSettings: (
     business_name: string, 
     business_logo: string,
@@ -94,14 +87,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [dbConnected, setDbConnected] = useState(false);
-  const [appSettings, setAppSettings] = useState({ 
-    business_name: 'CoolAir Pro', 
-    business_logo: '',
-    bank_name: '',
-    bank_account_number: '',
-    bank_account_holder: '',
-    qris_image: ''
-  });
+  const [appSettings, setAppSettings] = useState<any>({});
 
   // Initialize data from database
   useEffect(() => {
@@ -140,16 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setServicePrices(fetchedServicePrices);
         setCategories(fetchedCategories);
         setAddons(fetchedAddons);
-        if (fetchedSettings) {
-          setAppSettings({
-            business_name: fetchedSettings.business_name || 'CoolAir Pro',
-            business_logo: fetchedSettings.business_logo || '',
-            bank_name: fetchedSettings.bank_name || '',
-            bank_account_number: fetchedSettings.bank_account_number || '',
-            bank_account_holder: fetchedSettings.bank_account_holder || '',
-            qris_image: fetchedSettings.qris_image || '',
-          });
-        }
+        if (fetchedSettings) { setAppSettings(fetchedSettings); }
 
         // Restore active user session from localStorage
         if (typeof window !== 'undefined') {
@@ -238,10 +215,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Dynamic Tab Title and Favicon based on settings
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (appSettings.business_name) {
-        document.title = `${appSettings.business_name} - Sistem Jasa AC`;
+      if (appSettings?.['GLOBAL']?.business_name) {
+        document.title = `${appSettings['GLOBAL'].business_name} - Sistem Jasa AC`;
       }
-      if (appSettings.business_logo) {
+      if (appSettings?.['GLOBAL']?.business_logo) {
         // Update Favicon
         let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
         if (!link) {
@@ -249,7 +226,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           link.rel = 'shortcut icon';
           document.getElementsByTagName('head')[0].appendChild(link);
         }
-        link.href = appSettings.business_logo;
+        link.href = appSettings['GLOBAL'].business_logo;
 
         // Update Apple Touch Icon (For Add to Home Screen)
         let appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement;
@@ -258,10 +235,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           appleLink.rel = 'apple-touch-icon';
           document.getElementsByTagName('head')[0].appendChild(appleLink);
         }
-        appleLink.href = appSettings.business_logo;
+        appleLink.href = appSettings['GLOBAL'].business_logo;
       }
     }
-  }, [appSettings.business_name, appSettings.business_logo]);
+  }, [appSettings]);
 
   const updateAppSettings = async (
     business_name: string, 
@@ -280,14 +257,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         bank_account_holder,
         qris_image
       });
-      setAppSettings({ 
-        business_name, 
-        business_logo,
-        bank_name: bank_name || '',
-        bank_account_number: bank_account_number || '',
-        bank_account_holder: bank_account_holder || '',
-        qris_image: qris_image || ''
-      });
+      // Re-fetch to get correct regional mappings
+        const settingsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings`);
+        const fetchedSettings = await settingsRes.json();
+        setAppSettings(fetchedSettings);
       showAlert('Pengaturan bisnis berhasil diperbarui!');
     } catch (error) {
       console.error('Failed to update app settings:', error);

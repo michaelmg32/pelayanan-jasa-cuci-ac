@@ -32,9 +32,10 @@ export default function OwnerDashboard() {
   const { activeUser, setActiveUser, orders: allOrders, users: allUsers, setUsers, logout, appSettings, updateAppSettings, regions } = useApp();
 
   const orders = activeUser?.region_id ? allOrders.filter(o => o.region_id === activeUser.region_id) : allOrders;
-  const users = activeUser?.region_id ? allUsers.filter(u => u.region_id === activeUser.region_id) : allUsers;
+  const usersRaw = activeUser?.region_id ? allUsers.filter(u => u.region_id === activeUser.region_id) : allUsers;
+  const users = usersRaw.filter(u => u.role !== Role.USER);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>(!activeUser?.region_id ? 'users' : 'dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const getLocalDateString = (d: Date = new Date()) => {
@@ -254,12 +255,13 @@ export default function OwnerDashboard() {
       }
 
       const updatePayload = {
-        name: targetUser.name,
-        email: targetUser.email,
-        role: editRole,
-        phone: editPhone,
-        status: editStatus,
-      };
+          name: targetUser.name,
+          email: targetUser.email,
+          role: editRole,
+          phone: editPhone,
+          status: editStatus,
+          region_id: editRole === Role.USER ? null : (activeUser?.region_id || editRegionId || null),
+        };
 
       await api.updateUser(userId, updatePayload);
 
@@ -288,29 +290,30 @@ export default function OwnerDashboard() {
     setEditingUserId(target.id);
     setEditRole(target.role);
     setEditPhone(target.phone || '');
+    setEditRegionId(target.region_id || '');
     setEditAddress(target.address || '');
     setEditStatus(target.status || 'active');
   };
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [editName, setEditName] = useState(appSettings?.business_name || '');
-  const [editLogo, setEditLogo] = useState(appSettings?.business_logo || '');
-  const [editBankName, setEditBankName] = useState(appSettings?.bank_name || '');
-  const [editBankAccountNumber, setEditBankAccountNumber] = useState(appSettings?.bank_account_number || '');
-  const [editBankAccountHolder, setEditBankAccountHolder] = useState(appSettings?.bank_account_holder || '');
-  const [editQrisImage, setEditQrisImage] = useState(appSettings?.qris_image || '');
+  const [editName, setEditName] = useState(appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_name || '');
+  const [editLogo, setEditLogo] = useState(appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_logo || '');
+  const [editBankName, setEditBankName] = useState(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_name || '');
+  const [editBankAccountNumber, setEditBankAccountNumber] = useState(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_account_number || '');
+  const [editBankAccountHolder, setEditBankAccountHolder] = useState(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_account_holder || '');
+  const [editQrisImage, setEditQrisImage] = useState(appSettings?.[activeUser?.region_id || 'GLOBAL']?.qris_image || '');
 
   const formatRupiah = (num: any) => {
     return 'Rp' + Number(num || 0).toLocaleString('id-ID');
   };
 
   const handleOpenSettings = () => {
-    setEditName(appSettings?.business_name || '');
-    setEditLogo(appSettings?.business_logo || '');
-    setEditBankName(appSettings?.bank_name || '');
-    setEditBankAccountNumber(appSettings?.bank_account_number || '');
-    setEditBankAccountHolder(appSettings?.bank_account_holder || '');
-    setEditQrisImage(appSettings?.qris_image || '');
+    setEditName(appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_name || '');
+    setEditLogo(appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_logo || '');
+    setEditBankName(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_name || '');
+    setEditBankAccountNumber(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_account_number || '');
+    setEditBankAccountHolder(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_account_holder || '');
+    setEditQrisImage(appSettings?.[activeUser?.region_id || 'GLOBAL']?.qris_image || '');
     setIsSettingsOpen(true);
   };
 
@@ -415,7 +418,7 @@ export default function OwnerDashboard() {
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
-            {appSettings?.business_logo ? (
+            {appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_logo ? (
               <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
             ) : (
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,7 +427,7 @@ export default function OwnerDashboard() {
             )}
           </div>
           <div className="text-left">
-            <h1 className="text-sm font-black leading-none">{appSettings?.business_name || 'Sugar AC'}</h1>
+            <h1 className="text-sm font-black leading-none">{appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_name || 'Sugar AC'}</h1>
             <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Owner</p>
           </div>
         </div>
@@ -511,7 +514,7 @@ export default function OwnerDashboard() {
 
       {/* Body - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {activeTab === 'dashboard' && (
+        {activeTab === 'dashboard' && activeUser?.region_id && (
           <>
 
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
@@ -1219,6 +1222,22 @@ export default function OwnerDashboard() {
                   <option value={Role.OWNER}>Owner</option>
                 </select>
               </div>
+                {!activeUser?.region_id && editRole !== Role.USER && (
+                  <div>
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Penempatan Wilayah/Cabang</label>
+                    <select
+                      value={editRegionId}
+                      onChange={(e) => setEditRegionId(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                      disabled={isLoading}
+                    >
+                      <option value="">-- Pusat (Tanpa Wilayah) --</option>
+                      {regions.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
               <div>
                 <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Status Akun</label>

@@ -372,7 +372,9 @@ app.get('/api/settings', async (req, res) => {
     const [rows] = await connection.query('SELECT * FROM settings');
     const settings = {};
     rows.forEach(row => {
-      settings[row.key_name] = row.value;
+      const regionKey = row.region_id || 'GLOBAL';
+      if (!settings[regionKey]) settings[regionKey] = {};
+      settings[regionKey][row.key_name] = row.value;
     });
     res.json(settings);
   } catch (error) {
@@ -384,28 +386,29 @@ app.get('/api/settings', async (req, res) => {
 });
 
 // PUT App Settings (Update Settings)
-app.put('/api/settings', async (req, res) => {
+app.put('/api/settings', verifyToken, async (req, res) => {
   const { business_name, business_logo, bank_name, bank_account_number, bank_account_holder, qris_image } = req.body;
+  const region_id = req.user.region_id || null;
   let connection;
   try {
     connection = await pool.getConnection();
     if (business_name !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_name', business_name, business_name]);
+      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_name', business_name, region_id, business_name]);
     }
     if (business_logo !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_logo', business_logo, business_logo]);
+      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['business_logo', business_logo, region_id, business_logo]);
     }
     if (bank_name !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_name', bank_name, bank_name]);
+      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_name', bank_name, region_id, bank_name]);
     }
     if (bank_account_number !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_number', bank_account_number, bank_account_number]);
+      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_number', bank_account_number, region_id, bank_account_number]);
     }
     if (bank_account_holder !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_holder', bank_account_holder, bank_account_holder]);
+      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['bank_account_holder', bank_account_holder, region_id, bank_account_holder]);
     }
     if (qris_image !== undefined) {
-      await connection.query('INSERT INTO settings (key_name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', ['qris_image', qris_image, qris_image]);
+      await connection.query('INSERT INTO settings (key_name, value, region_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?', ['qris_image', qris_image, region_id, qris_image]);
     }
     res.json({ message: 'Settings updated successfully' });
   } catch (error) {
@@ -1147,7 +1150,7 @@ const sendFonnteInvoice = async (orderId, force = false) => {
       return;
     }
 
-    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name' AND (region_id = ? OR region_id IS NULL) ORDER BY region_id DESC LIMIT 1", [order.region_id || null]);
     const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
 
     let phone = order.customerPhone || '';
@@ -1237,7 +1240,7 @@ const sendFonnteNotification = async (orderId, type) => {
     if (orders.length === 0) return;
     const order = orders[0];
 
-    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name' AND (region_id = ? OR region_id IS NULL) ORDER BY region_id DESC LIMIT 1", [order.region_id || null]);
     const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
 
     let phone = order.customerPhone || '';
@@ -1315,7 +1318,7 @@ const sendWorkerNotification = async (orderId, workerId) => {
     if (orders.length === 0) return;
     const order = orders[0];
 
-    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name'");
+    const [settings] = await connection.query("SELECT value FROM settings WHERE key_name = 'business_name' AND (region_id = ? OR region_id IS NULL) ORDER BY region_id DESC LIMIT 1", [order.region_id || null]);
     const businessName = settings.length > 0 ? settings[0].value : 'CoolAir Pro';
 
     let acDetail = null;
@@ -1810,14 +1813,16 @@ app.get('/api/models', async (req, res) => {
   }
 });
 
-app.post('/api/models', async (req, res) => {
-  const { id, name, manufacturer } = req.body;
+app.post('/api/models', verifyToken, async (req, res) => {
+  const { id, name, manufacturer, region_id } = req.body;
+  // Fallback ke region_id user jika tidak ada di body dan user bukan Owner Pusat (null region)
+  const finalRegionId = req.user && req.user.region_id ? req.user.region_id : (region_id || null);
   try {
     const connection = await pool.getConnection();
     const newId = id || `model_${Date.now()}`;
     await connection.query(
-      'INSERT INTO ac_models (id, name, manufacturer) VALUES (?, ?, ?)',
-      [newId, name, manufacturer || null]
+      'INSERT INTO ac_models (id, name, manufacturer, region_id) VALUES (?, ?, ?, ?)',
+      [newId, name, manufacturer || null, finalRegionId]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Model AC', `Menambahkan model AC baru: ${name}`);
@@ -1827,7 +1832,7 @@ app.post('/api/models', async (req, res) => {
   }
 });
 
-app.put('/api/models/:id', async (req, res) => {
+app.put('/api/models/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { name, manufacturer } = req.body;
   try {
@@ -1863,14 +1868,15 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-app.post('/api/categories', async (req, res) => {
-  const { id, name, description, hasServices } = req.body;
+app.post('/api/categories', verifyToken, async (req, res) => {
+  const { id, name, description, hasServices, region_id } = req.body;
+  const finalRegionId = req.user && req.user.region_id ? req.user.region_id : (region_id || null);
   try {
     const connection = await pool.getConnection();
     const newId = id || `cat_${Date.now()}`;
     await connection.query(
-      'INSERT INTO ac_categories (id, name, description, hasServices) VALUES (?, ?, ?, ?)',
-      [newId, name, description || null, hasServices !== undefined ? hasServices : true]
+      'INSERT INTO ac_categories (id, name, description, hasServices, region_id) VALUES (?, ?, ?, ?, ?)',
+      [newId, name, description || null, hasServices !== undefined ? hasServices : true, finalRegionId]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Kategori Layanan', `Menambahkan kategori baru: ${name}`);
@@ -1880,7 +1886,7 @@ app.post('/api/categories', async (req, res) => {
   }
 });
 
-app.put('/api/categories/:id', async (req, res) => {
+app.put('/api/categories/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { name, description, hasServices } = req.body;
   try {

@@ -1141,7 +1141,11 @@ export default function AdminDashboard() {
 
   if (!activeUser) return null;
 
-  return (
+    const filteredModels = models.filter((m: any) => !activeUser?.region_id || m.region_id === activeUser.region_id);
+  const filteredCategories = categories.filter((c: any) => !activeUser?.region_id || c.region_id === activeUser.region_id);
+  const filteredServices = services.filter((s: any) => !activeUser?.region_id || s.region_id === activeUser.region_id);
+  const filteredAddons = addons.filter((a: any) => !activeUser?.region_id || a.region_id === activeUser.region_id);
+return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
       {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
       <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
@@ -1615,7 +1619,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {models.map(m => (
+                      {filteredModels.map(m => (
                         <tr key={m.id} className="hover:bg-slate-50/50">
                           <td className="p-3 font-bold text-slate-800">{m.name}</td>
                           <td className="p-3 text-right flex justify-end gap-1.5">
@@ -1659,7 +1663,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
-                      {categories.map(c => (
+                      {filteredCategories.map(c => (
                         <React.Fragment key={c.id}>
                           <tr
                             className={`hover:bg-slate-50/50 cursor-pointer transition ${expandedCategoryId === c.id ? 'bg-indigo-50/50' : ''}`}
@@ -1791,7 +1795,7 @@ export default function AdminDashboard() {
                         className="bg-white border border-slate-200 text-slate-700 text-[10px] px-2 py-1 rounded-lg outline-none font-bold"
                       >
                         <option value="ALL">Semua Barang</option>
-                        {addons.map(a => (
+                        {filteredAddons.map(a => (
                           <option key={a.id} value={a.id}>{a.name}</option>
                         ))}
                       </select>
@@ -1862,7 +1866,7 @@ export default function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium">
-                          {addons.map(a => {
+                          {filteredAddons.map(a => {
                             const stockCount = a.stock ?? 0;
                             let stockColor = 'bg-emerald-50 border-emerald-200 text-emerald-700';
                             let stockLabel = 'Tersedia';
@@ -2931,7 +2935,7 @@ export default function AdminDashboard() {
                       disabled={isLoading}
                     >
                       <option value="">-- Pilih Kategori --</option>
-                      {categories.map(cat => (
+                      {filteredCategories.map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
@@ -3576,7 +3580,7 @@ export default function AdminDashboard() {
               </p>
               
               <div className="space-y-3">
-                {models.map(m => (
+                {filteredModels.map(m => (
                   <div key={m.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                     <span className="text-xs font-bold text-slate-800">{m.name}</span>
                     <div className="flex items-center gap-2">
