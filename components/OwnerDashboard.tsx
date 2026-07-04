@@ -1543,7 +1543,7 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
                   if (!activeUser?.region_id) {
                     await updateAppSettings(editName, editLogo, undefined, undefined, undefined, undefined);
                   } else {
-                    await updateAppSettings(undefined, undefined, editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage);
+                    await updateAppSettings("", "", editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage);
                   }
                   setIsSettingsOpen(false);
                 }}
