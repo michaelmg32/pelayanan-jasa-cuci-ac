@@ -29,7 +29,10 @@ import {
 import { Role, User } from '@/types';
 
 export default function OwnerDashboard() {
-  const { activeUser, setActiveUser, orders, users, setUsers, logout, appSettings, updateAppSettings, regions } = useApp();
+  const { activeUser, setActiveUser, orders: allOrders, users: allUsers, setUsers, logout, appSettings, updateAppSettings, regions } = useApp();
+
+  const orders = activeUser?.region_id ? allOrders.filter(o => o.region_id === activeUser.region_id) : allOrders;
+  const users = activeUser?.region_id ? allUsers.filter(u => u.region_id === activeUser.region_id) : allUsers;
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
