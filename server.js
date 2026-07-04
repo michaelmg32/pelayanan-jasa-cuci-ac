@@ -432,13 +432,6 @@ app.put('/api/settings', verifyToken, async (req, res) => {
     if (connection) connection.release();
   }
 });
-  } catch (error) {
-    console.error('Error updating settings:', error);
-    res.status(500).json({ error: error.message });
-  } finally {
-    if (connection) connection.release();
-  }
-});
 
 // ===== ACTIVITY LOGS HELPER & API =====
 const logActivity = async (req, action, details) => {
