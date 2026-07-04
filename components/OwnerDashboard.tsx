@@ -1309,7 +1309,9 @@ export default function OwnerDashboard() {
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {/* Nama Usaha */}
-              <div className="space-y-1">
+              {!activeUser?.region_id && (
+<>
+<div className="space-y-1">
                 <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
                 <input
                   type="text"
@@ -1362,7 +1364,8 @@ export default function OwnerDashboard() {
               </div>
 
               {/* Rekening Bank Manual & QRIS */}
-              <div className="border-t border-slate-100 pt-3 space-y-3">
+              {activeUser?.region_id && (
+<div className="border-t border-slate-100 pt-3 space-y-3">
                 <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -1439,6 +1442,9 @@ export default function OwnerDashboard() {
                   </div>
                 </div>
               </div>
+)}
+</>
+)}
             </div>
 
             {/* Actions */}
