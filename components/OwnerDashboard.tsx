@@ -62,7 +62,7 @@ export default function OwnerDashboard() {
   // User Management States
   const [userSearch, setUserSearch] = useState('');
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [editRole, setEditRole] = useState<Role>(Role.USER);
+  const [editRole, setEditRole] = useState<Role>(Role.USER);\n  const [editRegionId, setEditRegionId] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editStatus, setEditStatus] = useState<string>('active');
@@ -328,7 +328,7 @@ export default function OwnerDashboard() {
   };
 
   // Filter completed orders for revenue
-  const completedOrders = orders.filter(o => o.status === OrderStatus.SELESAI);
+  const filteredOrdersByRegion = reportRegionId === 'ALL' ? orders : orders.filter(o => o.region_id === reportRegionId);\n  const completedOrders = filteredOrdersByRegion.filter(o => o.status === OrderStatus.SELESAI);
 
   // Filter cash flow orders by date range (only for this container)
   const cashFlowOrders = completedOrders.filter(o => {
@@ -564,7 +564,7 @@ export default function OwnerDashboard() {
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
               <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Pesanan Terbaru</h3>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {orders.slice(-10).reverse().map(order => (
+                {filteredOrdersByRegion.slice(-10).reverse().map(order => (
                   <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 text-[10px]">
                     <div className="flex-1">
                       <div className="font-bold text-slate-800">{order.customerName}</div>
@@ -590,7 +590,7 @@ export default function OwnerDashboard() {
                     </div>
                   </div>
                 ))}
-                {orders.length === 0 && (
+                {filteredOrdersByRegion.length === 0 && (
                   <div className="text-center py-8 text-slate-400 text-[10px]">
                     Belum ada pesanan
                   </div>
@@ -740,7 +740,7 @@ export default function OwnerDashboard() {
             </div>
           </>)}
 
-        {activeTab === 'activity-logs' && (
+                {activeTab === 'regions' && (\n          <div className='bg-white border rounded-2xl p-4 shadow-xs'>\n            <h3 className='font-black text-xs uppercase tracking-wider text-slate-800 mb-4'>Daftar Cabang / Wilayah</h3>\n            \n            <div className='flex gap-2 mb-4'>\n              <input\n                type='text'\n                placeholder='Nama Cabang Baru...'\n                value={newRegionName}\n                onChange={(e) => setNewRegionName(e.target.value)}\n                className='flex-1 border-slate-200 rounded-lg p-2 bg-slate-50 text-sm'\n              />\n              <button\n                onClick={async () => {\n                  if (!newRegionName.trim()) return;\n                  try {\n                    setIsAddingRegion(true);\n                    await api.createRegion({ name: newRegionName });\n                    setNewRegionName('');\n                    alert('Cabang berhasil ditambahkan. Memuat ulang...');\n                    window.location.reload();\n                  } catch (e) {\n                    alert('Gagal menambah cabang');\n                  } finally {\n                    setIsAddingRegion(false);\n                  }\n                }}\n                disabled={isAddingRegion || !newRegionName.trim()}\n                className='bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold'\n              >\n                + Tambah\n              </button>\n            </div>\n\n            <div className='space-y-2'>\n              {regions && regions.map(r => (\n                <div key={r.id} className='flex justify-between items-center p-3 border rounded-lg bg-slate-50'>\n                  <span className='font-bold'>{r.name}</span>\n                  {r.id !== 'reg_default' && (\n                    <button\n                      onClick={async () => {\n                        if (confirm('Hapus cabang ini?')) {\n                          try {\n                            await api.deleteRegion(r.id);\n                            window.location.reload();\n                          } catch (e) {\n                            alert('Gagal menghapus');\n                          }\n                        }\n                      }}\n                      className='text-red-600 hover:bg-red-50 p-1 rounded'\n                    >\n                      <X size={16} />\n                    </button>\n                  )}\n                </div>\n              ))}\n            </div>\n          </div>\n        )}\n        {activeTab === 'activity-logs' && (
           <div className="bg-white border rounded-2xl p-4 shadow-xs">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
               <div>

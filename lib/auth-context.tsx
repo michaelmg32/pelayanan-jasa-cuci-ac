@@ -17,6 +17,8 @@ interface AppContextType {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   
   // Master data
+  regions: any[];
+  setRegions: (regions: any[]) => void;
   models: ACModel[];
   setModels: (models: ACModel[]) => void;
   categories: ACCategory[];
@@ -82,6 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeUser, setActiveUserState] = useState<User | null>(null);
 
   // Master Lists State
+  const [regions, setRegions] = useState<any[]>([]);
   const [models, setModels] = useState<ACModel[]>([]);
   const [categories, setCategories] = useState<ACCategory[]>([]);
   const [services, setServices] = useState<ACService[]>([]);
@@ -117,7 +120,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         // Fetch all data
-        const [fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings, fetchedServicePrices] = await Promise.all([
+        const [fetchedRegions, fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings, fetchedServicePrices] = await Promise.all([
+          api.fetchRegions ? api.fetchRegions() : Promise.resolve([]),
           api.fetchUsers(),
           api.fetchOrders(),
           api.fetchModels(),
@@ -128,6 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           api.fetchServicePrices(),
         ]);
 
+        if (setRegions) setRegions(fetchedRegions);
         setUsers(fetchedUsers);
         setOrders(fetchedOrders);
         setModels(fetchedModels);

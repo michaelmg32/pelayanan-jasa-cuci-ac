@@ -67,10 +67,45 @@ export const denormalizeRole = (frontendRole: string): string => {
   return roleMap[frontendRole] || 'pelanggan';
 };
 
-// ===== USERS =====
-export const fetchUsers = async () => {
+
+// ===== REGIONS =====
+export const fetchRegions = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users`, {
+    const response = await fetch(`${API_BASE_URL}/regions`);
+    if (!response.ok) throw new Error('Failed to fetch regions');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching regions:', error);
+    return [];
+  }
+};
+export const createRegion = async (regionData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/regions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(regionData),
+    });
+    if (!response.ok) throw new Error('Failed to create region');
+    return await response.json();
+  } catch (error) { throw error; }
+};
+export const deleteRegion = async (regionId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/regions/${regionId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to delete region');
+    return await response.json();
+  } catch (error) { throw error; }
+};
+
+// ===== USERS =====
+export const fetchUsers = async (region_id?: string) => {
+  try {
+    const url = region_id ? `${API_BASE_URL}/users?region_id=${region_id}` : `${API_BASE_URL}/users`;
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error('Failed to fetch users');
@@ -170,9 +205,10 @@ export const updatePassword = async (userId: string, passwordData: { oldPassword
 };
 
 // ===== ORDERS =====
-export const fetchOrders = async () => {
+export const fetchOrders = async (region_id?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/orders`, {
+    const url = region_id ? `${API_BASE_URL}/orders?region_id=${region_id}` : `${API_BASE_URL}/orders`;
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error('Failed to fetch orders');
@@ -217,9 +253,10 @@ export const updateOrder = async (orderId: string, orderData: any) => {
 };
 
 // ===== AC MODELS =====
-export const fetchModels = async () => {
+export const fetchModels = async (region_id?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/models`);
+    const url = region_id ? `${API_BASE_URL}/models?region_id=${region_id}` : `${API_BASE_URL}/models`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch models');
     return await response.json();
   } catch (error) {
@@ -273,9 +310,10 @@ export const deleteModel = async (modelId: string) => {
 };
 
 // ===== AC CATEGORIES =====
-export const fetchCategories = async () => {
+export const fetchCategories = async (region_id?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/categories`);
+    const url = region_id ? `${API_BASE_URL}/categories?region_id=${region_id}` : `${API_BASE_URL}/categories`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch categories');
     return await response.json();
   } catch (error) {
@@ -329,9 +367,10 @@ export const deleteCategory = async (categoryId: string) => {
 };
 
 // ===== AC SERVICES =====
-export const fetchServices = async () => {
+export const fetchServices = async (region_id?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/services`);
+    const url = region_id ? `${API_BASE_URL}/services?region_id=${region_id}` : `${API_BASE_URL}/services`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch services');
     return await response.json();
   } catch (error) {
@@ -385,9 +424,10 @@ export const deleteService = async (serviceId: string) => {
 };
 
 // ===== AC SERVICE PRICES =====
-export const fetchServicePrices = async () => {
+export const fetchServicePrices = async (region_id?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/service-prices`, {
+    const url = region_id ? `${API_BASE_URL}/service-prices?region_id=${region_id}` : `${API_BASE_URL}/service-prices`;
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error('Failed to fetch service prices');
@@ -414,9 +454,10 @@ export const updateServicePricesBulk = async (serviceId: string, prices: any[]) 
 };
 
 // ===== AC ADDONS =====
-export const fetchAddons = async () => {
+export const fetchAddons = async (region_id?: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/addons`);
+    const url = region_id ? `${API_BASE_URL}/addons?region_id=${region_id}` : `${API_BASE_URL}/addons`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch addons');
     return await response.json();
   } catch (error) {

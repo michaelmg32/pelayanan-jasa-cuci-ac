@@ -490,7 +490,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, region_id: user.region_id },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRY }
     );
@@ -562,7 +562,7 @@ app.post('/api/auth/google', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, region_id: user.region_id },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRY }
     );
@@ -678,11 +678,54 @@ app.post('/api/auth/logout', verifyToken, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-// ===== USERS API =====
-app.get('/api/users', async (req, res) => {
+// ===== REGIONS API =====
+app.get('/api/regions', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt FROM users');
+    const [regions] = await connection.query('SELECT * FROM regions ORDER BY name ASC');
+    connection.release();
+    res.json(regions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+app.post('/api/regions', verifyToken, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Unauthorized' });
+  try {
+    const { name } = req.body;
+    const id = 'reg_' + Date.now();
+    const connection = await pool.getConnection();
+    await connection.query('INSERT INTO regions (id, name) VALUES (?, ?)', [id, name]);
+    connection.release();
+    res.json({ id, name });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+app.delete('/api/regions/:id', verifyToken, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Unauthorized' });
+  try {
+    const connection = await pool.getConnection();
+    await connection.query('DELETE FROM regions WHERE id = ?', [req.params.id]);
+    connection.release();
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// ===== USERS API =====
+app.get('/api/users', verifyToken, async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+        let query = 'SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt, region_id FROM users';
+    let params = [];
+    if (req.user.role === 'admin' || req.user.role === 'karyawan') {
+       if (req.user.region_id) {
+         query += ' WHERE region_id = ?';
+         params.push(req.user.region_id);
+       }
+    } else if (req.query.region_id) {
+       query += ' WHERE region_id = ?';
+       params.push(req.query.region_id);
+    }
+    const [users] = await connection.query(query, params);
     connection.release();
     res.json(users);
   } catch (error) {
@@ -691,7 +734,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { id, name, email, phone, role, password } = req.body;
+  const { id, name, email, phone, role, password, region_id } = req.body;
   try {
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name required' });
@@ -704,8 +747,8 @@ app.post('/api/users', async (req, res) => {
     const connection = await pool.getConnection();
     const userId = id || `usr_${Date.now()}`;
     await connection.query(
-      'INSERT INTO users (id, name, email, phone, role, password) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, name, email, phone || null, role || 'pelanggan', hashedPassword]
+      'INSERT INTO users (id, name, email, phone, role, password, region_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, name, email, phone || null, role || 'pelanggan', hashedPassword, region_id || null]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Pengguna', `Menambahkan pengguna baru: ${name} (${role})`);
@@ -717,7 +760,7 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const { name, email, phone, role, password, address, photo, status } = req.body;
+  const { name, email, phone, role, password, address, photo, status, region_id } = req.body;
   try {
     const connection = await pool.getConnection();
 
@@ -771,6 +814,10 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
     if (photo !== undefined) {
       updateFields.push('photo = ?');
       updateValues.push(photo);
+    }
+    if (region_id !== undefined) {
+      updateFields.push('region_id = ?');
+      updateValues.push(region_id === '' ? null : region_id);
     }
     if (status !== undefined) {
       updateFields.push('status = ?');
@@ -883,10 +930,21 @@ app.put('/api/users/:id/password', verifyToken, async (req, res) => {
 });
 
 // ===== ORDERS API =====
-app.get('/api/orders', async (req, res) => {
+app.get('/api/orders', verifyToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [orders] = await connection.query('SELECT * FROM orders');
+        let query = 'SELECT * FROM orders';
+    let params = [];
+    if (req.user.role === 'admin' || req.user.role === 'karyawan' || (req.user.role === 'owner' && req.user.region_id)) {
+       if (req.user.region_id) {
+         query += ' WHERE region_id = ?';
+         params.push(req.user.region_id);
+       }
+    } else if (req.query.region_id) {
+       query += ' WHERE region_id = ?';
+       params.push(req.query.region_id);
+    }
+    const [orders] = await connection.query(query, params);
     connection.release();
 
     // Parse JSON fields and map workerId to assignedTo
@@ -1324,7 +1382,7 @@ app.post('/api/orders', async (req, res) => {
         serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
         paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )`,
       [
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -1738,7 +1796,13 @@ app.post('/api/orders/:id/send-invoice', async (req, res) => {
 app.get('/api/models', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [models] = await connection.query('SELECT * FROM ac_models');
+    let query = 'SELECT * FROM ac_models';
+    let params = [];
+    if (req.query.region_id) {
+       query += ' WHERE region_id = ?';
+       params.push(req.query.region_id);
+    }
+    const [models] = await connection.query(query, params);
     connection.release();
     res.json(models);
   } catch (error) {
@@ -1785,7 +1849,13 @@ app.put('/api/models/:id', async (req, res) => {
 app.get('/api/categories', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [categories] = await connection.query('SELECT * FROM ac_categories');
+    let query = 'SELECT * FROM ac_categories';
+    let params = [];
+    if (req.query.region_id) {
+       query += ' WHERE region_id = ?';
+       params.push(req.query.region_id);
+    }
+    const [categories] = await connection.query(query, params);
     connection.release();
     res.json(categories);
   } catch (error) {
@@ -1832,7 +1902,13 @@ app.put('/api/categories/:id', async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [services] = await connection.query('SELECT * FROM ac_services');
+    let query = 'SELECT * FROM ac_services';
+    let params = [];
+    if (req.query.region_id) {
+       query += ' WHERE region_id = ?';
+       params.push(req.query.region_id);
+    }
+    const [services] = await connection.query(query, params);
     connection.release();
     res.json(services);
   } catch (error) {
@@ -1947,7 +2023,7 @@ app.post('/api/addons', async (req, res) => {
     const connection = await pool.getConnection();
     const newId = id || `addon_${Date.now()}`;
     await connection.query(
-      'INSERT INTO ac_addons (id, name, description, price, hpp) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO ac_addons (id, name, description, price, hpp, region_id) VALUES (?, ?, ?, ?, ?, ?)',
       [newId, name, description || null, price || 0, hpp || 0]
     );
     connection.release();
@@ -1960,7 +2036,7 @@ app.post('/api/addons', async (req, res) => {
 
 app.put('/api/addons/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, price, hpp } = req.body;
+  const { name, description, price, hpp, region_id } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
