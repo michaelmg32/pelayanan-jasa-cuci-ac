@@ -34,11 +34,25 @@ import {
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
-  const {  activeUser, setActiveUser, orders, setOrders, models, categories, services, servicePrices, addons, logout, showAlert, users, appSettings , regions } = useApp();
+  const {  activeUser, setActiveUser, orders, setOrders, models: allModels, categories: allCategories, services: allServices, servicePrices, addons: allAddons, logout, showAlert, users, appSettings, regions } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
-  \n  const [selectedRegionId, setSelectedRegionId] = useState('');\n  \n  useEffect(() => {\n    if (regions && regions.length > 0 && !selectedRegionId) {\n      setSelectedRegionId(regions[0].id);\n    }\n  }, [regions, selectedRegionId]);\n\n  const models = (allModels || []).filter(m => m.region_id === selectedRegionId || !m.region_id);\n  const categories = (allCategories || []).filter(c => c.region_id === selectedRegionId || !c.region_id);\n  const services = (allServices || []).filter(s => s.region_id === selectedRegionId || !s.region_id);\n  const addons = (allAddons || []).filter(a => a.region_id === selectedRegionId || !a.region_id);\n\n  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
+  
+  const [selectedRegionId, setSelectedRegionId] = useState('');
+  
+  useEffect(() => {
+    if (regions && regions.length > 0 && !selectedRegionId) {
+      setSelectedRegionId(regions[0].id);
+    }
+  }, [regions, selectedRegionId]);
+
+  const models = (allModels || []).filter((m: any) => m.region_id === selectedRegionId || !m.region_id);
+  const categories = (allCategories || []).filter((c: any) => c.region_id === selectedRegionId || !c.region_id);
+  const services = (allServices || []).filter((s: any) => s.region_id === selectedRegionId || !s.region_id);
+  const addons = (allAddons || []).filter((a: any) => a.region_id === selectedRegionId || !a.region_id);
+
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
 

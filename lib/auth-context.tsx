@@ -456,6 +456,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         users,
         setUsers,
+        regions,
+        setRegions,
         activeUser,
         setActiveUser,
         orders,

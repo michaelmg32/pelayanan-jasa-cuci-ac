@@ -22,6 +22,7 @@ export enum OrderStatus {
 
 export interface User {
   id: string;
+  region_id?: string;
   email: string;
   name: string;
   role: Role;
@@ -38,11 +39,13 @@ export interface User {
 
 export interface ACModel {
   id: string;
+  region_id?: string;
   name: string;
 }
 
 export interface ACCategory {
   id: string;
+  region_id?: string;
   name: string;
   description?: string;
   hasServices: boolean; // Jika false, kategori ini tidak memiliki layanan khusus
@@ -50,6 +53,7 @@ export interface ACCategory {
 
 export interface ACService {
   id: string;
+  region_id?: string;
   categoryId: string;
   name: string;
   price: number;
@@ -57,6 +61,7 @@ export interface ACService {
 
 export interface ACAddon {
   id: string;
+  region_id?: string;
   name: string;
   price: number;
   hpp?: number;
@@ -65,6 +70,7 @@ export interface ACAddon {
 
 export interface AddonTransaction {
   id: number;
+  region_id?: string;
   addonId: string;
   addonName?: string;
   type: 'masuk' | 'keluar';
@@ -85,6 +91,7 @@ export interface SelectedAddon {
 
 export interface Order {
   id: string;
+  region_id?: string;
   customerId: string;
   customerName: string;
   customerPhone: string;

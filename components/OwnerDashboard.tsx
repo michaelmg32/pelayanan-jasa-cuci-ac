@@ -29,9 +29,9 @@ import {
 import { Role, User } from '@/types';
 
 export default function OwnerDashboard() {
-  const { activeUser, setActiveUser, orders, users, setUsers, logout, appSettings, updateAppSettings } = useApp();
+  const { activeUser, setActiveUser, orders, users, setUsers, logout, appSettings, updateAppSettings, regions } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const getLocalDateString = (d: Date = new Date()) => {
@@ -62,11 +62,17 @@ export default function OwnerDashboard() {
   // User Management States
   const [userSearch, setUserSearch] = useState('');
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [editRole, setEditRole] = useState<Role>(Role.USER);\n  const [editRegionId, setEditRegionId] = useState('');
+  const [editRole, setEditRole] = useState<Role>(Role.USER);
+  const [editRegionId, setEditRegionId] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editStatus, setEditStatus] = useState<string>('active');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Region Management States
+  const [newRegionName, setNewRegionName] = useState('');
+  const [isAddingRegion, setIsAddingRegion] = useState(false);
+  const [reportRegionId, setReportRegionId] = useState('ALL');
 
   // Activity Logs States
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
@@ -328,7 +334,8 @@ export default function OwnerDashboard() {
   };
 
   // Filter completed orders for revenue
-  const filteredOrdersByRegion = reportRegionId === 'ALL' ? orders : orders.filter(o => o.region_id === reportRegionId);\n  const completedOrders = filteredOrdersByRegion.filter(o => o.status === OrderStatus.SELESAI);
+  const filteredOrdersByRegion = reportRegionId === 'ALL' ? orders : orders.filter(o => o.region_id === reportRegionId);
+  const completedOrders = filteredOrdersByRegion.filter(o => o.status === OrderStatus.SELESAI);
 
   // Filter cash flow orders by date range (only for this container)
   const cashFlowOrders = completedOrders.filter(o => {
@@ -740,7 +747,67 @@ export default function OwnerDashboard() {
             </div>
           </>)}
 
-                {activeTab === 'regions' && (\n          <div className='bg-white border rounded-2xl p-4 shadow-xs'>\n            <h3 className='font-black text-xs uppercase tracking-wider text-slate-800 mb-4'>Daftar Cabang / Wilayah</h3>\n            \n            <div className='flex gap-2 mb-4'>\n              <input\n                type='text'\n                placeholder='Nama Cabang Baru...'\n                value={newRegionName}\n                onChange={(e) => setNewRegionName(e.target.value)}\n                className='flex-1 border-slate-200 rounded-lg p-2 bg-slate-50 text-sm'\n              />\n              <button\n                onClick={async () => {\n                  if (!newRegionName.trim()) return;\n                  try {\n                    setIsAddingRegion(true);\n                    await api.createRegion({ name: newRegionName });\n                    setNewRegionName('');\n                    alert('Cabang berhasil ditambahkan. Memuat ulang...');\n                    window.location.reload();\n                  } catch (e) {\n                    alert('Gagal menambah cabang');\n                  } finally {\n                    setIsAddingRegion(false);\n                  }\n                }}\n                disabled={isAddingRegion || !newRegionName.trim()}\n                className='bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold'\n              >\n                + Tambah\n              </button>\n            </div>\n\n            <div className='space-y-2'>\n              {regions && regions.map(r => (\n                <div key={r.id} className='flex justify-between items-center p-3 border rounded-lg bg-slate-50'>\n                  <span className='font-bold'>{r.name}</span>\n                  {r.id !== 'reg_default' && (\n                    <button\n                      onClick={async () => {\n                        if (confirm('Hapus cabang ini?')) {\n                          try {\n                            await api.deleteRegion(r.id);\n                            window.location.reload();\n                          } catch (e) {\n                            alert('Gagal menghapus');\n                          }\n                        }\n                      }}\n                      className='text-red-600 hover:bg-red-50 p-1 rounded'\n                    >\n                      <X size={16} />\n                    </button>\n                  )}\n                </div>\n              ))}\n            </div>\n          </div>\n        )}\n        {activeTab === 'activity-logs' && (
+                {activeTab === 'regions' && (
+          <div className='bg-white border rounded-2xl p-4 shadow-xs'>
+            <h3 className='font-black text-xs uppercase tracking-wider text-slate-800 mb-4'>Daftar Cabang / Wilayah</h3>
+            
+            <div className='flex gap-2 mb-4'>
+              <input
+                type='text'
+                placeholder='Nama Cabang Baru...'
+                value={newRegionName}
+                onChange={(e) => setNewRegionName(e.target.value)}
+                className='flex-1 border-slate-200 rounded-lg p-2 bg-slate-50 text-sm'
+              />
+              <button
+                onClick={async () => {
+                  if (!newRegionName.trim()) return;
+                  try {
+                    setIsAddingRegion(true);
+                    await api.createRegion({ name: newRegionName });
+                    setNewRegionName('');
+                    alert('Cabang berhasil ditambahkan. Memuat ulang...');
+                    window.location.reload();
+                  } catch (e) {
+                    alert('Gagal menambah cabang');
+                  } finally {
+                    setIsAddingRegion(false);
+                  }
+                }}
+                disabled={isAddingRegion || !newRegionName.trim()}
+                className='bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold'
+              >
+                + Tambah
+              </button>
+            </div>
+
+            <div className='space-y-2'>
+              {regions && regions.map(r => (
+                <div key={r.id} className='flex justify-between items-center p-3 border rounded-lg bg-slate-50'>
+                  <span className='font-bold'>{r.name}</span>
+                  {r.id !== 'reg_default' && (
+                    <button
+                      onClick={async () => {
+                        if (confirm('Hapus cabang ini?')) {
+                          try {
+                            await api.deleteRegion(r.id);
+                            window.location.reload();
+                          } catch (e) {
+                            alert('Gagal menghapus');
+                          }
+                        }
+                      }}
+                      className='text-red-600 hover:bg-red-50 p-1 rounded'
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {activeTab === 'activity-logs' && (
           <div className="bg-white border rounded-2xl p-4 shadow-xs">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
               <div>

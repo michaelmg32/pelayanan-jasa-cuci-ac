@@ -79,7 +79,7 @@ export const fetchRegions = async () => {
     return [];
   }
 };
-export const createRegion = async (regionData) => {
+export const createRegion = async (regionData: {name: string}) => {
   try {
     const response = await fetch(`${API_BASE_URL}/regions`, {
       method: 'POST',
@@ -90,7 +90,7 @@ export const createRegion = async (regionData) => {
     return await response.json();
   } catch (error) { throw error; }
 };
-export const deleteRegion = async (regionId) => {
+export const deleteRegion = async (regionId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/regions/${regionId}`, {
       method: 'DELETE',
