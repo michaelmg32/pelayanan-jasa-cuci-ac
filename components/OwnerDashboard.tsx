@@ -36,6 +36,7 @@ export default function OwnerDashboard() {
   const users = usersRaw.filter(u => u.role !== Role.USER);
 
   const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null);
+  const [expandedDashboardRegionId, setExpandedDashboardRegionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>(!activeUser?.region_id ? 'users' : 'dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -121,7 +122,9 @@ export default function OwnerDashboard() {
     const timer = setTimeout(() => {
       document.addEventListener('click', handleOutsideClick);
     }, 0);
-    return () => {
+  
+  return (
+      ) => {
       clearTimeout(timer);
       document.removeEventListener('click', handleOutsideClick);
     };
@@ -410,114 +413,8 @@ export default function OwnerDashboard() {
     [OrderStatus.DIBATALKAN]: orders.filter(o => o.status === OrderStatus.DIBATALKAN).length,
   };
 
-  if (!activeUser) return null;
-
-  return (
-    <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 min-h-0 h-full overflow-hidden">
-      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
-      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
-        {/* Logo, Business Name & Slogan */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
-            {appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_logo ? (
-              <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
-            ) : (
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            )}
-          </div>
-          <div className="text-left">
-            <h1 className="text-sm font-black leading-none">{appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_name || 'Sugar AC'}</h1>
-            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Owner</p>
-          </div>
-        </div>
-
-        {/* Three-dots menu button */}
-        <div className="relative">
-          <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMoreMenu(prev => !prev);
-              }}
-              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase text-white tracking-wider flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Settings size={12} /> Atur Akses
-            </button>
-
-          {showMoreMenu && (
-            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
-              <button
-                onClick={() => {
-                  setActiveTab('dashboard');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'dashboard' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <TrendingUp size={14} className={activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Dashboard Analisis</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  handleOpenSettings();
-                }}
-                className="w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700"
-              >
-                <Settings size={14} className="text-slate-400" />
-                <span>Pengaturan Bisnis</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('profile');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'profile' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Profil Saya</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('users');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'users' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Akses Pengguna</span>
-              </button>
-                
-              <button
-                onClick={() => {
-                  setActiveTab('activity-logs');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'activity-logs' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <ShieldCheck size={14} className={activeTab === 'activity-logs' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Log Aktivitas Admin</span>
-              </button>
-              <hr className="my-1 border-slate-100" />
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  logout();
-                }}
-                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
-              >
-                <LogOut size={14} />
-                <span>Keluar</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Body - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {activeTab === 'dashboard' && activeUser?.region_id && (
-          <>
+  const renderDashboardStats = () => (
+    <>
 
             <div className="bg-white border rounded-2xl p-4 shadow-xs">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
@@ -753,311 +650,171 @@ export default function OwnerDashboard() {
                 )}
               </div>
             </div>
-          </>)}
+          </>
+  );
 
-                
-        {activeTab === 'activity-logs' && (
-          <div className="bg-white border rounded-2xl p-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Log Aktivitas Admin</h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Pemantauan transparansi tindakan admin</p>
-              </div>
-              <button 
-                onClick={loadActivityLogs}
-                disabled={isLogsLoading}
-                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+  if (!activeUser) return null;
+
+  return (
+    <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 min-h-0 h-full overflow-hidden">
+      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
+      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+        {/* Logo, Business Name & Slogan */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
+            {appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_logo ? (
+              <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </div>
+          <div className="text-left">
+            <h1 className="text-sm font-black leading-none">{appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_name || 'Sugar AC'}</h1>
+            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Owner</p>
+          </div>
+        </div>
+
+        {/* Three-dots menu button */}
+        <div className="relative">
+          <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMoreMenu(prev => !prev);
+              }}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase text-white tracking-wider flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <Settings size={12} /> Atur Akses
+            </button>
+
+          {showMoreMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'dashboard' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
               >
-                {isLogsLoading ? <Loader size={12} className="animate-spin" /> : <TrendingUp size={12} />}
-                Segarkan
+                <TrendingUp size={14} className={activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Dashboard Analisis</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  handleOpenSettings();
+                }}
+                className="w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700"
+              >
+                <Settings size={14} className="text-slate-400" />
+                <span>Pengaturan Bisnis</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('profile');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'profile' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Profil Saya</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('users');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'users' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Akses Pengguna</span>
+              </button>
+                
+              {!activeUser?.region_id && (
+                <button
+                  onClick={() => {
+                    setActiveTab('activity-logs');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'activity-logs' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+                >
+                  <ShieldCheck size={14} className={activeTab === 'activity-logs' ? 'text-indigo-600' : 'text-slate-400'} />
+                  <span>Log Aktivitas Admin</span>
+                </button>
+              )}
+              <hr className="my-1 border-slate-100" />
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  logout();
+                }}
+                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
+              >
+                <LogOut size={14} />
+                <span>Keluar</span>
               </button>
             </div>
+          )}
+        </div>
+      </div>
 
-            {isLogsLoading ? (
-              <div className="py-10 flex flex-col items-center justify-center text-indigo-600">
-                <Loader className="animate-spin mb-2" size={24} />
-                <p className="text-[10px] font-bold">Memuat log...</p>
-              </div>
-            ) : activityLogs.length === 0 ? (
-              <div className="text-center py-10 text-slate-400 text-[10px] font-medium">
-                Belum ada aktivitas admin yang tercatat.
-              </div>
+      {/* Body - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        {/* ===================== TAB: DASHBOARD ===================== */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-4">
+            {activeUser?.region_id ? (
+              renderDashboardStats()
             ) : (
               <div className="space-y-4">
-                <div className="relative border-l-2 border-slate-100 ml-3 md:ml-4 space-y-6 pb-4">
-                  {activityLogs.map((log) => (
-                    <div key={log.id} className="relative pl-6">
-                      <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-white"></div>
-                      <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 shadow-sm hover:shadow-md transition">
-                        <div className="flex justify-between items-start mb-1.5">
-                          <div className="font-black text-xs text-slate-800 flex items-center gap-1.5">
-                            <ShieldCheck size={14} className="text-indigo-600" />
-                            {log.action}
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full whitespace-nowrap">
-                            {new Date(log.createdAt).toLocaleString('id-ID', {
-                              day: '2-digit', month: 'short', year: 'numeric',
-                              hour: '2-digit', minute: '2-digit'
-                            })}
-                          </span>
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                  <h3 className="font-extrabold text-sm uppercase text-slate-800">Analisis Cabang</h3>
+                  <p className="text-[11px] text-slate-400 mt-1 font-medium">Pilih cabang di bawah ini untuk melihat 
+detail aliran kas, omzet, dan kinerja teknisinya.</p>
+                </div>
+                {regions.map(region => (
+                  <div key={region.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transition-all">
+                    <button
+                      onClick={() => {
+                        if (expandedDashboardRegionId === region.id) {
+                          setExpandedDashboardRegionId(null);
+                        } else {
+                          setExpandedDashboardRegionId(region.id);
+                          setReportRegionId(region.id);
+                        }
+                      }}
+                      className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                          {region.name.substring(0, 2).toUpperCase()}
                         </div>
-                        <div className="text-[10.5px] text-slate-600 font-medium mb-2 leading-relaxed">
-                          {log.details}
-                        </div>
-                        <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200/60 mt-1">
-                          <div className="w-4 h-4 bg-indigo-100 text-indigo-700 font-black rounded flex items-center justify-center text-[8px] uppercase">
-                            {log.admin_name.charAt(0)}
-                          </div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide">
-                            Admin: <span className="text-slate-700">{log.admin_name}</span>
-                          </span>
+                        <div className="text-left">
+                          <h4 className="font-bold text-xs text-slate-800">{region.name}</h4>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                      {expandedDashboardRegionId === region.id ? (
+                        <Check size={16} className="text-indigo-600" />
+                      ) : (
+                        <MoreVertical size={16} className="text-slate-400" />
+                      )}
+                    </button>
 
-        {activeTab === 'profile' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-2xl mx-auto shadow-sm">
-            <div className="flex justify-between items-center px-1 border-b pb-3 border-slate-100">
-              <div>
-                <h3 className="font-extrabold text-sm uppercase text-slate-800">Profil Owner</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Informasi akun pemilik usaha</p>
-              </div>
-              <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[8.5px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">
-                OWNER
-              </span>
-            </div>
-
-            {saveProfileSuccess && (
-              <div className="bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold flex items-center gap-2">
-                <Check size={14} /> Profil berhasil diperbarui!
-              </div>
-            )}
-
-            {profileErrorMsg && (
-              <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-xl text-[11px] text-rose-700 font-semibold flex items-center gap-2">
-                <X size={14} /> {profileErrorMsg}
-              </div>
-            )}
-
-            {profileViewMode === 'readonly' && (
-              <div className="space-y-5">
-                <div className="flex flex-col items-center justify-center pb-4 border-b border-slate-150">
-                  <div className="w-20 h-20 bg-indigo-100 text-indigo-700 font-black text-lg flex items-center justify-center rounded-2xl shadow-sm border overflow-hidden">
-                    {activeUser.photo ? (
-                      <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      activeUser.name.charAt(0).toUpperCase()
+                    {expandedDashboardRegionId === region.id && (
+                      <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                        {renderDashboardStats()}
+                      </div>
                     )}
                   </div>
-                  <h4 className="font-extrabold text-sm text-slate-850 mt-2">{activeUser.name}</h4>
-                  <p className="text-[10px] text-slate-400 font-medium">{activeUser.email}</p>
-                </div>
-
-                <div className="space-y-3.5">
-                  <div className="flex items-center justify-between border-b pb-3 border-slate-50">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</p>
-                      <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser.name}</p>
-                    </div>
-                    <UserIcon size={16} className="text-slate-350" />
-                  </div>
-
-                  <div className="flex items-center justify-between border-b pb-3 border-slate-50">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">No. Handphone</p>
-                      <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser.phone || <span className="italic text-slate-400">Belum diatur</span>}</p>
-                    </div>
-                    <Phone size={16} className="text-slate-350" />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Rumah</p>
-                      <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser.address || <span className="italic text-slate-400">Belum diatur</span>}</p>
-                    </div>
-                    <MapPin size={16} className="text-slate-350" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-3">
-                  <button
-                    onClick={() => { setProfileErrorMsg(''); setProfileViewMode('edit-profile'); }}
-                    className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
-                  >
-                    Edit Profil
-                  </button>
-                  <button
-                    onClick={() => { setProfileErrorMsg(''); setProfileViewMode('edit-password'); }}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer"
-                  >
-                    Ubah Password
-                  </button>
-                </div>
+                ))}
               </div>
-            )}
-
-            {profileViewMode === 'edit-profile' && (
-              <form onSubmit={handleSaveProfile} className="space-y-4">
-                {/* Profile Photo Upload */}
-                <div className="space-y-2 pb-2 border-b border-slate-100">
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block">Foto Profil</label>
-                  <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-150">
-                    <div className="w-14 h-14 bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center overflow-hidden border">
-                      {editProfilePhoto ? (
-                        <img src={editProfilePhoto} alt="Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-[10px] font-bold">No Photo</span>
-                      )}
-                    </div>
-                    <div className="flex-grow text-left">
-                      <span className="text-[10px] text-slate-655 font-bold block mb-1">Unggah Foto Profil</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProfilePhotoChange}
-                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-755 hover:file:bg-indigo-100 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    value={editProfileName}
-                    onChange={(e) => setEditProfileName(e.target.value)}
-                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
-                  <input
-                    type="text"
-                    value={editProfilePhone}
-                    onChange={(e) => setEditProfilePhone(e.target.value)}
-                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat Rumah</label>
-                  <textarea
-                    value={editProfileAddress}
-                    onChange={(e) => setEditProfileAddress(e.target.value)}
-                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 h-16 resize-none disabled:opacity-50 transition"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setProfileViewMode('readonly')}
-                    disabled={isLoading}
-                    className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-655 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-indigo-600 hover:bg-indigo-755 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
-                  >
-                    {isLoading && <Loader size={12} className="animate-spin" />}
-                    {isLoading ? 'Menyimpan...' : 'Simpan Profil'}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {profileViewMode === 'edit-password' && (
-              <form onSubmit={handleUpdatePassword} className="space-y-4">
-                <div className="bg-slate-55 p-3 rounded-xl border border-slate-100/70 flex items-start gap-2 mb-2">
-                  <ShieldCheck size={16} className="text-indigo-600 shrink-0 mt-0.5" />
-                  <p className="text-[9.5px] text-slate-500 font-medium leading-relaxed">
-                    Silakan masukkan password lama Anda untuk memverifikasi perubahan password baru.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Lama</label>
-                  <input
-                    type="password"
-                    value={editOldPassword}
-                    onChange={(e) => setEditOldPassword(e.target.value)}
-                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div className="pt-2 border-t border-slate-100">
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Baru</label>
-                  <input
-                    type="password"
-                    value={editNewPassword}
-                    onChange={(e) => setEditNewPassword(e.target.value)}
-                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
-                    disabled={isLoading}
-                    required
-                    minLength={6}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Konfirmasi Password Baru</label>
-                  <input
-                    type="password"
-                    value={editConfirmPassword}
-                    onChange={(e) => setEditConfirmPassword(e.target.value)}
-                    className="w-full bg-slate-55 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
-                    disabled={isLoading}
-                    required
-                    minLength={6}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileViewMode('readonly');
-                      setEditOldPassword('');
-                      setEditNewPassword('');
-                      setEditConfirmPassword('');
-                      setProfileErrorMsg('');
-                    }}
-                    disabled={isLoading}
-                    className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-655 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
-                  >
-                    {isLoading && <Loader size={12} className="animate-spin" />}
-                    {isLoading ? 'Menyimpan...' : 'Ubah Password'}
-                  </button>
-                </div>
-              </form>
             )}
           </div>
         )}
-
-        {/* ===================== TAB: USER MANAGEMENT ===================== */}
+      
+{/* ===================== TAB: USER MANAGEMENT ===================== */}
         {activeTab === 'users' && (
             <div className="space-y-4">
               <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
