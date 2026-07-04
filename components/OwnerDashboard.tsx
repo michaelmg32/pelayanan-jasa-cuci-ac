@@ -35,6 +35,7 @@ export default function OwnerDashboard() {
   const usersRaw = activeUser?.region_id ? allUsers.filter(u => u.region_id === activeUser.region_id) : allUsers;
   const users = usersRaw.filter(u => u.role !== Role.USER);
 
+  const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>(!activeUser?.region_id ? 'users' : 'dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -484,20 +485,9 @@ export default function OwnerDashboard() {
                 className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'users' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
               >
                 <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Manajemen Pengguna</span>
+                <span>Manajemen Akses & Cabang</span>
               </button>
-                {!activeUser?.region_id && (
-                  <button
-                    onClick={() => {
-                      setActiveTab('regions');
-                      setShowMoreMenu(false);
-                    }}
-                    className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'regions' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-                  >
-                    <MapPin size={14} className={activeTab === 'regions' ? 'text-indigo-600' : 'text-slate-400'} />
-                    <span>Manajemen Cabang</span>
-                  </button>
-                )}
+                
               <button
                 onClick={() => {
                   setActiveTab('activity-logs');
@@ -765,66 +755,7 @@ export default function OwnerDashboard() {
             </div>
           </>)}
 
-                {activeTab === 'regions' && (
-          <div className='bg-white border rounded-2xl p-4 shadow-xs'>
-            <h3 className='font-black text-xs uppercase tracking-wider text-slate-800 mb-4'>Daftar Cabang / Wilayah</h3>
-            
-            <div className='flex gap-2 mb-4'>
-              <input
-                type='text'
-                placeholder='Nama Cabang Baru...'
-                value={newRegionName}
-                onChange={(e) => setNewRegionName(e.target.value)}
-                className='flex-1 border-slate-200 rounded-lg p-2 bg-slate-50 text-sm'
-              />
-              <button
-                onClick={async () => {
-                  if (!newRegionName.trim()) return;
-                  try {
-                    setIsAddingRegion(true);
-                    await api.createRegion({ name: newRegionName });
-                    setNewRegionName('');
-                    alert('Cabang berhasil ditambahkan. Memuat ulang...');
-                    window.location.reload();
-                  } catch (e) {
-                    alert('Gagal menambah cabang');
-                  } finally {
-                    setIsAddingRegion(false);
-                  }
-                }}
-                disabled={isAddingRegion || !newRegionName.trim()}
-                className='bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold'
-              >
-                + Tambah
-              </button>
-            </div>
-
-            <div className='space-y-2'>
-              {regions && regions.map(r => (
-                <div key={r.id} className='flex justify-between items-center p-3 border rounded-lg bg-slate-50'>
-                  <span className='font-bold'>{r.name}</span>
-                  {r.id !== 'reg_default' && (
-                    <button
-                      onClick={async () => {
-                        if (confirm('Hapus cabang ini?')) {
-                          try {
-                            await api.deleteRegion(r.id);
-                            window.location.reload();
-                          } catch (e) {
-                            alert('Gagal menghapus');
-                          }
-                        }
-                      }}
-                      className='text-red-600 hover:bg-red-50 p-1 rounded'
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                
         {activeTab === 'activity-logs' && (
           <div className="bg-white border rounded-2xl p-4 shadow-xs">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
