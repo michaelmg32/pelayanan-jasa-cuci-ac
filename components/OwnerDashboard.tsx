@@ -436,14 +436,14 @@ export default function OwnerDashboard() {
         {/* Three-dots menu button */}
         <div className="relative">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMoreMenu(prev => !prev);
-            }}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
-          >
-            <MoreVertical size={18} />
-          </button>
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMoreMenu(prev => !prev);
+              }}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase text-white tracking-wider flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <Settings size={12} /> Atur Akses
+            </button>
 
           {showMoreMenu && (
             <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
@@ -1059,78 +1059,171 @@ export default function OwnerDashboard() {
 
         {/* ===================== TAB: USER MANAGEMENT ===================== */}
         {activeTab === 'users' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-4 shadow-sm">
-            <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
-              <div>
-                <h3 className="font-extrabold text-sm uppercase text-slate-800">Manajemen Akses & Pengguna</h3>
-                <p className="text-[11px] text-slate-400 mt-1 font-medium">Ubah peran (role) dan status keaktifan pengguna</p>
+            <div className="space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="font-extrabold text-sm uppercase text-slate-800">Manajemen Akses & Cabang</h3>
+                  <p className="text-[11px] text-slate-400 mt-1 font-medium">Kelola wilayah cabang dan pengguna yang bertugas</p>
+                </div>
+                
+                <div className="w-full sm:w-64 relative">
+                  <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari user..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                  />
+                </div>
               </div>
-              <div className="relative w-full sm:w-64">
-                <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari user..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
 
-            <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
-              {users.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
-                <div key={u.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-650 text-white font-bold flex items-center justify-center text-xs uppercase">
-                        {u.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
-                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                            u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
-                            u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                            'bg-slate-100 text-slate-600 border-slate-200'
-                            }`}>
-                            {u.role}
-                          </span>
-                          {u.role === Role.STAFF && (
-                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
-                              u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' :
-                              u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                              'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            }`}>
-                              {u.status === 'inactive' ? 'MENUNGGU VERIFIKASI' :
-                               u.status === 'archived' ? 'DIARSIPKAN (NONAKTIF)' :
-                               'AKTIF'}
-                            </span>
+              {!activeUser?.region_id && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nama Cabang Baru..."
+                    value={newRegionName}
+                    onChange={(e) => setNewRegionName(e.target.value)}
+                    className="flex-1 bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newRegionName.trim()) return;
+                      try {
+                        setIsAddingRegion(true);
+                        await api.createRegion({ name: newRegionName });
+                        setNewRegionName('');
+                        alert('Cabang berhasil ditambahkan.');
+                        window.location.reload();
+                      } catch (e) {
+                        alert('Gagal menambah cabang');
+                      } finally {
+                        setIsAddingRegion(false);
+                      }
+                    }}
+                    disabled={isAddingRegion || !newRegionName.trim()}
+                    className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300"
+                  >
+                    {isAddingRegion ? 'Menyimpan...' : '+ Tambah Cabang'}
+                  </button>
+                </div>
+              )}
+
+              {/* Accordion List */}
+              <div className="space-y-3">
+                {(!activeUser?.region_id ? [{ id: 'null', name: 'PUSAT (GLOBAL)' }, ...(regions || [])] : [{ id: activeUser.region_id, name: regions.find(r => r.id === activeUser.region_id)?.name || 'CABANG SAYA' }]).map((region) => {
+                  const isExpanded = expandedRegionId === region.id || (activeUser?.region_id && region.id === activeUser.region_id);
+                  const regionUsers = users.filter(u => (region.id === 'null' ? !u.region_id : u.region_id === region.id));
+                  const filteredRegionUsers = regionUsers.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()));
+
+                  return (
+                    <div key={region.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-200">
+                      {/* Header */}
+                      <div 
+                        onClick={() => !activeUser?.region_id && setExpandedRegionId(isExpanded ? null : region.id)}
+                        className={`p-4 flex items-center justify-between ${!activeUser?.region_id ? 'cursor-pointer hover:bg-slate-50' : ''} ${isExpanded ? 'border-b border-slate-100 bg-slate-50/50' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${region.id === 'null' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {region.id === 'null' ? <ShieldCheck size={16} /> : <MapPin size={16} />}
+                          </div>
+                          <div>
+                            <h4 className="font-black text-sm uppercase text-slate-800">{region.name}</h4>
+                            <p className="text-[10px] text-slate-500 font-bold">{regionUsers.length} Pengguna</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {region.id !== 'null' && region.id !== 'reg_default' && !activeUser?.region_id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Hapus cabang ini? Semua pengguna di dalamnya tidak akan terhapus namun kehilangan cabang.')) {
+                                  api.deleteRegion(region.id).then(() => window.location.reload());
+                                }
+                              }}
+                              className="text-rose-500 hover:text-rose-700 p-1 bg-white rounded-lg border border-rose-100 shadow-sm"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                          {!activeUser?.region_id && (
+                            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-450 font-semibold mt-1">{u.email}</p>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {u.id !== activeUser.id && (
-                      <button
-                        type="button"
-                        onClick={() => startEditUser(u)}
-                        className="bg-indigo-50 border border-indigo-150 text-indigo-700 hover:bg-indigo-100 text-[10.5px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase transition cursor-pointer"
-                      >
-                        <Edit size={12} /> Edit
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* ===================== EDIT USER MODAL ===================== */}
-      {editingUserId && (
+                      {/* Content */}
+                      {isExpanded && (
+                        <div className="p-0 bg-slate-50/30">
+                          {filteredRegionUsers.length === 0 ? (
+                            <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase">
+                              Tidak ada pengguna di cabang ini
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-slate-100">
+                              {filteredRegionUsers.map(u => (
+                                <div key={u.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left transition">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-inner uppercase">
+                                      {u.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
+                                        <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded border ${
+                                          u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                          u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
+                                          u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                          'bg-slate-100 text-slate-600 border-slate-200'
+                                        }`}>
+                                          {u.role}
+                                        </span>
+                                      </div>
+                                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{u.email}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    {u.role === Role.STAFF && (
+                                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${
+                                        u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                        u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                        'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      }`}>
+                                        {u.status === 'inactive' ? 'Menunggu' : u.status === 'archived' ? 'Nonaktif' : 'Aktif'}
+                                      </span>
+                                    )}
+                                    {u.id !== activeUser.id && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); startEditUser(u); }}
+                                        className="bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-[10px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 uppercase transition shadow-sm"
+                                      >
+                                        <Edit size={12} /> Edit
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ===================== EDIT USER MODAL ===================== */}
+        {editingUserId && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left animate-fadeIn">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
