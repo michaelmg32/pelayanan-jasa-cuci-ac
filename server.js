@@ -407,7 +407,7 @@ app.put('/api/settings', verifyToken, async (req, res) => {
     }
 
     for (const u of updates) {
-      if (region_id === null) {
+      if (!region_id) {
         const [existing] = await connection.query('SELECT id FROM settings WHERE key_name = ? AND region_id IS NULL', [u.key]);
         if (existing.length > 0) {
           await connection.query('UPDATE settings SET value = ? WHERE key_name = ? AND region_id IS NULL', [u.val, u.key]);

@@ -361,7 +361,7 @@ export default function OwnerDashboard() {
   const totalMargin = cashFlowOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
 
   // Staff (Employee) Performance Stats
-  const staffList = (users || []).filter(u => u.role === 'STAFF');
+  const staffList = (users || []).filter(u => u.role === 'STAFF' && (reportRegionId === 'ALL' || u.region_id === reportRegionId));
   const staffStats = staffList.map(staff => {
     const staffOrders = orders.filter(o => o.assignedTo === staff.id && o.status === OrderStatus.SELESAI);
     const jobsDone = staffOrders.length;
