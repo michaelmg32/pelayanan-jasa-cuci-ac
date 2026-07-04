@@ -486,6 +486,18 @@ export default function OwnerDashboard() {
                 <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
                 <span>Manajemen Pengguna</span>
               </button>
+                {!activeUser?.region_id && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('regions');
+                      setShowMoreMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'regions' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+                  >
+                    <MapPin size={14} className={activeTab === 'regions' ? 'text-indigo-600' : 'text-slate-400'} />
+                    <span>Manajemen Cabang</span>
+                  </button>
+                )}
               <button
                 onClick={() => {
                   setActiveTab('activity-logs');
