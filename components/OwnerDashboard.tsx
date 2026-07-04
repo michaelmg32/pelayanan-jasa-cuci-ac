@@ -1540,7 +1540,11 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
               </button>
               <button
                 onClick={async () => {
-                  await updateAppSettings(editName, editLogo, editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage);
+                  if (!activeUser?.region_id) {
+                    await updateAppSettings(editName, editLogo, undefined, undefined, undefined, undefined);
+                  } else {
+                    await updateAppSettings(undefined, undefined, editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage);
+                  }
                   setIsSettingsOpen(false);
                 }}
                 className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase rounded-lg shadow-sm transition"
