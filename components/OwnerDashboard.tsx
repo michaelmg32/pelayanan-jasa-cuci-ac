@@ -125,9 +125,9 @@ export default function OwnerDashboard() {
     const timer = setTimeout(() => {
       document.addEventListener('click', handleOutsideClick);
     }, 0);
-  
-  return (
-      ) => {
+
+    return (
+    ) => {
       clearTimeout(timer);
       document.removeEventListener('click', handleOutsideClick);
     };
@@ -262,13 +262,13 @@ export default function OwnerDashboard() {
       }
 
       const updatePayload = {
-          name: targetUser.name,
-          email: targetUser.email,
-          role: editRole,
-          phone: editPhone,
-          status: editStatus,
-          region_id: editRole === Role.USER ? null : (activeUser?.region_id || editRegionId || null),
-        };
+        name: targetUser.name,
+        email: targetUser.email,
+        role: editRole,
+        phone: editPhone,
+        status: editStatus,
+        region_id: editRole === Role.USER ? null : (activeUser?.region_id || editRegionId || null),
+      };
 
       await api.updateUser(userId, updatePayload);
 
@@ -419,241 +419,241 @@ export default function OwnerDashboard() {
   const renderDashboardStats = () => (
     <>
 
-            <div className="bg-white border rounded-2xl p-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
-                  <input
-                    type="date"
-                    value={filterStartDate}
-                    onChange={(e) => setFilterStartDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-                  />
-                  <span>s/d</span>
-                  <input
-                    type="date"
-                    value={filterEndDate}
-                    onChange={(e) => setFilterEndDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-                  />
+      <div className="bg-white border rounded-2xl p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
+          <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
+            <input
+              type="date"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+            />
+            <span>s/d</span>
+            <input
+              type="date"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+            />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+            <div>
+              <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
+              <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
+            </div>
+            <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
+          </div>
+
+          <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
+            <div>
+              <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
+              <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
+            </div>
+            <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
+          </div>
+
+          <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
+            <div>
+              <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
+              <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
+            </div>
+            <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
+          </div>
+
+          <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
+            <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
+            <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
+          </div>
+
+          <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
+            <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
+            <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Orders */}
+      <div className="bg-white border rounded-2xl p-4 shadow-xs">
+        <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Pesanan Terbaru</h3>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {filteredOrdersByRegion.slice(-10).reverse().map(order => (
+            <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 text-[10px]">
+              <div className="flex-1">
+                <div className="font-bold text-slate-800">{order.customerName}</div>
+                <div className="text-slate-500 mt-0.5 flex gap-1.5 items-center flex-wrap">
+                  <span>{order.scheduledDate}</span>
+                  <span>•</span>
+                  <span className={`text-[8.5px] font-black uppercase ${order.paymentMethod === 'TRANSFER' ? 'text-indigo-600' :
+                    order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
+                    }`}>
+                    {order.paymentMethod === 'TRANSFER' ? '💳 TRANSFER (XENDIT)' :
+                      order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI'}
+                  </span>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
-                  <div>
-                    <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
-                    <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
-                  </div>
-                  <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
-                </div>
-
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
-                  <div>
-                    <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
-                    <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
-                  </div>
-                  <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
-                </div>
-
-                <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
-                  <div>
-                    <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
-                    <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
-                  </div>
-                  <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
-                </div>
-
-                <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
-                  <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
-                  <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
-                </div>
-
-                <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
-                  <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
-                  <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
-                </div>
+              <div className="text-right">
+                <div className="font-mono font-bold text-slate-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</div>
+                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded inline-block mt-1 ${order.status === OrderStatus.SELESAI ? 'bg-emerald-100 text-emerald-800' :
+                  order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                  {order.status.replace('_', ' ')}
+                </span>
               </div>
             </div>
+          ))}
+          {filteredOrdersByRegion.length === 0 && (
+            <div className="text-center py-8 text-slate-400 text-[10px]">
+              Belum ada pesanan
+            </div>
+          )}
+        </div>
+      </div>
 
-            {/* Recent Orders */}
-            <div className="bg-white border rounded-2xl p-4 shadow-xs">
-              <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Pesanan Terbaru</h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {filteredOrdersByRegion.slice(-10).reverse().map(order => (
-                  <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 text-[10px]">
-                    <div className="flex-1">
-                      <div className="font-bold text-slate-800">{order.customerName}</div>
-                      <div className="text-slate-500 mt-0.5 flex gap-1.5 items-center flex-wrap">
-                        <span>{order.scheduledDate}</span>
-                        <span>•</span>
-                        <span className={`text-[8.5px] font-black uppercase ${order.paymentMethod === 'TRANSFER' ? 'text-indigo-600' :
-                          order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
-                          }`}>
-                          {order.paymentMethod === 'TRANSFER' ? '💳 TRANSFER (XENDIT)' :
-                            order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI'}
-                        </span>
+      {/* Statistik Karyawan */}
+      <div className="bg-white border rounded-2xl p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Statistik Kinerja Karyawan</h3>
+            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Analisis kontribusi dan rating teknisi</p>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-[9.5px] font-bold text-slate-400 uppercase whitespace-nowrap">Urutkan:</span>
+            <select
+              value={staffSortKey}
+              onChange={(e) => setStaffSortKey(e.target.value as any)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-bold cursor-pointer w-full sm:w-auto"
+            >
+              <option value="rating">⭐️ Rata-Rata Bintang</option>
+              <option value="jobs">💼 Total Pekerjaan Selesai</option>
+              <option value="margin">💰 Kontribusi Margin Keuntungan</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="border border-slate-100 rounded-xl overflow-x-auto">
+          <table className="w-full text-[10px] text-left min-w-[500px]">
+            <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[8px] border-b border-slate-100">
+              <tr>
+                <th className="p-3">Nama Teknisi</th>
+                <th className="p-3 text-center">Pekerjaan Selesai</th>
+                <th className="p-3 text-center">Rata-Rata Rating</th>
+                <th className="p-3 text-right">Kontribusi Margin</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {sortedStaffStats.map((staff) => (
+                <tr key={staff.id} className="hover:bg-slate-50/50">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      {staff.photo ? (
+                        <img src={staff.photo} alt={staff.name} className="w-6 h-6 rounded-lg object-cover border" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-lg bg-indigo-150 text-indigo-700 font-bold flex items-center justify-center text-[9px] uppercase">
+                          {staff.name.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-extrabold text-slate-800">{staff.name}</div>
+                        <div className="text-[8.5px] text-slate-400 font-medium mt-0.5">{staff.email}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-mono font-bold text-slate-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</div>
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded inline-block mt-1 ${order.status === OrderStatus.SELESAI ? 'bg-emerald-100 text-emerald-800' :
-                        order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                        {order.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {filteredOrdersByRegion.length === 0 && (
-                  <div className="text-center py-8 text-slate-400 text-[10px]">
-                    Belum ada pesanan
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Statistik Karyawan */}
-            <div className="bg-white border rounded-2xl p-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-                <div>
-                  <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Statistik Kinerja Karyawan</h3>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Analisis kontribusi dan rating teknisi</p>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className="text-[9.5px] font-bold text-slate-400 uppercase whitespace-nowrap">Urutkan:</span>
-                  <select
-                    value={staffSortKey}
-                    onChange={(e) => setStaffSortKey(e.target.value as any)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-bold cursor-pointer w-full sm:w-auto"
-                  >
-                    <option value="rating">⭐️ Rata-Rata Bintang</option>
-                    <option value="jobs">💼 Total Pekerjaan Selesai</option>
-                    <option value="margin">💰 Kontribusi Margin Keuntungan</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="border border-slate-100 rounded-xl overflow-x-auto">
-                <table className="w-full text-[10px] text-left min-w-[500px]">
-                  <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[8px] border-b border-slate-100">
-                    <tr>
-                      <th className="p-3">Nama Teknisi</th>
-                      <th className="p-3 text-center">Pekerjaan Selesai</th>
-                      <th className="p-3 text-center">Rata-Rata Rating</th>
-                      <th className="p-3 text-right">Kontribusi Margin</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
-                    {sortedStaffStats.map((staff) => (
-                      <tr key={staff.id} className="hover:bg-slate-50/50">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            {staff.photo ? (
-                              <img src={staff.photo} alt={staff.name} className="w-6 h-6 rounded-lg object-cover border" />
-                            ) : (
-                              <div className="w-6 h-6 rounded-lg bg-indigo-150 text-indigo-700 font-bold flex items-center justify-center text-[9px] uppercase">
-                                {staff.name.charAt(0)}
-                              </div>
-                            )}
-                            <div>
-                              <div className="font-extrabold text-slate-800">{staff.name}</div>
-                              <div className="text-[8.5px] text-slate-400 font-medium mt-0.5">{staff.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-3 text-center font-bold text-slate-700">{staff.jobsDone} Pekerjaan</td>
-                        <td className="p-3 text-center">
-                          {staff.jobsDone > 0 ? (
-                            <div className="flex items-center justify-center gap-1 font-bold text-amber-600">
-                              <span>{staff.avgRating}</span>
-                              <span className="text-[8px]">★</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-350 font-bold">-</span>
-                          )}
-                        </td>
-                        <td className="p-3 text-right font-mono font-black text-emerald-700">
-                          {formatRupiah(staff.totalMarginContrib)}
-                        </td>
-                      </tr>
-                    ))}
-                    {sortedStaffStats.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="text-center py-8 text-slate-400 font-semibold">
-                          Tidak ada data karyawan
-                        </td>
-                      </tr>
+                  </td>
+                  <td className="p-3 text-center font-bold text-slate-700">{staff.jobsDone} Pekerjaan</td>
+                  <td className="p-3 text-center">
+                    {staff.jobsDone > 0 ? (
+                      <div className="flex items-center justify-center gap-1 font-bold text-amber-600">
+                        <span>{staff.avgRating}</span>
+                        <span className="text-[8px]">★</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-350 font-bold">-</span>
                     )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </td>
+                  <td className="p-3 text-right font-mono font-black text-emerald-700">
+                    {formatRupiah(staff.totalMarginContrib)}
+                  </td>
+                </tr>
+              ))}
+              {sortedStaffStats.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center py-8 text-slate-400 font-semibold">
+                    Tidak ada data karyawan
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-            {/* Umpan Balik & Ulasan Pelanggan */}
-            <div className="bg-white border rounded-2xl p-4 shadow-xs">
-              <div className="border-b border-slate-100 pb-3 mb-4">
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Umpan Balik & Ulasan Pelanggan</h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Rating dan ulasan dari pelanggan terbaru</p>
-              </div>
+      {/* Umpan Balik & Ulasan Pelanggan */}
+      <div className="bg-white border rounded-2xl p-4 shadow-xs">
+        <div className="border-b border-slate-100 pb-3 mb-4">
+          <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Umpan Balik & Ulasan Pelanggan</h3>
+          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Rating dan ulasan dari pelanggan terbaru</p>
+        </div>
 
-              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                {completedOrders
-                  .filter(o => o.rating !== undefined || (o.ratingNotes && o.ratingNotes.trim()))
-                  .slice()
-                  .reverse()
-                  .map((review) => {
-                    const rating = review.rating || 0;
-                    return (
-                      <div key={review.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-[10px] text-left">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 font-black flex items-center justify-center text-[9px] uppercase">
-                              {review.customerName ? review.customerName.charAt(0) : 'U'}
-                            </div>
-                            <div>
-                              <span className="font-extrabold text-slate-800">{review.customerName || 'Pelanggan'}</span>
-                              <p className="text-[8px] text-slate-400 font-semibold mt-0.5">
-                                {review.scheduledDate} • Teknisi: <strong className="text-slate-650">{review.assignedEmployeeName || 'Belum ditunjuk'}</strong>
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-0.5 text-amber-500 font-bold bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-lg text-[9px]">
-                            <span>{rating}</span>
-                            <span className="text-[8px]">★</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-2 rounded-lg border border-slate-100 space-y-1">
-                          <div className="text-slate-500 font-semibold text-[9px]">
-                            Layanan: {Array.isArray(review.acDetail) 
-                              ? review.acDetail.map(s => `${s.quantity}x ${s.serviceType === 'none' ? s.category : s.serviceType} (${s.acType || ''})`).join(', ')
-                              : review.acDetail ? `${(review.acDetail as any).quantity}x ${(review.acDetail as any).serviceType === 'none' ? (review.acDetail as any).category : (review.acDetail as any).serviceType} (${(review.acDetail as any).acType})` : ''}
-                          </div>
-                          {review.ratingNotes && review.ratingNotes.trim() ? (
-                            <p className="text-slate-700 italic font-medium">"{review.ratingNotes}"</p>
-                          ) : (
-                            <p className="text-slate-400 italic">Tidak ada komentar tertulis.</p>
-                          )}
-                        </div>
-
-                        {review.completionNotes && review.completionNotes.trim() && (
-                          <div className="text-[8.5px] text-slate-500 bg-slate-100/50 p-1.5 rounded-md border border-slate-205">
-                            <span className="font-bold text-slate-600">Catatan Pengerjaan Teknisi:</span> {review.completionNotes}
-                          </div>
-                        )}
+        <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+          {completedOrders
+            .filter(o => o.rating !== undefined || (o.ratingNotes && o.ratingNotes.trim()))
+            .slice()
+            .reverse()
+            .map((review) => {
+              const rating = review.rating || 0;
+              return (
+                <div key={review.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-[10px] text-left">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 font-black flex items-center justify-center text-[9px] uppercase">
+                        {review.customerName ? review.customerName.charAt(0) : 'U'}
                       </div>
-                    );
-                  })}
-
-                {completedOrders.filter(o => o.rating !== undefined || (o.ratingNotes && o.ratingNotes.trim())).length === 0 && (
-                  <div className="text-center py-8 text-slate-400 text-[10px]">
-                    Belum ada umpan balik dari pelanggan
+                      <div>
+                        <span className="font-extrabold text-slate-800">{review.customerName || 'Pelanggan'}</span>
+                        <p className="text-[8px] text-slate-400 font-semibold mt-0.5">
+                          {review.scheduledDate} • Teknisi: <strong className="text-slate-650">{review.assignedEmployeeName || 'Belum ditunjuk'}</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 text-amber-500 font-bold bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-lg text-[9px]">
+                      <span>{rating}</span>
+                      <span className="text-[8px]">★</span>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  <div className="bg-white p-2 rounded-lg border border-slate-100 space-y-1">
+                    <div className="text-slate-500 font-semibold text-[9px]">
+                      Layanan: {Array.isArray(review.acDetail)
+                        ? review.acDetail.map(s => `${s.quantity}x ${s.serviceType === 'none' ? s.category : s.serviceType} (${s.acType || ''})`).join(', ')
+                        : review.acDetail ? `${(review.acDetail as any).quantity}x ${(review.acDetail as any).serviceType === 'none' ? (review.acDetail as any).category : (review.acDetail as any).serviceType} (${(review.acDetail as any).acType})` : ''}
+                    </div>
+                    {review.ratingNotes && review.ratingNotes.trim() ? (
+                      <p className="text-slate-700 italic font-medium">"{review.ratingNotes}"</p>
+                    ) : (
+                      <p className="text-slate-400 italic">Tidak ada komentar tertulis.</p>
+                    )}
+                  </div>
+
+                  {review.completionNotes && review.completionNotes.trim() && (
+                    <div className="text-[8.5px] text-slate-500 bg-slate-100/50 p-1.5 rounded-md border border-slate-205">
+                      <span className="font-bold text-slate-600">Catatan Pengerjaan Teknisi:</span> {review.completionNotes}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+          {completedOrders.filter(o => o.rating !== undefined || (o.ratingNotes && o.ratingNotes.trim())).length === 0 && (
+            <div className="text-center py-8 text-slate-400 text-[10px]">
+              Belum ada umpan balik dari pelanggan
             </div>
-          </>
+          )}
+        </div>
+      </div>
+    </>
   );
 
   if (!activeUser) return null;
@@ -682,14 +682,14 @@ export default function OwnerDashboard() {
         {/* Three-dots menu button */}
         <div className="relative">
           <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMoreMenu(prev => !prev);
-              }}
-              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase text-white tracking-wider flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Settings size={12} /> Atur Akses
-            </button>
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMoreMenu(prev => !prev);
+            }}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase text-white tracking-wider flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <Settings size={12} /> Atur Akses
+          </button>
 
           {showMoreMenu && (
             <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
@@ -734,7 +734,7 @@ export default function OwnerDashboard() {
                 <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
                 <span>Akses Pengguna</span>
               </button>
-                
+
               {!activeUser?.region_id && (
                 <button
                   onClick={() => {
@@ -765,7 +765,7 @@ export default function OwnerDashboard() {
 
       {/* Body - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        
+
         {/* ===================== TAB: DASHBOARD ===================== */}
         {activeTab === 'dashboard' && (
           <div className="space-y-4">
@@ -775,8 +775,8 @@ export default function OwnerDashboard() {
               <div className="space-y-4">
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
                   <h3 className="font-extrabold text-sm uppercase text-slate-800">Analisis Cabang</h3>
-                  <p className="text-[11px] text-slate-400 mt-1 font-medium">Pilih cabang di bawah ini untuk melihat 
-detail aliran kas, omzet, dan kinerja teknisinya.</p>
+                  <p className="text-[11px] text-slate-400 mt-1 font-medium">Pilih cabang di bawah ini untuk melihat
+                    detail aliran kas, omzet, dan kinerja teknisinya.</p>
                 </div>
                 {regions.map(region => (
                   <div key={region.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transition-all">
@@ -817,8 +817,8 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
             )}
           </div>
         )}
-      
-{/* ===================== TAB: USER MANAGEMENT ===================== */}
+
+        {/* ===================== TAB: USER MANAGEMENT ===================== */}
         {activeTab === 'activity-logs' && (
           <div className="bg-white border rounded-2xl p-4 shadow-xs">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
@@ -826,7 +826,7 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
                 <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Log Aktivitas Admin</h3>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Pemantauan transparansi tindakan admin</p>
               </div>
-              <button 
+              <button
                 onClick={loadActivityLogs}
                 disabled={isLogsLoading}
                 className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
@@ -1124,171 +1124,169 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
 
         {/* ===================== TAB: USER MANAGEMENT ===================== */}
         {activeTab === 'users' && (
-            <div className="space-y-4">
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h3 className="font-extrabold text-sm uppercase text-slate-800">Akses Pengguna</h3>
-                  <p className="text-[11px] text-slate-400 mt-1 font-medium">Kelola wilayah cabang dan pengguna yang bertugas</p>
-                </div>
-                
-                <div className="w-full sm:w-64 relative">
-                  <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Cari user..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
-                  />
-                </div>
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="font-extrabold text-sm uppercase text-slate-800">Akses Pengguna</h3>
+                <p className="text-[11px] text-slate-400 mt-1 font-medium">Kelola wilayah cabang dan pengguna yang bertugas</p>
               </div>
 
-              {!activeUser?.region_id && (
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nama Cabang Baru..."
-                    value={newRegionName}
-                    onChange={(e) => setNewRegionName(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!newRegionName.trim()) return;
-                      try {
-                        setIsAddingRegion(true);
-                        await api.createRegion({ name: newRegionName });
-                        setNewRegionName('');
-                        alert('Cabang berhasil ditambahkan.');
-                        window.location.reload();
-                      } catch (e) {
-                        alert('Gagal menambah cabang');
-                      } finally {
-                        setIsAddingRegion(false);
-                      }
-                    }}
-                    disabled={isAddingRegion || !newRegionName.trim()}
-                    className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300"
-                  >
-                    {isAddingRegion ? 'Menyimpan...' : '+ Tambah Cabang'}
-                  </button>
-                </div>
-              )}
+              <div className="w-full sm:w-64 relative">
+                <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari user..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
 
-              {/* Accordion List */}
-              <div className="space-y-3">
-                {(!activeUser?.region_id ? [{ id: 'null', name: 'PUSAT (GLOBAL)' }, ...(regions || [])] : [{ id: activeUser.region_id, name: regions.find(r => r.id === activeUser.region_id)?.name || 'CABANG SAYA' }]).map((region) => {
-                  const isExpanded = expandedRegionId === region.id || (activeUser?.region_id && region.id === activeUser.region_id);
-                  const regionUsers = users.filter(u => (region.id === 'null' ? !u.region_id : u.region_id === region.id));
-                  const filteredRegionUsers = regionUsers.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()));
+            {!activeUser?.region_id && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Nama Cabang Baru..."
+                  value={newRegionName}
+                  onChange={(e) => setNewRegionName(e.target.value)}
+                  className="flex-1 bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                />
+                <button
+                  onClick={async () => {
+                    if (!newRegionName.trim()) return;
+                    try {
+                      setIsAddingRegion(true);
+                      await api.createRegion({ name: newRegionName });
+                      setNewRegionName('');
+                      alert('Cabang berhasil ditambahkan.');
+                      window.location.reload();
+                    } catch (e) {
+                      alert('Gagal menambah cabang');
+                    } finally {
+                      setIsAddingRegion(false);
+                    }
+                  }}
+                  disabled={isAddingRegion || !newRegionName.trim()}
+                  className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300"
+                >
+                  {isAddingRegion ? 'Menyimpan...' : '+ Tambah Cabang'}
+                </button>
+              </div>
+            )}
 
-                  return (
-                    <div key={region.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-200">
-                      {/* Header */}
-                      <div 
-                        onClick={() => !activeUser?.region_id && setExpandedRegionId(isExpanded ? null : region.id)}
-                        className={`p-4 flex items-center justify-between ${!activeUser?.region_id ? 'cursor-pointer hover:bg-slate-50' : ''} ${isExpanded ? 'border-b border-slate-100 bg-slate-50/50' : ''}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${region.id === 'null' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                            {region.id === 'null' ? <ShieldCheck size={16} /> : <MapPin size={16} />}
-                          </div>
-                          <div>
-                            <h4 className="font-black text-sm uppercase text-slate-800">{region.name}</h4>
-                            <p className="text-[10px] text-slate-500 font-bold">{regionUsers.length} Pengguna</p>
-                          </div>
+            {/* Accordion List */}
+            <div className="space-y-3">
+              {(!activeUser?.region_id ? [{ id: 'null', name: 'PUSAT (GLOBAL)' }, ...(regions || [])] : [{ id: activeUser.region_id, name: regions.find(r => r.id === activeUser.region_id)?.name || 'CABANG SAYA' }]).map((region) => {
+                const isExpanded = expandedRegionId === region.id || (activeUser?.region_id && region.id === activeUser.region_id);
+                const regionUsers = users.filter(u => (region.id === 'null' ? !u.region_id : u.region_id === region.id));
+                const filteredRegionUsers = regionUsers.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()));
+
+                return (
+                  <div key={region.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-200">
+                    {/* Header */}
+                    <div
+                      onClick={() => !activeUser?.region_id && setExpandedRegionId(isExpanded ? null : region.id)}
+                      className={`p-4 flex items-center justify-between ${!activeUser?.region_id ? 'cursor-pointer hover:bg-slate-50' : ''} ${isExpanded ? 'border-b border-slate-100 bg-slate-50/50' : ''}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${region.id === 'null' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {region.id === 'null' ? <ShieldCheck size={16} /> : <MapPin size={16} />}
                         </div>
-
-                        <div className="flex items-center gap-3">
-                          {region.id !== 'null' && region.id !== 'reg_default' && !activeUser?.region_id && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Hapus cabang ini? Semua pengguna di dalamnya tidak akan terhapus namun kehilangan cabang.')) {
-                                  api.deleteRegion(region.id).then(() => window.location.reload());
-                                }
-                              }}
-                              className="text-rose-500 hover:text-rose-700 p-1 bg-white rounded-lg border border-rose-100 shadow-sm"
-                            >
-                              <X size={14} />
-                            </button>
-                          )}
-                          {!activeUser?.region_id && (
-                            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                            </div>
-                          )}
+                        <div>
+                          <h4 className="font-black text-sm uppercase text-slate-800">{region.name}</h4>
+                          <p className="text-[10px] text-slate-500 font-bold">{regionUsers.length} Pengguna</p>
                         </div>
                       </div>
 
-                      {/* Content */}
-                      {isExpanded && (
-                        <div className="p-0 bg-slate-50/30">
-                          {filteredRegionUsers.length === 0 ? (
-                            <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase">
-                              Tidak ada pengguna di cabang ini
-                            </div>
-                          ) : (
-                            <div className="divide-y divide-slate-100">
-                              {filteredRegionUsers.map(u => (
-                                <div key={u.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left transition">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-inner uppercase">
-                                      {u.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
-                                        <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded border ${
-                                          u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                                          u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
-                                          u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                                          'bg-slate-100 text-slate-600 border-slate-200'
-                                        }`}>
-                                          {u.role}
-                                        </span>
-                                      </div>
-                                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{u.email}</p>
-                                    </div>
+                      <div className="flex items-center gap-3">
+                        {region.id !== 'null' && region.id !== 'reg_default' && !activeUser?.region_id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Hapus cabang ini? Semua pengguna di dalamnya tidak akan terhapus namun kehilangan cabang.')) {
+                                api.deleteRegion(region.id).then(() => window.location.reload());
+                              }
+                            }}
+                            className="text-rose-500 hover:text-rose-700 p-1 bg-white rounded-lg border border-rose-100 shadow-sm"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                        {!activeUser?.region_id && (
+                          <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    {isExpanded && (
+                      <div className="p-0 bg-slate-50/30">
+                        {filteredRegionUsers.length === 0 ? (
+                          <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase">
+                            Tidak ada pengguna di cabang ini
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-slate-100">
+                            {filteredRegionUsers.map(u => (
+                              <div key={u.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left transition">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-inner uppercase">
+                                    {u.name.charAt(0)}
                                   </div>
-                                  
-                                  <div className="flex items-center gap-2">
-                                    {u.role === Role.STAFF && (
-                                      <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${
-                                        u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                        u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                                        'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                      }`}>
-                                        {u.status === 'inactive' ? 'Menunggu' : u.status === 'archived' ? 'Nonaktif' : 'Aktif'}
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
+                                      <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded border ${u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                          u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
+                                            u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                              'bg-slate-100 text-slate-600 border-slate-200'
+                                        }`}>
+                                        {u.role}
                                       </span>
-                                    )}
-                                    {u.id !== activeUser.id && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); startEditUser(u); }}
-                                        className="bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-[10px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 uppercase transition shadow-sm"
-                                      >
-                                        <Edit size={12} /> Edit
-                                      </button>
-                                    )}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{u.email}</p>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+
+                                <div className="flex items-center gap-2">
+                                  {u.role === Role.STAFF && (
+                                    <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                        u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                          'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      }`}>
+                                      {u.status === 'inactive' ? 'Menunggu' : u.status === 'archived' ? 'Nonaktif' : 'Aktif'}
+                                    </span>
+                                  )}
+                                  {u.id !== activeUser.id && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); startEditUser(u); }}
+                                      className="bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-[10px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 uppercase transition shadow-sm"
+                                    >
+                                      <Edit size={12} /> Edit
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
+          </div>
+        )}
 
-        </div>
+      </div>
 
-        {/* ===================== EDIT USER MODAL ===================== */}
-        {editingUserId && (
+      {/* ===================== EDIT USER MODAL ===================== */}
+      {editingUserId && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left animate-fadeIn">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
@@ -1323,22 +1321,22 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
                   <option value={Role.OWNER}>Owner</option>
                 </select>
               </div>
-                {!activeUser?.region_id && editRole !== Role.USER && (
-                  <div>
-                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Penempatan Wilayah/Cabang</label>
-                    <select
-                      value={editRegionId}
-                      onChange={(e) => setEditRegionId(e.target.value)}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
-                      disabled={isLoading}
-                    >
-                      <option value="">-- Pusat (Tanpa Wilayah) --</option>
-                      {regions.map(r => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+              {!activeUser?.region_id && editRole !== Role.USER && (
+                <div>
+                  <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Penempatan Wilayah/Cabang</label>
+                  <select
+                    value={editRegionId}
+                    onChange={(e) => setEditRegionId(e.target.value)}
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                    disabled={isLoading}
+                  >
+                    <option value="">-- Pusat (Tanpa Wilayah) --</option>
+                    {regions.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Status Akun</label>
@@ -1397,146 +1395,146 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
             </div>
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                {!activeUser?.region_id ? (
-                  <>
-                    {/* Nama Usaha */}
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
+              {!activeUser?.region_id ? (
+                <>
+                  {/* Nama Usaha */}
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
+                      placeholder="Masukkan nama usaha..."
+                    />
+                  </div>
+
+                  {/* Logo Usaha */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
+
+                    {/* Logo Preview */}
+                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
+                        {editLogo ? (
+                          <img src={editLogo} alt="Logo Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-bold">No Logo</span>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="text-[10px] text-slate-600 font-bold block">Pratinjau Logo</span>
+                        <span className="text-[8px] text-slate-400 block">Akan digunakan sebagai favicon dan logo aplikasi</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar (Base64)</span>
                       <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
-                        placeholder="Masukkan nama usaha..."
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                       />
                     </div>
-      
-                    {/* Logo Usaha */}
+
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: Menggunakan URL Gambar</span>
+                      <input
+                        type="text"
+                        value={editLogo}
+                        onChange={(e) => setEditLogo(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Rekening Bank Manual & QRIS */}
+                  <div className="border-t border-slate-100 pt-3 space-y-3">
+                    <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
+                        <input
+                          type="text"
+                          value={editBankName}
+                          onChange={(e) => setEditBankName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="e.g. Bank BCA"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
+                        <input
+                          type="text"
+                          value={editBankAccountNumber}
+                          onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="e.g. 123456789"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
+                      <input
+                        type="text"
+                        value={editBankAccountHolder}
+                        onChange={(e) => setEditBankAccountHolder(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                        placeholder="e.g. Sugar AC PT"
+                      />
+                    </div>
+
                     <div className="space-y-2">
-                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
-      
-                      {/* Logo Preview */}
+                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
+
+                      {/* QRIS Preview */}
                       <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
-                          {editLogo ? (
-                            <img src={editLogo} alt="Logo Preview" className="w-full h-full object-cover" />
+                          {editQrisImage ? (
+                            <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-[10px] font-bold">No Logo</span>
+                            <span className="text-[10px] font-bold">No QRIS</span>
                           )}
                         </div>
-                        <div className="flex-1 text-left">
-                          <span className="text-[10px] text-slate-600 font-bold block">Pratinjau Logo</span>
-                          <span className="text-[8px] text-slate-400 block">Akan digunakan sebagai favicon dan logo aplikasi</span>
+                        <div className="flex-grow text-left">
+                          <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
+                          <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
                         </div>
                       </div>
-      
+
                       <div className="space-y-1.5">
-                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar (Base64)</span>
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleFileChange}
+                          onChange={handleQrisFileChange}
                           className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                         />
                       </div>
-      
+
                       <div className="space-y-1">
-                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: Menggunakan URL Gambar</span>
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
                         <input
                           type="text"
-                          value={editLogo}
-                          onChange={(e) => setEditLogo(e.target.value)}
+                          value={editQrisImage}
+                          onChange={(e) => setEditQrisImage(e.target.value)}
                           className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                          placeholder="https://example.com/logo.png"
+                          placeholder="https://example.com/qris.png"
                         />
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Rekening Bank Manual & QRIS */}
-                    <div className="border-t border-slate-100 pt-3 space-y-3">
-                      <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
-      
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
-                          <input
-                            type="text"
-                            value={editBankName}
-                            onChange={(e) => setEditBankName(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                            placeholder="e.g. Bank BCA"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
-                          <input
-                            type="text"
-                            value={editBankAccountNumber}
-                            onChange={(e) => setEditBankAccountNumber(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                            placeholder="e.g. 123456789"
-                          />
-                        </div>
-                      </div>
-      
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
-                        <input
-                          type="text"
-                          value={editBankAccountHolder}
-                          onChange={(e) => setEditBankAccountHolder(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                          placeholder="e.g. Sugar AC PT"
-                        />
-                      </div>
-      
-                      <div className="space-y-2">
-                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
-      
-                        {/* QRIS Preview */}
-                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                          <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
-                            {editQrisImage ? (
-                              <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-[10px] font-bold">No QRIS</span>
-                            )}
-                          </div>
-                          <div className="flex-grow text-left">
-                            <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
-                            <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
-                          </div>
-                        </div>
-      
-                        <div className="space-y-1.5">
-                          <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleQrisFileChange}
-                            className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                          />
-                        </div>
-      
-                        <div className="space-y-1">
-                          <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
-                          <input
-                            type="text"
-                            value={editQrisImage}
-                            onChange={(e) => setEditQrisImage(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                            placeholder="https://example.com/qris.png"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-  
-              {/* Actions */}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Actions */}
             <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setIsSettingsOpen(false)}
@@ -1562,127 +1560,7 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
         </div>
       )}
 
-        {/* AC SERVICE HISTORY LOGS MODAL */}
-        {showACHistoryModal && selectedACForHistory && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white rounded-3xl flex flex-col w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl animate-scale-up text-left">
-              {/* Modal Header */}
-              <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
-                <div>
-                  <span className="text-[8px] bg-indigo-650 px-2 py-0.5 rounded font-black uppercase text-white">Riwayat Servis</span>
-                  <h4 className="text-sm font-extrabold text-white mt-1 truncate">Riwayat AC: {selectedACForHistory.name || 'AC'} ({selectedACForHistory.id})</h4>
-                </div>
-                <button
-                  onClick={() => setShowACHistoryModal(false)}
-                  className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
-                >
-                  <X size={15} />
-                </button>
-              </div>
 
-              {/* Modal Content */}
-              <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50 text-left">
-                {loadingHistory ? (
-                  <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                    <Loader className="animate-spin text-indigo-600" size={24} />
-                    <span className="text-xs text-slate-500 font-bold">Memuat riwayat servis...</span>
-                  </div>
-                ) : acHistoryLogs.length === 0 ? (
-                  <div className="text-center py-10 space-y-2">
-                    <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
-                      <Clock size={20} />
-                    </div>
-                    <p className="text-xs font-bold text-slate-700">Belum Ada Riwayat Cuci/Servis</p>
-                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs mx-auto">
-                      Riwayat cuci/servis AC ini belum tersedia.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-5">
-                    {acHistoryLogs.map((log) => (
-                      <div key={log.id} className="relative text-xs">
-                        {/* Dot indicator */}
-                        <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-indigo-600 border border-white"></div>
-                        
-                        <div className="bg-white border border-slate-150 p-3.5 rounded-xl shadow-xs space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <strong className="text-slate-800 text-xs">{log.serviceName}</strong>
-                              <span className="text-[9.5px] text-slate-450 block mt-0.5">
-                                📅 {log.scheduledDate} {log.scheduledTime ? `| Pukul ${log.scheduledTime}` : ''}
-                              </span>
-                            </div>
-                            <span className="text-[9.5px] bg-slate-150 px-2 py-0.5 rounded font-medium text-slate-600">
-                              Oleh: {log.workerName || 'Teknisi'}
-                            </span>
-                          </div>
-
-                          {log.notes && (
-                            <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-slate-650 text-[10.5px] italic">
-                              "{log.notes}"
-                            </div>
-                          )}
-
-                          {/* Photos before/after */}
-                          {(log.photoBefore || log.photoAfter) && (
-                            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100">
-                              <div>
-                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sebelum</span>
-                                {log.photoBefore ? (
-                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                                    <img src={log.photoBefore} alt="Before" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoBefore)} />
-                                  </div>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
-                                )}
-                              </div>
-                              <div>
-                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sesudah</span>
-                                {log.photoAfter ? (
-                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                                    <img src={log.photoAfter} alt="After" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoAfter)} />
-                                  </div>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
-                <button
-                  onClick={() => setShowACHistoryModal(false)}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider transition cursor-pointer text-center"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PHOTO INSPECTION MODAL */}
-        {inspectedPhoto && (
-          <div 
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out"
-            onClick={() => setInspectedPhoto(null)}
-          >
-            <div className="max-w-full max-h-full flex items-center justify-center">
-              <img src={inspectedPhoto} alt="Zoomed" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-fade-in" />
-            </div>
-            <button 
-              className="absolute top-4 right-4 text-white hover:text-slate-350 p-2"
-              onClick={() => setInspectedPhoto(null)}
-            >
-              <X size={24} />
-            </button>
-          </div>
-        )}
-      </div>
+    </div>
   );
 }
