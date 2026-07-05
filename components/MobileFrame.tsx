@@ -35,8 +35,8 @@ export default function MobileFrame({
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
-              {appSettings?.business_logo ? (
-                <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+              {appSettings?.['GLOBAL']?.business_logo ? (
+                <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -44,7 +44,7 @@ export default function MobileFrame({
               )}
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900">{appSettings?.business_name || 'CoolAir Pro'}</h1>
+              <h1 className="text-lg font-bold text-slate-900">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h1>
               <p className="text-xs text-slate-500">Sistem Layanan AC Profesional</p>
             </div>
           </div>
