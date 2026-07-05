@@ -186,3 +186,31 @@ CREATE TABLE IF NOT EXISTS ac_addon_transactions (
   FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE SET NULL
 );
 
+-- Master Data AC Pelanggan
+CREATE TABLE IF NOT EXISTS customer_ac (
+  id VARCHAR(50) PRIMARY KEY,
+  customerId VARCHAR(50) NOT NULL,
+  acModelId VARCHAR(50) NULL,
+  brand VARCHAR(100) NULL,
+  name VARCHAR(255) NULL,
+  locationNotes TEXT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (customerId) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (acModelId) REFERENCES ac_models(id) ON DELETE SET NULL
+);
+
+-- Riwayat Servis AC (Before/After & Catatan per AC)
+CREATE TABLE IF NOT EXISTS order_ac_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  orderId VARCHAR(50) NOT NULL,
+  customerAcId VARCHAR(50) NOT NULL,
+  serviceName VARCHAR(255) NOT NULL,
+  photoBefore LONGTEXT NULL,
+  photoAfter LONGTEXT NULL,
+  notes TEXT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (customerAcId) REFERENCES customer_ac(id) ON DELETE CASCADE
+);
+

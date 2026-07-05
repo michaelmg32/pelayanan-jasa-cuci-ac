@@ -52,9 +52,47 @@ export default function PelangganDashboard() {
   const services = (allServices || []).filter((s: any) => s.region_id === selectedRegionId || !s.region_id);
   const addons = (allAddons || []).filter((a: any) => a.region_id === selectedRegionId || !a.region_id);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'my-ac'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
+
+  // My ACs State
+  const [customerACs, setCustomerACs] = useState<any[]>([]);
+  const [selectedAcSource, setSelectedAcSource] = useState<string>('new');
+  const [showACHistoryModal, setShowACHistoryModal] = useState<boolean>(false);
+  const [selectedACForHistory, setSelectedACForHistory] = useState<any | null>(null);
+  const [acHistoryLogs, setAcHistoryLogs] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
+
+  const loadCustomerACs = async () => {
+    if (activeUser) {
+      try {
+        const data = await api.fetchCustomerACs(activeUser.id);
+        setCustomerACs(data);
+      } catch (err) {
+        console.error('Error fetching ACs:', err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadCustomerACs();
+  }, [activeUser]);
+
+  const handleViewACHistory = async (ac: any) => {
+    setSelectedACForHistory(ac);
+    setShowACHistoryModal(true);
+    setLoadingHistory(true);
+    setAcHistoryLogs([]);
+    try {
+      const logs = await api.fetchCustomerACHistory(ac.id);
+      setAcHistoryLogs(logs);
+    } catch (err) {
+      console.error('Error fetching AC history:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   // Booking Form State
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
@@ -79,6 +117,8 @@ export default function PelangganDashboard() {
     serviceType: string;
     quantity: number;
     price: number;
+    acId?: string;
+    acName?: string;
   }[]>([]);
 
   // Simulated Location details
@@ -298,15 +338,34 @@ export default function PelangganDashboard() {
     const catObj = categories.find(c => c.id === selectedCategory);
     const categoryName = catObj ? catObj.name : 'Inspeksi & Konsultasi';
     
+    let linkedAcId = undefined;
+    let linkedAcName = undefined;
+    if (selectedAcSource !== 'new') {
+      const matchAc = customerACs.find(ac => ac.id === selectedAcSource);
+      if (matchAc) {
+        linkedAcId = matchAc.id;
+        linkedAcName = matchAc.name;
+      }
+    }
+
+    // Check if AC is already added to cart to prevent duplicate services for the same AC in one visit
+    if (linkedAcId && cartServices.some(item => item.acId === linkedAcId)) {
+      alert('❌ AC ini sudah ada di dalam daftar layanan pesanan.');
+      return;
+    }
+
     setCartServices([...cartServices, {
       acType: selectedModel,
       category: categoryName,
       categoryId: selectedCategory,
       serviceType: selectedService,
-      quantity,
-      price: currentServicePrice
+      quantity: selectedAcSource !== 'new' ? 1 : quantity,
+      price: currentServicePrice,
+      acId: linkedAcId,
+      acName: linkedAcName
     }]);
     setQuantity(1);
+    setSelectedAcSource('new');
   };
 
   const handleRemoveServiceFromCart = (index: number) => {
@@ -372,6 +431,8 @@ export default function PelangganDashboard() {
           category: item.category,
           serviceType: item.serviceType,
           quantity: item.quantity,
+          acId: item.acId || null,
+          acName: item.acName || null
         })),
         notes: notes.trim(),
         serviceCost: totalCost,
@@ -717,6 +778,16 @@ export default function PelangganDashboard() {
                 >
                   <Clock size={14} className={activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'} />
                   <span>Histori</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('my-ac');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'my-ac' ? 'text-indigo-600 bg-indigo-50/20' : ''}`}
+                >
+                  <FileText size={14} className={activeTab === 'my-ac' ? 'text-indigo-600' : 'text-slate-400'} />
+                  <span>AC Saya</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1430,6 +1501,66 @@ export default function PelangganDashboard() {
             </div>
           )}
 
+          {/* ==================== TAB 4: MY AC (AC SAYA) ==================== */}
+          {activeTab === 'my-ac' && (
+            <div>
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0">
+                <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
+                  Perangkat Saya
+                </span>
+                <h2 className="text-base font-extrabold text-white mt-2">Daftar AC Terdaftar</h2>
+                <p className="text-[10px] text-blue-150 mt-1">Daftar AC Anda yang telah ditempel stiker Barcode/QR Code oleh teknisi kami.</p>
+              </div>
+
+              <div className="px-4 py-6 space-y-4">
+                {customerACs.length === 0 ? (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-7 flex flex-col items-center justify-center text-center space-y-3 shadow-xs">
+                    <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs uppercase tracking-wide">Belum Ada AC Terdaftar</p>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-normal max-w-xs">
+                        Ketika teknisi kami berkunjung untuk menyervis AC Anda pertama kali, mereka akan menempelkan stiker barcode dan mendaftarkannya ke akun Anda.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {customerACs.map(ac => (
+                      <div key={ac.id} className="bg-white border border-slate-150 rounded-2xl p-4 shadow-xs text-left relative flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-[8px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                              {ac.brand || 'Umum'}
+                            </span>
+                            <span className="font-mono text-[9px] text-slate-450 font-extrabold bg-slate-100 px-2 py-0.5 rounded">
+                              ID: {ac.id}
+                            </span>
+                          </div>
+                          <h4 className="font-extrabold text-xs text-slate-800 mt-2">{ac.name || 'AC Tanpa Nama'}</h4>
+                          <p className="text-[10.5px] text-slate-500 mt-0.5">Model: {ac.modelName || 'Tipe Tidak Diketahui'}</p>
+                          {ac.locationNotes && (
+                            <p className="text-[10px] text-slate-400 italic mt-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                              📍 {ac.locationNotes}
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => handleViewACHistory(ac)}
+                          className="mt-4 w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] py-2 rounded-xl uppercase tracking-wider transition cursor-pointer text-center"
+                        >
+                          Lihat Riwayat Servis
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ==================== TAB 3: PROFILE ==================== */}
           {activeTab === 'profile' && (
             <div>
@@ -1730,28 +1861,65 @@ export default function PelangganDashboard() {
                     </select>
                   </div>
 
+                  {/* AC Selection (Registered vs New) */}
+                  {customerACs.length > 0 && (
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                        2. Pilih AC yang akan Diservis
+                      </label>
+                      <select
+                        value={selectedAcSource}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setSelectedAcSource(val);
+                          if (val !== 'new') {
+                            const matchAc = customerACs.find(ac => ac.id === val);
+                            if (matchAc && matchAc.modelName) {
+                              setSelectedModel(matchAc.modelName);
+                            }
+                            setQuantity(1); // Force 1 unit for registered AC
+                          }
+                        }}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                      >
+                        <option value="new">AC Baru (Belum tempel Barcode)</option>
+                        {customerACs.map(ac => (
+                          <option key={ac.id} value={ac.id}>
+                            {ac.name || 'AC'} - {ac.brand || 'Umum'} ({ac.modelName || 'Tipe N/A'}) [ID: {ac.id}]
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   {/* Model Selection */}
                   <div>
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                      2. Tipe AC / Model
+                      3. Tipe AC / Model
                     </label>
-                    <select
-                      value={selectedModel}
-                      onChange={e => setSelectedModel(e.target.value)}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
-                    >
-                      {models.map(m => (
-                        <option key={m.id} value={m.name}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
+                    {selectedAcSource !== 'new' ? (
+                      <div className="w-full bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-2.5 rounded-xl font-bold">
+                        {selectedModel} (Dikunci dari AC terdaftar)
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedModel}
+                        onChange={e => setSelectedModel(e.target.value)}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                      >
+                        {models.map(m => (
+                          <option key={m.id} value={m.name}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {/* Category Selection */}
                   <div>
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                      2. Kategori Layanan
+                      4. Kategori Layanan
                     </label>
                     <select
                       value={selectedCategory}
@@ -1792,25 +1960,31 @@ export default function PelangganDashboard() {
                   {/* Quantity */}
                   <div>
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
-                      4. Jumlah Unit
+                      5. Jumlah Unit
                     </label>
-                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-10">
-                      <button
-                        type="button"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <span className="text-xs font-mono font-black w-6 text-center">{quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
+                    {selectedAcSource !== 'new' ? (
+                      <div className="w-full bg-slate-100 border border-slate-200 text-slate-600 text-xs px-3 py-2.5 rounded-xl font-bold">
+                        1 Unit (AC Terdaftar)
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-10">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="text-xs font-mono font-black w-6 text-center">{quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <button
@@ -1829,7 +2003,9 @@ export default function PelangganDashboard() {
                         <div key={idx} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded-lg border border-slate-100">
                           <div>
                             <p className="font-bold text-slate-700">{item.quantity}x {item.serviceType === 'none' ? item.category : item.serviceType}</p>
-                            <p className="text-[9px] text-slate-500">{item.acType} - {formatRupiah(item.price * item.quantity)}</p>
+                            <p className="text-[9px] text-slate-500">
+                              {item.acType} {item.acName ? `[${item.acName}]` : ''} - {formatRupiah(item.price * item.quantity)}
+                            </p>
                           </div>
                           <button type="button" onClick={() => handleRemoveServiceFromCart(idx)} className="text-rose-500 hover:bg-rose-100 p-1.5 rounded-md cursor-pointer transition">
                             <X size={14} />
@@ -2305,6 +2481,128 @@ export default function PelangganDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* AC SERVICE HISTORY LOGS MODAL */}
+        {showACHistoryModal && selectedACForHistory && (
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex flex-col justify-end z-45 animate-fade-in pt-10">
+            <div className="bg-white rounded-t-[24px] flex flex-col max-h-[calc(100%-2.5rem)] overflow-hidden shadow-2xl animate-slide-up">
+              {/* Modal Header */}
+              <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
+                <div>
+                  <span className="text-[8px] bg-indigo-650 px-2 py-0.5 rounded font-black uppercase text-white">Riwayat Servis</span>
+                  <h4 className="text-sm font-extrabold text-white mt-1 truncate">Riwayat AC {selectedACForHistory.name}</h4>
+                </div>
+                <button
+                  onClick={() => setShowACHistoryModal(false)}
+                  className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50 text-left">
+                {loadingHistory ? (
+                  <div className="flex flex-col items-center justify-center py-10 space-y-2">
+                    <Loader className="animate-spin text-indigo-600" size={24} />
+                    <span className="text-xs text-slate-500 font-bold">Memuat riwayat servis...</span>
+                  </div>
+                ) : acHistoryLogs.length === 0 ? (
+                  <div className="text-center py-10 space-y-2">
+                    <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+                      <Clock size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700">Belum Ada Riwayat Cuci/Servis</p>
+                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs mx-auto">
+                      Riwayat akan terisi otomatis saat pekerjaan cuci atau perbaikan AC dengan barcode ini selesai dikerjakan teknisi.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-5">
+                    {acHistoryLogs.map((log) => (
+                      <div key={log.id} className="relative text-xs">
+                        {/* Dot indicator */}
+                        <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-indigo-600 border border-white"></div>
+                        
+                        <div className="bg-white border border-slate-150 p-3.5 rounded-xl shadow-xs space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <strong className="text-slate-800 text-xs">{log.serviceName}</strong>
+                              <span className="text-[9.5px] text-slate-450 block mt-0.5">
+                                📅 {log.scheduledDate} {log.scheduledTime ? `| Pukul ${log.scheduledTime}` : ''}
+                              </span>
+                            </div>
+                            <span className="text-[9.5px] bg-slate-150 px-2 py-0.5 rounded font-medium text-slate-600">
+                              Oleh: {log.workerName || 'Teknisi'}
+                            </span>
+                          </div>
+
+                          {log.notes && (
+                            <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-slate-650 text-[10.5px] italic">
+                              "{log.notes}"
+                            </div>
+                          )}
+
+                          {/* Photos before/after */}
+                          {(log.photoBefore || log.photoAfter) && (
+                            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100">
+                              <div>
+                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sebelum</span>
+                                {log.photoBefore ? (
+                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                                    <img src={log.photoBefore} alt="Before" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoBefore)} />
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sesudah</span>
+                                {log.photoAfter ? (
+                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                                    <img src={log.photoAfter} alt="After" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoAfter)} />
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
+                <button
+                  onClick={() => setShowACHistoryModal(false)}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PHOTO INSPECTION MODAL */}
+        {inspectedPhoto && (
+          <div 
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out"
+            onClick={() => setInspectedPhoto(null)}
+          >
+            <div className="max-w-full max-h-full flex items-center justify-center">
+              <img src={inspectedPhoto} alt="Zoomed" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-fade-in" />
+            </div>
+            <button 
+              className="absolute top-4 right-4 text-white hover:text-slate-300 p-2"
+              onClick={() => setInspectedPhoto(null)}
+            >
+              <X size={24} />
+            </button>
           </div>
         )}
       </div>

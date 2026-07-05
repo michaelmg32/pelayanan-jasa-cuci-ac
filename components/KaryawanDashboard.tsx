@@ -59,6 +59,123 @@ export default function KaryawanDashboard() {
   const [completionNotes, setCompletionNotes] = useState('');
   const [paymentProofs, setPaymentProofs] = useState<{ [orderId: string]: string }>({});
 
+  // Individual AC Units State for current active task
+  const [acHistoryInputs, setAcHistoryInputs] = useState<{[acKey: string]: { 
+    customerAcId?: string; 
+    name?: string; 
+    brand?: string; 
+    photoBefore?: string; 
+    photoAfter?: string; 
+    notes?: string; 
+    isRegistered?: boolean;
+  }}>({});
+
+  const getIndividualAcUnits = (task: any) => {
+    const units: any[] = [];
+    if (!task || !task.acDetail) return units;
+    
+    const details = Array.isArray(task.acDetail) ? task.acDetail : [task.acDetail];
+    details.forEach((item: any, detailIdx: number) => {
+      const qty = item.quantity || 1;
+      for (let i = 0; i < qty; i++) {
+        units.push({
+          key: `${detailIdx}-${i}`,
+          serviceType: item.serviceType === 'none' ? item.category : item.serviceType,
+          acType: item.acType,
+          acId: item.acId || null,
+          acName: item.acName || null,
+        });
+      }
+    });
+    return units;
+  };
+
+  const handleAcImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, unitKey: string, type: 'before' | 'after') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 800, 800, 0.7);
+        setAcHistoryInputs(prev => ({
+          ...prev,
+          [unitKey]: {
+            ...prev[unitKey],
+            [type === 'before' ? 'photoBefore' : 'photoAfter']: compressedBase64
+          }
+        }));
+      } catch (err) {
+        console.error('Error compressing image:', err);
+        alert('❌ Gagal memproses gambar. Silakan coba lagi.');
+      }
+    }
+  };
+
+  const handleRegisterNewAC = async (unitKey: string, task: any, prefilledModelName: string) => {
+    const input = acHistoryInputs[unitKey] || {};
+    const barcode = input.customerAcId?.trim();
+    const acName = input.name?.trim();
+    const acBrand = input.brand?.trim() || 'Umum';
+    
+    if (!barcode) {
+      alert('❌ Mohon isi / scan Barcode ID terlebih dahulu.');
+      return;
+    }
+    if (!acName) {
+      alert('❌ Mohon isi Nama Panggilan AC (misal: Kamar Utama).');
+      return;
+    }
+
+    const matchModel = models.find((m: any) => m.name === prefilledModelName);
+    const modelId = matchModel?.id || undefined;
+
+    try {
+      setIsLoading(true);
+      await api.registerCustomerAC({
+        id: barcode,
+        customerId: task.customerId,
+        brand: acBrand,
+        acModelId: modelId,
+        name: acName,
+        locationNotes: `Terdaftar via Teknisi Lapangan`
+      });
+
+      // Update local acHistoryInputs state
+      setAcHistoryInputs(prev => ({
+        ...prev,
+        [unitKey]: {
+          ...prev[unitKey],
+          isRegistered: true,
+          customerAcId: barcode,
+          name: acName,
+          brand: acBrand,
+        }
+      }));
+
+      // Automatically update the order's acDetail so the barcode is linked to the order
+      const updatedDetails = Array.isArray(task.acDetail) ? [...task.acDetail] : [task.acDetail];
+      const [detailIdxStr] = unitKey.split('-');
+      const dIdx = parseInt(detailIdxStr);
+      if (updatedDetails[dIdx]) {
+        updatedDetails[dIdx] = {
+          ...updatedDetails[dIdx],
+          acId: barcode,
+          acName: acName
+        };
+        await api.updateOrder(task.id, {
+          acDetail: updatedDetails
+        });
+        
+        // Refresh local orders list
+        setOrders(prev => prev.map(o => o.id === task.id ? { ...o, acDetail: updatedDetails } : o));
+      }
+
+      alert('✅ AC baru berhasil didaftarkan dan stiker telah ditempel!');
+    } catch (err: any) {
+      alert('❌ Gagal mendaftarkan AC: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Profile edit states
   const [editName, setEditName] = useState(activeUser?.name || '');
   const [editPhone, setEditPhone] = useState(activeUser?.phone || '');
@@ -588,52 +705,95 @@ export default function KaryawanDashboard() {
 
   // Status transition: CEK_LAYANAN → PENGERJAAN
   const handleStartRepairAndWash = async (orderId: string) => {
-    if (!photoBeforeUrl) {
-      alert('Mohon pilih/upload foto kondisi awal (Before) terlebih dahulu.');
-      return;
+    const task = orders.find(o => o.id === orderId);
+    const individualUnits = getIndividualAcUnits(task);
+    
+    // Validate that all ACs are registered & have photoBefore uploaded
+    for (const unit of individualUnits) {
+      const input = acHistoryInputs[unit.key] || {};
+      const finalAcId = unit.acId || input.customerAcId;
+      if (!finalAcId) {
+        alert(`❌ Unit AC "${unit.serviceType} (${unit.acType})" belum terdaftar/ditempel stiker barcode.`);
+        return;
+      }
+      const beforePhoto = input.photoBefore;
+      if (!beforePhoto) {
+        alert(`❌ Mohon upload foto kondisi awal (Before) untuk unit AC "${unit.acName || finalAcId}".`);
+        return;
+      }
     }
+
     try {
+      setIsLoading(true);
+      const firstKey = individualUnits[0]?.key;
+      const firstPhoto = acHistoryInputs[firstKey]?.photoBefore || '';
+
       await api.updateOrder(orderId, {
         status: OrderStatus.PENGERJAAN,
-        photoBefore: photoBeforeUrl
+        photoBefore: firstPhoto
       });
       setOrders(prevOrders =>
         prevOrders.map(o =>
-          o.id === orderId ? { ...o, status: OrderStatus.PENGERJAAN, photoBefore: photoBeforeUrl } : o
+          o.id === orderId ? { ...o, status: OrderStatus.PENGERJAAN, photoBefore: firstPhoto } : o
         )
       );
     } catch (error) {
       alert('❌ Gagal update status');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Status transition: PENGERJAAN → PAYMENT
   const handleSendBillToCustomer = async (orderId: string) => {
-    if (!photoAfterUrl) {
-      alert('Mohon ambil/pilih foto kondisi sesudah pekerjaan (After).');
-      return;
-    }
-    if (!completionNotes.trim()) {
-      alert('Mohon ketik rincian pengerjaan / catatan penyelesaian AC.');
-      return;
+    const task = orders.find(o => o.id === orderId);
+    const individualUnits = getIndividualAcUnits(task);
+
+    // Validate photoAfter and notes for each AC
+    for (const unit of individualUnits) {
+      const input = acHistoryInputs[unit.key] || {};
+      if (!input.photoAfter) {
+        alert(`❌ Mohon upload foto kondisi sesudah (After) untuk AC "${unit.acName || unit.acId || input.customerAcId}".`);
+        return;
+      }
+      if (!input.notes?.trim()) {
+        alert(`❌ Mohon tulis catatan kondisi penyelesaian untuk AC "${unit.acName || unit.acId || input.customerAcId}".`);
+        return;
+      }
     }
 
     try {
+      setIsLoading(true);
       const addonsCost = addonsUsed.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
-      const currentOrder = orders.find(o => o.id === orderId);
-      const serviceCost = currentOrder?.serviceCost || 0;
+      const serviceCost = task?.serviceCost || 0;
       const totalCost = serviceCost;
       const finalPrice = serviceCost + addonsCost;
 
+      // Compile AC history logs to be saved in DB
+      const acHistoryList = individualUnits.map(unit => {
+        const input = acHistoryInputs[unit.key] || {};
+        return {
+          customerAcId: unit.acId || input.customerAcId,
+          serviceName: unit.serviceType,
+          photoBefore: input.photoBefore || '',
+          photoAfter: input.photoAfter || '',
+          notes: input.notes?.trim() || ''
+        };
+      });
+
+      const firstKey = individualUnits[0]?.key;
+      const firstPhotoAfter = acHistoryInputs[firstKey]?.photoAfter || '';
+
       await api.updateOrder(orderId, {
         status: OrderStatus.PAYMENT,
-        photoAfter: photoAfterUrl,
+        photoAfter: firstPhotoAfter,
         addonsCost,
-        completionNotes: completionNotes.trim(),
+        completionNotes: completionNotes.trim() || 'Servis AC selesai.',
         totalCost,
         finalPrice,
         paymentStatus: 'WAITING_APPROVAL',
-        addonsUsed: addonsUsed
+        addonsUsed: addonsUsed,
+        acHistoryList: acHistoryList
       });
 
       setOrders(prevOrders =>
@@ -642,9 +802,9 @@ export default function KaryawanDashboard() {
             ? {
               ...o,
               status: OrderStatus.PAYMENT,
-              photoAfter: photoAfterUrl,
+              photoAfter: firstPhotoAfter,
               addonsCost,
-              completionNotes: completionNotes.trim(),
+              completionNotes: completionNotes.trim() || 'Servis AC selesai.',
               totalCost,
               finalPrice,
               addonsUsed: addonsUsed
@@ -659,6 +819,8 @@ export default function KaryawanDashboard() {
       alert('✓ Tagihan berhasil dikirim ke pelanggan!');
     } catch (error) {
       alert('❌ Gagal mengirim tagihan');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1073,33 +1235,98 @@ export default function KaryawanDashboard() {
                                 )}
                               </div>
 
-                              {/* Photo BEFORE */}
-                              <div className="border border-indigo-100 bg-indigo-50/50 p-3 rounded-xl space-y-2.5">
-                                <span className="text-[8px] font-black tracking-widest text-indigo-700 uppercase block">FOTO KONDISI AWAL (BEFORE)</span>
+                              {/* Photo BEFORE for each AC unit */}
+                              <div className="space-y-4">
+                                <span className="text-[8.5px] font-black tracking-widest text-indigo-700 uppercase block">FOTO KONDISI AWAL (BEFORE) PER AC</span>
+                                {getIndividualAcUnits(task).map(unit => {
+                                  const input = acHistoryInputs[unit.key] || {};
+                                  const finalAcId = unit.acId || input.customerAcId;
+                                  const isRegistered = !!unit.acId || input.isRegistered;
 
-                                <div className="flex flex-col gap-3">
-                                  <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase justify-center cursor-pointer h-10">
-                                    <Camera size={14} />
-                                    Upload Foto Before
-                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'before')} className="hidden" />
-                                  </label>
+                                  return (
+                                    <div key={unit.key} className="border border-indigo-100 bg-white p-3.5 rounded-xl space-y-3 shadow-xs">
+                                      <div className="flex justify-between items-center text-[10.5px]">
+                                        <strong className="text-slate-800">{unit.serviceType}</strong>
+                                        <span className="text-[9.5px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-extrabold">
+                                          {isRegistered ? `Barcode: ${finalAcId}` : 'Belum Ada Barcode'}
+                                        </span>
+                                      </div>
 
-                                  {photoBeforeUrl && (
-                                    <div className="mt-1 space-y-1">
-                                      <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Preview Foto Terpilih:</span>
-                                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
-                                        <img src={photoBeforeUrl} alt="Preview Before" className="w-full h-full object-contain" />
-                                        <button
-                                          type="button"
-                                          onClick={() => setPhotoBeforeUrl('')}
-                                          className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md cursor-pointer"
-                                        >
-                                          <X size={10} />
-                                        </button>
+                                      {/* Barcode Registration form if AC not registered yet */}
+                                      {!isRegistered && (
+                                        <div className="bg-amber-50/50 border border-amber-250 p-2.5 rounded-lg space-y-2 text-[10.5px]">
+                                          <div className="text-[8px] font-black uppercase text-amber-700 tracking-wider">Registrasi & Tempel Barcode Baru</div>
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <input
+                                              type="text"
+                                              placeholder="Scan/Isi Barcode AC"
+                                              value={input.customerAcId || ''}
+                                              onChange={e => setAcHistoryInputs(prev => ({
+                                                ...prev,
+                                                [unit.key]: { ...prev[unit.key], customerAcId: e.target.value }
+                                              }))}
+                                              className="w-full bg-white border border-slate-200 text-xs px-2 py-1 rounded outline-none"
+                                            />
+                                            <input
+                                              type="text"
+                                              placeholder="Nama AC (Kamar Utama, dll)"
+                                              value={input.name || ''}
+                                              onChange={e => setAcHistoryInputs(prev => ({
+                                                ...prev,
+                                                [unit.key]: { ...prev[unit.key], name: e.target.value }
+                                              }))}
+                                              className="w-full bg-white border border-slate-200 text-xs px-2 py-1 rounded outline-none"
+                                            />
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="text"
+                                              placeholder="Merek/Brand (LG, Daikin, dll)"
+                                              value={input.brand || ''}
+                                              onChange={e => setAcHistoryInputs(prev => ({
+                                                ...prev,
+                                                [unit.key]: { ...prev[unit.key], brand: e.target.value }
+                                              }))}
+                                              className="flex-1 bg-white border border-slate-200 text-xs px-2 py-1 rounded outline-none"
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRegisterNewAC(unit.key, task, unit.acType)}
+                                              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[9px] px-3 py-1 rounded cursor-pointer uppercase"
+                                            >
+                                              Daftar AC
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Image selector */}
+                                      <div className="flex flex-col gap-2">
+                                        <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-1.8 rounded-xl text-[9.5px] font-black uppercase justify-center cursor-pointer h-9">
+                                          <Camera size={13} />
+                                          Foto Before ({unit.acName || finalAcId || 'Pilih AC'})
+                                          <input type="file" accept="image/*" onChange={(e) => handleAcImageUpload(e, unit.key, 'before')} className="hidden" />
+                                        </label>
+
+                                        {input.photoBefore && (
+                                          <div className="relative w-full h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                                            <img src={input.photoBefore} alt="Preview Before" className="w-full h-full object-contain" />
+                                            <button
+                                              type="button"
+                                              onClick={() => setAcHistoryInputs(prev => ({
+                                                ...prev,
+                                                [unit.key]: { ...prev[unit.key], photoBefore: undefined }
+                                              }))}
+                                              className="absolute top-1.5 right-1.5 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md cursor-pointer"
+                                            >
+                                              <X size={8} />
+                                            </button>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                  )}
-                                </div>
+                                  );
+                                })}
                               </div>
 
                               {task.workerCancelReason ? (
@@ -1110,7 +1337,6 @@ export default function KaryawanDashboard() {
                                 <>
                                   <button
                                     onClick={() => handleStartRepairAndWash(task.id)}
-                                    disabled={!photoBeforeUrl}
                                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-extrabold text-xs py-2.5 rounded-xl uppercase tracking-wider cursor-pointer disabled:cursor-not-allowed mb-2"
                                   >
                                     Konfirmasi Selesai Ulasan & Mulai Kerja
@@ -1630,33 +1856,62 @@ export default function KaryawanDashboard() {
                     : `${(activeWorkingTask.acDetail as any)?.quantity || 0} Unit x ${(activeWorkingTask.acDetail as any)?.serviceType === 'none' ? (activeWorkingTask.acDetail as any)?.category : (activeWorkingTask.acDetail as any)?.serviceType}`}</strong></div>
                 </div>
 
-                {/* Photo AFTER */}
-                <div className="bg-white border rounded-xl p-3.5 space-y-2.5">
-                  <span className="text-[8.5px] font-black uppercase text-purple-600 tracking-wider block">1. Foto Selesai (After)</span>
+                {/* Photo AFTER & Notes for each AC unit */}
+                <div className="space-y-4">
+                  <span className="text-[8.5px] font-black uppercase text-purple-600 tracking-wider block">1. Foto Selesai (After) & Catatan per AC</span>
+                  {getIndividualAcUnits(activeWorkingTask).map(unit => {
+                    const input = acHistoryInputs[unit.key] || {};
+                    const finalAcId = unit.acId || input.customerAcId;
 
-                  <div className="flex flex-col gap-3">
-                    <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase justify-center cursor-pointer h-10">
-                      <Camera size={14} />
-                      Upload Foto After
-                      <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'after')} className="hidden" />
-                    </label>
+                    return (
+                      <div key={unit.key} className="bg-white border border-slate-200 p-3.5 rounded-xl space-y-3 shadow-xs">
+                        <div className="flex justify-between items-center text-[10.5px]">
+                          <strong className="text-slate-800">{unit.serviceType}</strong>
+                          <span className="text-[9.5px] font-mono text-purple-600 bg-purple-50 px-2 py-0.5 rounded font-extrabold">
+                            AC: {unit.acName || 'Belum Registrasi'} ({finalAcId})
+                          </span>
+                        </div>
 
-                    {photoAfterUrl && (
-                      <div className="mt-1 space-y-1">
-                        <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Preview Foto Terpilih:</span>
-                        <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
-                          <img src={photoAfterUrl} alt="Preview After" className="w-full h-full object-contain" />
-                          <button
-                            type="button"
-                            onClick={() => setPhotoAfterUrl('')}
-                            className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md cursor-pointer"
-                          >
-                            <X size={10} />
-                          </button>
+                        {/* Image upload selector */}
+                        <div className="flex flex-col gap-2">
+                          <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-1.8 rounded-xl text-[9px] font-black uppercase justify-center cursor-pointer h-9">
+                            <Camera size={13} />
+                            Upload Foto After
+                            <input type="file" accept="image/*" onChange={(e) => handleAcImageUpload(e, unit.key, 'after')} className="hidden" />
+                          </label>
+
+                          {input.photoAfter && (
+                            <div className="relative w-full h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                              <img src={input.photoAfter} alt="Preview After" className="w-full h-full object-contain" />
+                              <button
+                                type="button"
+                                onClick={() => setAcHistoryInputs(prev => ({
+                                  ...prev,
+                                  [unit.key]: { ...prev[unit.key], photoAfter: undefined }
+                                }))}
+                                className="absolute top-1.5 right-1.5 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md cursor-pointer"
+                              >
+                                <X size={8} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Note textarea */}
+                        <div>
+                          <textarea
+                            placeholder="Catatan kondisi AC ini (misal: freon aman, fan bersih)..."
+                            value={input.notes || ''}
+                            onChange={e => setAcHistoryInputs(prev => ({
+                              ...prev,
+                              [unit.key]: { ...prev[unit.key], notes: e.target.value }
+                            }))}
+                            className="w-full bg-slate-50 border border-slate-200 text-xs p-2 rounded-lg outline-none h-12 resize-none"
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
 
                 {/* Addons */}

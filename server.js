@@ -355,6 +355,41 @@ const initializeDatabaseSettings = async () => {
       console.log(`✅ Backfilled transaction logs for ${backfilledOrdersCount} completed orders.`);
     }
 
+    // Auto-migration: Create customer_ac table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS customer_ac (
+        id VARCHAR(50) PRIMARY KEY,
+        customerId VARCHAR(50) NOT NULL,
+        acModelId VARCHAR(50) NULL,
+        brand VARCHAR(100) NULL,
+        name VARCHAR(255) NULL,
+        locationNotes TEXT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (customerId) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (acModelId) REFERENCES ac_models(id) ON DELETE SET NULL
+      )
+    `);
+    console.log("✅ Auto-migrated 'customer_ac' table in database");
+
+    // Auto-migration: Create order_ac_history table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS order_ac_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        orderId VARCHAR(50) NOT NULL,
+        customerAcId VARCHAR(50) NOT NULL,
+        serviceName VARCHAR(255) NOT NULL,
+        photoBefore LONGTEXT NULL,
+        photoAfter LONGTEXT NULL,
+        notes TEXT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
+        FOREIGN KEY (customerAcId) REFERENCES customer_ac(id) ON DELETE CASCADE
+      )
+    `);
+    console.log("✅ Auto-migrated 'order_ac_history' table in database");
+
+
 
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
@@ -1668,6 +1703,20 @@ app.put('/api/orders/:id', async (req, res) => {
     await syncOrderAddonTransactions(connection, id);
     await recalculateOrderMargin(connection, id);
 
+    // Save logs for each specific AC in the order if provided
+    if (req.body.acHistoryList && Array.isArray(req.body.acHistoryList)) {
+      await connection.query('DELETE FROM order_ac_history WHERE orderId = ?', [id]);
+      for (const hist of req.body.acHistoryList) {
+        if (hist.customerAcId && hist.serviceName) {
+          await connection.query(
+            'INSERT INTO order_ac_history (orderId, customerAcId, serviceName, photoBefore, photoAfter, notes) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, hist.customerAcId, hist.serviceName, hist.photoBefore || null, hist.photoAfter || null, hist.notes || null]
+          );
+        }
+      }
+      console.log(`✅ Logged ${req.body.acHistoryList.length} AC service histories for order ${id}`);
+    }
+
     const [updatedOrder] = await connection.query('SELECT * FROM orders WHERE id = ?', [id]);
 
     if (updatedOrder.length > 0) {
@@ -2220,6 +2269,139 @@ app.delete('/api/addons/:id', async (req, res) => {
     await logActivity(req, 'Menghapus Addon/Sparepart', `Menghapus addon: ${itemName}`);
     res.json({ message: 'Addon deleted successfully', id });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== CUSTOMER UNIQUE AC & BARCODES API =====
+
+// Register a new customer AC unit
+app.post('/api/customer-ac', async (req, res) => {
+  const { id, customerId, acModelId, brand, name, locationNotes } = req.body;
+  let connection;
+  try {
+    if (!id || !customerId) {
+      return res.status(400).json({ error: 'id (barcode) and customerId are required' });
+    }
+    connection = await pool.getConnection();
+
+    // Check if barcode already exists
+    const [existing] = await connection.query('SELECT id FROM customer_ac WHERE id = ?', [id]);
+    if (existing.length > 0) {
+      connection.release();
+      return res.status(400).json({ error: 'Barcode AC sudah terdaftar.' });
+    }
+
+    await connection.query(
+      'INSERT INTO customer_ac (id, customerId, acModelId, brand, name, locationNotes) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, customerId, acModelId || null, brand || null, name || null, locationNotes || null]
+    );
+    connection.release();
+    res.status(201).json({ success: true, message: 'AC berhasil terdaftar' });
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fetch AC units for customer (supports filtering by customerId, role-based region restrictions)
+app.get('/api/customer-ac', verifyToken, async (req, res) => {
+  const { customerId } = req.query;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    let query = `
+      SELECT customer_ac.*, users.name as customerName, users.phone as customerPhone, users.region_id, ac_models.name as modelName
+      FROM customer_ac
+      JOIN users ON customer_ac.customerId = users.id
+      LEFT JOIN ac_models ON customer_ac.acModelId = ac_models.id
+    `;
+    let params = [];
+    let conditions = [];
+
+    if (customerId) {
+      conditions.push('customer_ac.customerId = ?');
+      params.push(customerId);
+    }
+
+    // Filter by region for staff/admin
+    if (req.user.role === 'admin' || req.user.role === 'karyawan') {
+      if (req.user.region_id) {
+        conditions.push('users.region_id = ?');
+        params.push(req.user.region_id);
+      }
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY customer_ac.createdAt DESC';
+
+    const [rows] = await connection.query(query, params);
+    connection.release();
+    res.json(rows);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Scan/Fetch single AC unit details by barcode (checks region restrictions)
+app.get('/api/customer-ac/scan/:id', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [rows] = await connection.query(
+      `SELECT customer_ac.*, users.name as customerName, users.phone as customerPhone, users.region_id, ac_models.name as modelName
+       FROM customer_ac
+       JOIN users ON customer_ac.customerId = users.id
+       LEFT JOIN ac_models ON customer_ac.acModelId = ac_models.id
+       WHERE customer_ac.id = ?`,
+      [id]
+    );
+    connection.release();
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Barcode AC tidak ditemukan.' });
+    }
+
+    const ac = rows[0];
+
+    // Filter by region for staff/admin
+    if ((req.user.role === 'admin' || req.user.role === 'karyawan') && req.user.region_id) {
+      if (ac.region_id !== req.user.region_id) {
+        return res.status(403).json({ error: 'AC ini terdaftar di wilayah lain.' });
+      }
+    }
+
+    res.json(ac);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fetch service history for specific AC unit by barcode
+app.get('/api/customer-ac/:id/history', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [rows] = await connection.query(
+      `SELECT order_ac_history.*, orders.scheduledDate, orders.scheduledTime, users.name as workerName
+       FROM order_ac_history
+       JOIN orders ON order_ac_history.orderId = orders.id
+       LEFT JOIN users ON orders.workerId = users.id
+       WHERE order_ac_history.customerAcId = ?
+       ORDER BY order_ac_history.createdAt DESC`,
+      [id]
+    );
+    connection.release();
+    res.json(rows);
+  } catch (error) {
+    if (connection) connection.release();
     res.status(500).json({ error: error.message });
   }
 });

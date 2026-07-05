@@ -25,6 +25,7 @@ import {
   Search,
   Edit,
   UserCog,
+  Clock,
 } from 'lucide-react';
 import { Role, User } from '@/types';
 
@@ -37,8 +38,48 @@ export default function OwnerDashboard() {
 
   const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null);
   const [expandedDashboardRegionId, setExpandedDashboardRegionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions' | 'customer-ac'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Customer AC list states
+  const [customerACs, setCustomerACs] = useState<any[]>([]);
+  const [acSearchQuery, setAcSearchQuery] = useState('');
+  const [showACHistoryModal, setShowACHistoryModal] = useState(false);
+  const [selectedACForHistory, setSelectedACForHistory] = useState<any | null>(null);
+  const [acHistoryLogs, setAcHistoryLogs] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const [inspectedPhoto, setInspectedPhoto] = useState<string | null>(null);
+
+  const loadAllCustomerACs = async () => {
+    try {
+      const data = await api.fetchCustomerACs();
+      setCustomerACs(data);
+    } catch (err) {
+      console.error('Error fetching customer ACs:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'customer-ac') {
+      loadAllCustomerACs();
+    }
+  }, [activeTab]);
+
+  const handleViewACHistory = async (ac: any) => {
+    setSelectedACForHistory(ac);
+    setShowACHistoryModal(true);
+    setLoadingHistory(true);
+    setAcHistoryLogs([]);
+    try {
+      const logs = await api.fetchCustomerACHistory(ac.id);
+      setAcHistoryLogs(logs);
+    } catch (err) {
+      console.error('Error fetching AC history:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const getLocalDateString = (d: Date = new Date()) => {
     const year = d.getFullYear();
@@ -722,6 +763,16 @@ export default function OwnerDashboard() {
               </button>
               <button
                 onClick={() => {
+                  setActiveTab('customer-ac');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'customer-ac' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <Briefcase size={14} className={activeTab === 'customer-ac' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Daftar AC Pelanggan</span>
+              </button>
+              <button
+                onClick={() => {
                   setActiveTab('users');
                   setShowMoreMenu(false);
                 }}
@@ -1113,6 +1164,98 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
                 </div>
               </form>
             )}
+          </div>
+        )}
+
+        {/* ===================== TAB: CUSTOMER AC ===================== */}
+        {activeTab === 'customer-ac' && (
+          <div className="bg-white border rounded-2xl p-4 shadow-xs space-y-4 text-left">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Daftar AC Pelanggan</h3>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Pantau data perangkat AC terdaftar dan scan barcode riwayat pencucian</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border p-3 rounded-xl flex flex-col md:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari barcode ID, nama pelanggan, merek, atau model AC..."
+                  value={acSearchQuery}
+                  onChange={(e) => setAcSearchQuery(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs pl-8 pr-4 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-semibold"
+                />
+              </div>
+            </div>
+
+            <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+              <table className="w-full text-xs text-left min-w-[600px]">
+                <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
+                  <tr>
+                    <th className="p-3">Barcode ID</th>
+                    <th className="p-3">Pelanggan</th>
+                    <th className="p-3">Merek / Model</th>
+                    <th className="p-3">Nama AC / Lokasi</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-[11.5px]">
+                  {customerACs.filter(ac => {
+                    const query = acSearchQuery.toLowerCase();
+                    return (
+                      ac.id?.toLowerCase().includes(query) ||
+                      ac.customerName?.toLowerCase().includes(query) ||
+                      ac.brand?.toLowerCase().includes(query) ||
+                      ac.modelName?.toLowerCase().includes(query) ||
+                      ac.name?.toLowerCase().includes(query)
+                    );
+                  }).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-slate-400 font-bold italic">Tidak ada data AC terdaftar</td>
+                    </tr>
+                  ) : (
+                    customerACs.filter(ac => {
+                      const query = acSearchQuery.toLowerCase();
+                      return (
+                        ac.id?.toLowerCase().includes(query) ||
+                        ac.customerName?.toLowerCase().includes(query) ||
+                        ac.brand?.toLowerCase().includes(query) ||
+                        ac.modelName?.toLowerCase().includes(query) ||
+                        ac.name?.toLowerCase().includes(query)
+                      );
+                    }).map(ac => (
+                      <tr key={ac.id} className="hover:bg-slate-50/50 transition">
+                        <td className="p-3 font-mono font-bold text-slate-900">{ac.id}</td>
+                        <td className="p-3 text-slate-800">
+                          <div className="font-bold">{ac.customerName}</div>
+                          <div className="text-[10px] text-slate-450 font-mono">{ac.customerPhone}</div>
+                        </td>
+                        <td className="p-3">
+                          <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[10px] uppercase">
+                            {ac.brand || 'Umum'}
+                          </span>
+                          <div className="text-[10.5px] text-slate-500 mt-1">{ac.modelName || 'Tipe N/A'}</div>
+                        </td>
+                        <td className="p-3 text-slate-700">
+                          <div className="font-bold">{ac.name || 'AC Tanpa Nama'}</div>
+                          {ac.locationNotes && <div className="text-[9.5px] text-slate-450 italic">📍 {ac.locationNotes}</div>}
+                        </td>
+                        <td className="p-3 text-right">
+                          <button
+                            onClick={() => handleViewACHistory(ac)}
+                            className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                          >
+                            Riwayat
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -1555,6 +1698,128 @@ detail aliran kas, omzet, dan kinerja teknisinya.</p>
           </div>
         </div>
       )}
-    </div>
+
+        {/* AC SERVICE HISTORY LOGS MODAL */}
+        {showACHistoryModal && selectedACForHistory && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white rounded-3xl flex flex-col w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl animate-scale-up text-left">
+              {/* Modal Header */}
+              <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
+                <div>
+                  <span className="text-[8px] bg-indigo-650 px-2 py-0.5 rounded font-black uppercase text-white">Riwayat Servis</span>
+                  <h4 className="text-sm font-extrabold text-white mt-1 truncate">Riwayat AC: {selectedACForHistory.name || 'AC'} ({selectedACForHistory.id})</h4>
+                </div>
+                <button
+                  onClick={() => setShowACHistoryModal(false)}
+                  className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50 text-left">
+                {loadingHistory ? (
+                  <div className="flex flex-col items-center justify-center py-10 space-y-2">
+                    <Loader className="animate-spin text-indigo-600" size={24} />
+                    <span className="text-xs text-slate-500 font-bold">Memuat riwayat servis...</span>
+                  </div>
+                ) : acHistoryLogs.length === 0 ? (
+                  <div className="text-center py-10 space-y-2">
+                    <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+                      <Clock size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700">Belum Ada Riwayat Cuci/Servis</p>
+                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs mx-auto">
+                      Riwayat cuci/servis AC ini belum tersedia.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-5">
+                    {acHistoryLogs.map((log) => (
+                      <div key={log.id} className="relative text-xs">
+                        {/* Dot indicator */}
+                        <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-indigo-600 border border-white"></div>
+                        
+                        <div className="bg-white border border-slate-150 p-3.5 rounded-xl shadow-xs space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <strong className="text-slate-800 text-xs">{log.serviceName}</strong>
+                              <span className="text-[9.5px] text-slate-450 block mt-0.5">
+                                📅 {log.scheduledDate} {log.scheduledTime ? `| Pukul ${log.scheduledTime}` : ''}
+                              </span>
+                            </div>
+                            <span className="text-[9.5px] bg-slate-150 px-2 py-0.5 rounded font-medium text-slate-600">
+                              Oleh: {log.workerName || 'Teknisi'}
+                            </span>
+                          </div>
+
+                          {log.notes && (
+                            <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-slate-650 text-[10.5px] italic">
+                              "{log.notes}"
+                            </div>
+                          )}
+
+                          {/* Photos before/after */}
+                          {(log.photoBefore || log.photoAfter) && (
+                            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100">
+                              <div>
+                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sebelum</span>
+                                {log.photoBefore ? (
+                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                                    <img src={log.photoBefore} alt="Before" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoBefore)} />
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sesudah</span>
+                                {log.photoAfter ? (
+                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                                    <img src={log.photoAfter} alt="After" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoAfter)} />
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
+                <button
+                  onClick={() => setShowACHistoryModal(false)}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider transition cursor-pointer text-center"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PHOTO INSPECTION MODAL */}
+        {inspectedPhoto && (
+          <div 
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out"
+            onClick={() => setInspectedPhoto(null)}
+          >
+            <div className="max-w-full max-h-full flex items-center justify-center">
+              <img src={inspectedPhoto} alt="Zoomed" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-fade-in" />
+            </div>
+            <button 
+              className="absolute top-4 right-4 text-white hover:text-slate-350 p-2"
+              onClick={() => setInspectedPhoto(null)}
+            >
+              <X size={24} />
+            </button>
+          </div>
+        )}
+      </div>
   );
 }
