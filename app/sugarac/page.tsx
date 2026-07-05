@@ -17,7 +17,11 @@ import {
   ArrowRight,
   Shield,
   Loader,
-  X
+  X,
+  AlertTriangle,
+  ThumbsUp,
+  Check,
+  Settings
 } from 'lucide-react';
 
 export default function SugarACCompanyProfile() {
@@ -271,10 +275,65 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
+      {/* ================= WHY CHOOSE SUGAR AC SECTION ================= */}
+      <section id="why-us" className="py-16 bg-gradient-to-b from-blue-50/50 to-white border-b border-slate-150">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-2xl mx-auto space-y-2 mb-12">
+            <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Kepercayaan Anda Prioritas Kami</span>
+            <h2 className="text-3xl font-black text-slate-900">Kenapa Harus Memakai Jasa Sugar AC?</h2>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">
+              Kami berkomitmen memberikan standar layanan cuci & perbaikan AC terbaik dengan berbagai keuntungan yang tidak Anda temukan di tempat lain.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                <Shield size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Garansi Pengerjaan 30 Hari</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Setiap layanan cuci AC dan penggantian suku cadang dilengkapi dengan garansi 30 hari. Jika AC Anda kembali bermasalah, teknisi kami siap datang kembali tanpa biaya tambahan.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                <ThumbsUp size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Harga Jujur & Transparan</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Tarif jasa kami transparan tanpa ada biaya siluman. Teknisi kami akan melakukan diagnosa terlebih dahulu dan memberikan rincian estimasi biaya secara jujur di awal sebelum pengerjaan dimulai.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                <Users size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Teknisi Jujur & Terlatih</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Semua teknisi Sugar AC memiliki seragam resmi, tanda pengenal diri, bersikap ramah, sopan, dan telah melewati tahap penyaringan ketat serta pelatihan khusus tentang kepuasan pelanggan.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                <Settings size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Peralatan Modern & Bersih</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Kami menggunakan pompa jet air bertekanan tinggi khusus, terpal pelindung anti air untuk menjaga dinding & lantai tetap bersih, serta alat ukur kebocoran freon digital berakurasi tinggi.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ================= SERVICES & PACKAGES SECTION ================= */}
-      <section id="services" className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="services" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto space-y-2 mb-10">
-          <h2 className="text-2xl font-black text-slate-900">Rekomendasi Paket Layanan AC</h2>
+          <h2 className="text-3xl font-black text-slate-900">Rekomendasi Paket Layanan AC</h2>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Pilih Jasa Yang Sesuai dengan Kebutuhan Anda</p>
         </div>
 
@@ -307,6 +366,99 @@ export default function SugarACCompanyProfile() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ================= AC ISSUES EDUCATION SECTION ================= */}
+      <section id="education" className="py-16 bg-white border-y border-slate-150">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
+            <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Edukasi Perawatan AC</span>
+            <h2 className="text-3xl font-black text-slate-900">Kenali Masalah Umum Pada AC Anda</h2>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">
+              Pahami gejala awal kerusakan AC Anda agar terhindar dari biaya perbaikan besar di kemudian hari.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150 space-y-3 hover:bg-white hover:shadow-lg transition">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">1. AC Hanya Keluar Angin / Tidak Dingin</h4>
+              <p className="text-[11.5px] text-slate-500 leading-relaxed font-medium">
+                Penyebab utama biasanya adalah filter udara yang terlalu kotor menyumbat hembusan udara, debu tebal pada evaporator, atau adanya kebocoran cairan pendingin (freon).
+              </p>
+              <div className="text-[10px] text-blue-600 font-extrabold uppercase pt-1">
+                👉 Solusi: Cuci AC Rutin & Cek Tekanan Freon
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150 space-y-3 hover:bg-white hover:shadow-lg transition">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">2. AC Bocor Air / Menetes ke Dalam Ruangan</h4>
+              <p className="text-[11.5px] text-slate-500 leading-relaxed font-medium">
+                Tetesan air biasanya disebabkan oleh pipa pembuangan air kondensasi (drainase) yang tersumbat oleh debu, lumut, atau lendir akibat jarang dicuci.
+              </p>
+              <div className="text-[10px] text-blue-600 font-extrabold uppercase pt-1">
+                👉 Solusi: Chemical Cleaning & Tembak Saluran Pipa Pembuangan
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150 space-y-3 hover:bg-white hover:shadow-lg transition">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">3. AC Mengeluarkan Suara Bising / Berisik</h4>
+              <p className="text-[11.5px] text-slate-500 leading-relaxed font-medium">
+                Bisa disebabkan oleh kipas blower indoor/outdoor yang oleng, bracket kompresor yang longgar, bearing kipas fan aus, atau instalasi unit yang kurang stabil.
+              </p>
+              <div className="text-[10px] text-blue-600 font-extrabold uppercase pt-1">
+                👉 Solusi: Kencangkan Baut Bracket & Cek Bearing Fan
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150 space-y-3 hover:bg-white hover:shadow-lg transition">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">4. Keluar Bau Tidak Sedap dari Hembusan AC</h4>
+              <p className="text-[11.5px] text-slate-500 leading-relaxed font-medium">
+                Kelembapan yang tinggi di dalam unit AC yang kotor memicu pertumbuhan jamur dan bakteri di atas evaporator, sehingga udara hembusan berbau apek.
+              </p>
+              <div className="text-[10px] text-blue-600 font-extrabold uppercase pt-1">
+                👉 Solusi: Pembersihan Evaporator Secara Menyeluruh & Spray Antibakteri
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150 space-y-3 hover:bg-white hover:shadow-lg transition">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">5. AC Mati Sendiri Secara Tiba-Tiba</h4>
+              <p className="text-[11.5px] text-slate-500 leading-relaxed font-medium">
+                Sensor suhu (*thermistor*) yang mendeteksi suhu dingin terganggu karena karat/debu, kerusakan modul kelistrikan utama, atau tegangan listrik rumah yang turun-naik.
+              </p>
+              <div className="text-[10px] text-blue-600 font-extrabold uppercase pt-1">
+                👉 Solusi: Cek Tegangan Listrik & Servis Thermistor/Modul
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150 space-y-3 hover:bg-white hover:shadow-lg transition">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">6. Pemborosan Listrik Akibat AC</h4>
+              <p className="text-[11.5px] text-slate-500 leading-relaxed font-medium">
+                Kompresor bekerja 2x lipat lebih keras karena evaporator dan kondensor yang dipenuhi lumpur debu tebal, sehingga AC menarik daya listrik yang sangat tinggi untuk mencapai suhu dingin.
+              </p>
+              <div className="text-[10px] text-blue-600 font-extrabold uppercase pt-1">
+                👉 Solusi: Cuci AC Rutin Setiap 2-3 Bulan Sekali
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
