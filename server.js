@@ -79,17 +79,35 @@ const initializeDatabaseSettings = async () => {
       )
     `);
 
-    await connection.query(`
-      INSERT INTO settings (key_name, value) VALUES 
-      ('business_name', 'CoolAir Pro'),
-      ('business_logo', ''),
-      ('bank_name', ''),
-      ('bank_account_number', ''),
-      ('bank_account_holder', ''),
-      ('qris_image', '')
-      ON DUPLICATE KEY UPDATE key_name=key_name
-    `);
-    console.log('✅ Settings table initialized in database');
+    // Auto-migration: Check if 'id' and 'region_id' columns exist in 'settings' table
+    const [idCols] = await connection.query("SHOW COLUMNS FROM settings LIKE 'id'");
+    if (idCols.length === 0) {
+      // First, drop the primary key constraint on key_name
+      try {
+        await connection.query("ALTER TABLE settings DROP PRIMARY KEY");
+      } catch (e) {
+        // Primary key might not exist
+      }
+      // Then add id as AUTO_INCREMENT PRIMARY KEY, and region_id
+      await connection.query("ALTER TABLE settings ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY FIRST");
+      await connection.query("ALTER TABLE settings ADD COLUMN region_id VARCHAR(50) NULL");
+      console.log("✅ Migrated 'settings' table to use id and region_id");
+    }
+
+    // Only insert default settings if they don't exist
+    const [existingSettings] = await connection.query("SELECT COUNT(*) as count FROM settings WHERE region_id IS NULL AND key_name = 'business_name'");
+    if (existingSettings[0].count === 0) {
+      await connection.query(`
+        INSERT INTO settings (key_name, value, region_id) VALUES 
+        ('business_name', 'CoolAir Pro', NULL),
+        ('business_logo', '', NULL),
+        ('bank_name', '', NULL),
+        ('bank_account_number', '', NULL),
+        ('bank_account_holder', '', NULL),
+        ('qris_image', '', NULL)
+      `);
+      console.log('✅ Default settings initialized in database');
+    }
 
     // Auto-migration: Check if 'photo' column exists in 'users' table, if not add it
     const [columns] = await connection.query("SHOW COLUMNS FROM users LIKE 'photo'");
