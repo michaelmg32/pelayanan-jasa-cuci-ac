@@ -2075,7 +2075,7 @@ export default function PelangganDashboard() {
                       <MapPin size={13} />
                       Pilih dari Peta Pintar
                     </button>
-                    {lat !== undefined && lng !== undefined && (
+                    {lat !== undefined && lat !== null && lng !== undefined && lng !== null && (
                       <p className="text-[10px] text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
                         <CheckCircle2 size={12} /> Titik lokasi tersimpan: {lat.toFixed(5)}, {lng.toFixed(5)}
                       </p>
