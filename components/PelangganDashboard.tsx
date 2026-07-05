@@ -443,6 +443,7 @@ export default function PelangganDashboard() {
         quantity: totalQuantity,
         latitude: lat,
         longitude: lng,
+        region_id: selectedRegionId,
       });
 
       // Refresh orders from API
