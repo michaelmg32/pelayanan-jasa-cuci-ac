@@ -100,11 +100,7 @@ const initializeDatabaseSettings = async () => {
       await connection.query(`
         INSERT INTO settings (key_name, value, region_id) VALUES 
         ('business_name', 'CoolAir Pro', NULL),
-        ('business_logo', '', NULL),
-        ('bank_name', '', NULL),
-        ('bank_account_number', '', NULL),
-        ('bank_account_holder', '', NULL),
-        ('qris_image', '', NULL)
+        ('business_logo', '', NULL)
       `);
       console.log('✅ Default settings initialized in database');
     }
