@@ -19,6 +19,9 @@ const API_BASE_URL = getApiBaseUrl();
 export const getAuthHeaders = () => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
   };
   
   if (typeof document !== 'undefined') {
@@ -71,7 +74,7 @@ export const denormalizeRole = (frontendRole: string): string => {
 // ===== REGIONS =====
 export const fetchRegions = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/regions`);
+    const response = await fetch(`${API_BASE_URL}/regions`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch regions');
     return await response.json();
   } catch (error) {
@@ -83,7 +86,7 @@ export const createRegion = async (regionData: {name: string}) => {
   try {
     const response = await fetch(`${API_BASE_URL}/regions`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(regionData),
     });
     if (!response.ok) throw new Error('Failed to create region');
@@ -94,7 +97,7 @@ export const deleteRegion = async (regionId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/regions/${regionId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to delete region');
     return await response.json();
@@ -106,7 +109,7 @@ export const fetchUsers = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/users?region_id=${region_id}` : `${API_BASE_URL}/users`;
     const response = await fetch(url, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch users');
     const users = await response.json();
@@ -121,7 +124,7 @@ export const createUser = async (userData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(userData),
     });
     if (!response.ok) throw new Error('Failed to create user');
@@ -144,7 +147,7 @@ export const updateUser = async (userId: string, userData: any) => {
     
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(payload),
     });
     
@@ -169,7 +172,7 @@ export const activateUser = async (userId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users/${userId}/activate`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     
     if (!response.ok) {
@@ -188,7 +191,7 @@ export const updatePassword = async (userId: string, passwordData: { oldPassword
   try {
     const response = await fetch(`${API_BASE_URL}/users/${userId}/password`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(passwordData),
     });
     
@@ -209,7 +212,7 @@ export const fetchOrders = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/orders?region_id=${region_id}` : `${API_BASE_URL}/orders`;
     const response = await fetch(url, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch orders');
     return await response.json();
@@ -223,7 +226,7 @@ export const createOrder = async (orderData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(orderData),
     });
     if (!response.ok) {
@@ -241,7 +244,7 @@ export const updateOrder = async (orderId: string, orderData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(orderData),
     });
     if (!response.ok) throw new Error('Failed to update order');
@@ -256,7 +259,7 @@ export const updateOrder = async (orderId: string, orderData: any) => {
 export const fetchModels = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/models?region_id=${region_id}` : `${API_BASE_URL}/models`;
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch models');
     return await response.json();
   } catch (error) {
@@ -269,7 +272,7 @@ export const createModel = async (modelData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/models`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(modelData),
     });
     if (!response.ok) throw new Error('Failed to create model');
@@ -284,7 +287,7 @@ export const updateModel = async (modelId: string, modelData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/models/${modelId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(modelData),
     });
     if (!response.ok) throw new Error('Failed to update model');
@@ -299,7 +302,7 @@ export const deleteModel = async (modelId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/models/${modelId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to delete model');
     return await response.json();
@@ -313,7 +316,7 @@ export const deleteModel = async (modelId: string) => {
 export const fetchCategories = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/categories?region_id=${region_id}` : `${API_BASE_URL}/categories`;
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch categories');
     return await response.json();
   } catch (error) {
@@ -326,7 +329,7 @@ export const createCategory = async (categoryData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/categories`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(categoryData),
     });
     if (!response.ok) throw new Error('Failed to create category');
@@ -341,7 +344,7 @@ export const updateCategory = async (categoryId: string, categoryData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(categoryData),
     });
     if (!response.ok) throw new Error('Failed to update category');
@@ -356,7 +359,7 @@ export const deleteCategory = async (categoryId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to delete category');
     return await response.json();
@@ -370,7 +373,7 @@ export const deleteCategory = async (categoryId: string) => {
 export const fetchServices = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/services?region_id=${region_id}` : `${API_BASE_URL}/services`;
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch services');
     return await response.json();
   } catch (error) {
@@ -383,7 +386,7 @@ export const createService = async (serviceData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/services`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(serviceData),
     });
     if (!response.ok) throw new Error('Failed to create service');
@@ -398,7 +401,7 @@ export const updateService = async (serviceId: string, serviceData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(serviceData),
     });
     if (!response.ok) throw new Error('Failed to update service');
@@ -413,7 +416,7 @@ export const deleteService = async (serviceId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to delete service');
     return await response.json();
@@ -428,7 +431,7 @@ export const fetchServicePrices = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/service-prices?region_id=${region_id}` : `${API_BASE_URL}/service-prices`;
     const response = await fetch(url, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch service prices');
     return await response.json();
@@ -442,7 +445,7 @@ export const updateServicePricesBulk = async (serviceId: string, prices: any[]) 
   try {
     const response = await fetch(`${API_BASE_URL}/service-prices/bulk`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify({ serviceId, prices }),
     });
     if (!response.ok) throw new Error('Failed to update service prices bulk');
@@ -457,7 +460,7 @@ export const updateServicePricesBulk = async (serviceId: string, prices: any[]) 
 export const fetchAddons = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/addons?region_id=${region_id}` : `${API_BASE_URL}/addons`;
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch addons');
     return await response.json();
   } catch (error) {
@@ -470,7 +473,7 @@ export const createAddon = async (addonData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/addons`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(addonData),
     });
     if (!response.ok) throw new Error('Failed to create addon');
@@ -485,7 +488,7 @@ export const updateAddon = async (addonId: string, addonData: any) => {
   try {
     const response = await fetch(`${API_BASE_URL}/addons/${addonId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(addonData),
     });
     if (!response.ok) throw new Error('Failed to update addon');
@@ -500,7 +503,7 @@ export const deleteAddon = async (addonId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/addons/${addonId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to delete addon');
     return await response.json();
@@ -514,7 +517,7 @@ export const purchaseAddon = async (addonId: string, purchaseData: { qty: number
   try {
     const response = await fetch(`${API_BASE_URL}/addons/purchase`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify({ addonId, ...purchaseData }),
     });
     if (!response.ok) {
@@ -532,7 +535,7 @@ export const fetchAddonTransactions = async (addonId?: string) => {
   try {
     const query = addonId ? `?addonId=${addonId}` : '';
     const response = await fetch(`${API_BASE_URL}/addons/transactions${query}`, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch addon transactions');
     return await response.json();
@@ -548,7 +551,7 @@ export const testConnection = async () => {
   try {
     const url = `${API_BASE_URL}/test-connection`;
     console.log('🔗 Connecting to:', url);
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
     console.log('📡 Response status:', response.status);
     if (!response.ok) {
       console.error('❌ Connection failed with status:', response.status);
@@ -566,7 +569,7 @@ export const testConnection = async () => {
 // ===== APP CONFIG / SETTINGS =====
 export const fetchSettings = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/settings`);
+    const response = await fetch(`${API_BASE_URL}/settings`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch settings');
     return await response.json();
   } catch (error) {
@@ -586,7 +589,7 @@ export const updateSettings = async (settingsData: {
   try {
     const response = await fetch(`${API_BASE_URL}/settings`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(settingsData),
     });
     if (!response.ok) throw new Error('Failed to update settings');
@@ -601,7 +604,7 @@ export const updateSettings = async (settingsData: {
 export const fetchActivityLogs = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/activity-logs`, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch activity logs');
     return await response.json();
@@ -616,7 +619,7 @@ export const fetchCustomerACs = async (customerId?: string) => {
   try {
     const query = customerId ? `?customerId=${customerId}` : '';
     const response = await fetch(`${API_BASE_URL}/customer-ac${query}`, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch customer AC units');
     return await response.json();
@@ -637,7 +640,7 @@ export const registerCustomerAC = async (acData: {
   try {
     const response = await fetch(`${API_BASE_URL}/customer-ac`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(acData),
     });
     if (!response.ok) {
@@ -654,7 +657,7 @@ export const registerCustomerAC = async (acData: {
 export const fetchCustomerACHistory = async (barcodeId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/customer-ac/${barcodeId}/history`, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch AC service history');
     return await response.json();
@@ -667,7 +670,7 @@ export const fetchCustomerACHistory = async (barcodeId: string) => {
 export const scanCustomerAC = async (barcodeId: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/customer-ac/scan/${barcodeId}`, {
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), cache: 'no-store',
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
