@@ -499,49 +499,61 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Nama Lengkap</label>
-                <input
-                  type="text"
-                  placeholder="Masukkan Nama Lengkap"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                  required
-                />
+                <div className="relative group">
+                  <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="text"
+                    placeholder="Masukkan Nama Lengkap"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail</label>
-                <input
-                  type="email"
-                  placeholder="Masukkan Email"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                  required
-                />
+                <div className="relative group">
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="email"
+                    placeholder="Masukkan Email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">No. Whatsapp</label>
-                <input
-                  type="tel"
-                  placeholder="Masukkan No. Whatsapp"
-                  value={regPhone}
-                  onChange={(e) => setRegPhone(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                  required
-                />
+                <div className="relative group">
+                  <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="tel"
+                    placeholder="Masukkan No. Whatsapp"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Alamat Lengkap</label>
-                <textarea
-                  placeholder="Masukkan Alamat Lengkap"
-                  value={regAddress}
-                  onChange={(e) => setRegAddress(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200 h-16 resize-none"
-                  required
-                ></textarea>
+                <div className="relative group">
+                  <MapPin size={15} className="absolute left-3.5 top-5 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <textarea
+                    placeholder="Masukkan Alamat Lengkap"
+                    value={regAddress}
+                    onChange={(e) => setRegAddress(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200 h-16 resize-none"
+                    required
+                  ></textarea>
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -582,49 +594,61 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Nama Lengkap</label>
-                <input
-                  type="text"
-                  placeholder="Masukkan Nama Lengkap Karyawan"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                  required
-                />
+                <div className="relative group">
+                  <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="text"
+                    placeholder="Masukkan Nama Lengkap Karyawan"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail</label>
-                <input
-                  type="email"
-                  placeholder="karyawan@company.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                  required
-                />
+                <div className="relative group">
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="email"
+                    placeholder="karyawan@company.com"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">No. WhatsApp</label>
-                <input
-                  type="tel"
-                  placeholder="Masukkan No. Whatsapp Aktif"
-                  value={regPhone}
-                  onChange={(e) => setRegPhone(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                  required
-                />
+                <div className="relative group">
+                  <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="tel"
+                    placeholder="Masukkan No. Whatsapp Aktif"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Alamat Lengkap</label>
-                <textarea
-                  placeholder="Masukkan Alamat Lengkap Sesuai KTP"
-                  value={regAddress}
-                  onChange={(e) => setRegAddress(e.target.value)}
-                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200 h-16 resize-none"
-                  required
-                ></textarea>
+                <div className="relative group">
+                  <MapPin size={15} className="absolute left-3.5 top-5 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <textarea
+                    placeholder="Masukkan Alamat Lengkap Sesuai KTP"
+                    value={regAddress}
+                    onChange={(e) => setRegAddress(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200 h-16 resize-none"
+                    required
+                  ></textarea>
+                </div>
               </div>
 
               {/* Document Uploads */}

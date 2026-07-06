@@ -32,89 +32,17 @@ export default function SugarACCompanyProfile() {
   // Region and branch selection
   const [selectedBranch, setSelectedBranch] = useState('Palembang');
 
-  // Booking Form State
-  const [nama, setNama] = useState(activeUser?.name || '');
-  const [telepon, setTelepon] = useState(activeUser?.phone || '');
-  const [email, setEmail] = useState(activeUser?.email || '');
-  const [layanan, setLayanan] = useState('Cuci AC Rutin');
-  const [jumlah, setJumlah] = useState(1);
-  const [keluhan, setKeluhan] = useState('');
-  const [alamat, setAlamat] = useState(activeUser?.address || '');
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  // Load user data on update
-  useEffect(() => {
-    if (activeUser) {
-      setNama(activeUser.name || '');
-      setTelepon(activeUser.phone || '');
-      setEmail(activeUser.email || '');
-      setAlamat(activeUser.address || '');
-    }
-  }, [activeUser]);
-
   const businessName = appSettings?.business_name || 'Sugar AC';
   const waNumber = '6281284976852'; // Prefilled default WA contact
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const formattedMessage = `Halo ${businessName} ${selectedBranch},\n\nSaya ingin memesan layanan AC:\n- Nama: ${nama}\n- Telepon: ${telepon}\n- Email: ${email}\n- Layanan: ${layanan}\n- Jumlah: ${jumlah} Unit\n- Keluhan: ${keluhan || '-'}\n- Alamat: ${alamat}`;
-    const encodedMessage = encodeURIComponent(formattedMessage);
-    const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
-
-    try {
-      if (activeUser) {
-        // Automatically save order in local DB for registered user
-        await api.createOrder({
-          customerId: activeUser.id,
-          customerName: nama,
-          customerPhone: telepon,
-          acType: 'Split Unit',
-          address: alamat,
-          scheduledDate: new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0], // tomorrow
-          scheduledTime: '09:00',
-          status: 'MENUNGGU',
-          acDetail: [{
-            category: 'Pembersihan AC',
-            serviceType: layanan,
-            quantity: Number(jumlah) || 1,
-            acType: 'Split Unit'
-          }],
-          notes: keluhan || 'Booking via Landing Page',
-          serviceCost: 75000 * (Number(jumlah) || 1),
-          addonsCost: 0,
-          totalCost: 75000 * (Number(jumlah) || 1),
-          totalPrice: 75000 * (Number(jumlah) || 1),
-          finalPrice: 75000 * (Number(jumlah) || 1),
-          quantity: Number(jumlah) || 1,
-        });
-      }
-      setIsSuccess(true);
-      setTimeout(() => {
-        setIsSuccess(false);
-        window.open(waUrl, '_blank');
-      }, 1500);
-    } catch (err) {
-      console.error('Error submitting profile booking:', err);
-      window.open(waUrl, '_blank');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleQuickContact = (type: 'wa' | 'phone' | 'install' | 'trade') => {
+  const handleQuickContact = (type: 'wa' | 'phone' | 'install' | 'trade', service?: string) => {
     if (type === 'wa') {
       window.open(`https://wa.me/${waNumber}?text=Halo%20${encodeURIComponent(businessName)}%2C%20saya%20butuh%20layanan%20AC.`, '_blank');
     } else if (type === 'phone') {
       window.open(`tel:+6281284976852`, '_self');
     } else if (type === 'install') {
-      const element = document.getElementById('booking-form');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+      const text = service ? `Halo ${businessName}, saya ingin memesan layanan ${service}.` : `Halo ${businessName}, saya ingin pesan layanan AC.`;
+      window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`, '_blank');
     } else if (type === 'trade') {
       window.open(`https://wa.me/${waNumber}?text=Halo%20${encodeURIComponent(businessName)}%2C%20saya%2520ingin%2520tanya%2520jual%2520beli%2520AC%2520baru%252Fbekas.`, '_blank');
     }
@@ -137,9 +65,9 @@ export default function SugarACCompanyProfile() {
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
             <a href="#hero" className="hover:text-blue-600 transition">Beranda</a>
-            <a href="#advantages" className="hover:text-blue-600 transition">Keunggulan</a>
-            <a href="#services" className="hover:text-blue-600 transition">Layanan & Harga</a>
-            <a href="#booking-form" className="hover:text-blue-600 transition">Pemesanan</a>
+            <a href="#services" className="hover:text-blue-600 transition">Pelayanan Kami</a>
+            <a href="#education" className="hover:text-blue-600 transition">Edukasi Perawatan</a>
+            <a href="#why-us" className="hover:text-blue-600 transition">Tentang Kami</a>
             
             {/* Custom Branch selector dropdown in Header */}
             <div className="relative group">
@@ -364,8 +292,7 @@ export default function SugarACCompanyProfile() {
                 <span className="text-xs font-black text-blue-700 font-mono">{srv.price}</span>
                 <button
                   onClick={() => {
-                    setLayanan(srv.title);
-                    handleQuickContact('install');
+                    handleQuickContact('install', srv.title);
                   }}
                   className="bg-slate-900 hover:bg-blue-600 text-white font-bold text-[9px] px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
                 >
@@ -500,125 +427,6 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-      {/* ================= BOOKING FORM SECTION ================= */}
-      <section id="booking-form" className="py-12 max-w-2xl mx-auto px-4">
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-5">
-          <div className="text-center space-y-1">
-            <span className="text-[8px] bg-blue-50 border border-blue-150 text-blue-700 font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Booking Online
-            </span>
-            <h3 className="text-lg font-black text-slate-800">Form Pemesanan {businessName}</h3>
-            <p className="text-[10px] text-slate-400 font-semibold">Isi formulir pesanan di bawah ini dengan lengkap & jelas</p>
-          </div>
-
-          {isSuccess && (
-            <div className="bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold p-3 rounded-xl flex items-center gap-2">
-              <CheckCircle size={16} /> Pesanan berhasil dibuat! Mengalihkan Anda ke WhatsApp...
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4 text-left">
-            <div>
-              <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">Nama Lengkap</label>
-              <input
-                type="text"
-                placeholder="Masukkan nama Anda..."
-                value={nama}
-                onChange={e => setNama(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 font-semibold"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">No. WhatsApp / Telepon</label>
-              <input
-                type="tel"
-                placeholder="Contoh: 08123456789..."
-                value={telepon}
-                onChange={e => setTelepon(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 font-semibold"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">Email Anda</label>
-              <input
-                type="email"
-                placeholder="Masukkan email aktif..."
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 font-semibold"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">Pilih Layanan Jasa</label>
-                <select
-                  value={layanan}
-                  onChange={e => setLayanan(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-850 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 font-bold"
-                >
-                  <option value="Cuci AC Rutin">Cuci AC Rutin</option>
-                  <option value="Bongkar Pasang AC">Bongkar Pasang AC</option>
-                  <option value="Isi Ulang Freon R32">Isi Ulang Freon R32</option>
-                  <option value="Perbaikan AC Rusak">Perbaikan AC Rusak</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">Jumlah Unit AC</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={jumlah}
-                  onChange={e => setJumlah(Number(e.target.value) || 1)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-855 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 font-mono font-bold"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">Keluhan / Catatan</label>
-              <input
-                type="text"
-                placeholder="Contoh: AC kurang dingin, air menetes, bising..."
-                value={keluhan}
-                onChange={e => setKeluhan(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">Alamat Lengkap Rumah</label>
-              <textarea
-                placeholder="Tuliskan alamat lengkap lokasi pengerjaan..."
-                value={alamat}
-                onChange={e => setAlamat(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-855 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-blue-500 h-20 resize-none font-semibold"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider shadow-md shadow-blue-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader className="animate-spin" size={14} /> Memproses...
-                </>
-              ) : (
-                'Buat Pesanan & Teruskan ke WA'
-              )}
-            </button>
-          </form>
-        </div>
-      </section>
 
       {/* ================= MOBILE STICKY FOOTER ================= */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-slate-950 text-white border-t border-slate-900 py-2.5 px-4 block md:hidden">
