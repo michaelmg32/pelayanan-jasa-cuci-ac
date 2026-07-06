@@ -39,7 +39,8 @@ interface AppContextType {
     bank_name?: string,
     bank_account_number?: string,
     bank_account_holder?: string,
-    qris_image?: string
+    qris_image?: string,
+    phone_number?: string
   ) => Promise<void>;
   
   // Actions
@@ -256,7 +257,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     bank_name?: string,
     bank_account_number?: string,
     bank_account_holder?: string,
-    qris_image?: string
+    qris_image?: string,
+    phone_number?: string
   ) => {
     try {
       await api.updateSettings({ 
@@ -265,7 +267,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         bank_name,
         bank_account_number,
         bank_account_holder,
-        qris_image
+        qris_image,
+        phone_number
       });
       // Re-fetch to get correct regional mappings
         const settingsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings`);

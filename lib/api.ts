@@ -585,6 +585,7 @@ export const updateSettings = async (settingsData: {
   bank_account_number?: string;
   bank_account_holder?: string;
   qris_image?: string;
+  phone_number?: string;
 }) => {
   try {
     const response = await fetch(`${API_BASE_URL}/settings`, {

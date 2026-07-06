@@ -33,7 +33,13 @@ export default function SugarACCompanyProfile() {
   const router = useRouter();
 
   // Region and branch selection
-  const [selectedBranch, setSelectedBranch] = useState('Palembang');
+  const [selectedBranch, setSelectedBranch] = useState('');
+
+  useEffect(() => {
+    if (regions && regions.length > 0 && !selectedBranch) {
+      setSelectedBranch(regions[0].name);
+    }
+  }, [regions, selectedBranch]);
 
   // Active Service Tab
   const [activeServiceTab, setActiveServiceTab] = useState('Cuci AC');
@@ -42,18 +48,24 @@ export default function SugarACCompanyProfile() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const businessName = appSettings?.['GLOBAL']?.business_name || 'Sugar AC';
-  const waNumber = '6281284976852'; // Prefilled default WA contact
+  
+  const activeRegion = regions?.find(r => r.name === selectedBranch);
+  const activeRegionId = activeRegion?.id;
+  
+  // Get dynamic phone from branch settings, fallback to global, fallback to default
+  const dynamicPhone = appSettings?.[activeRegionId || '']?.phone_number || appSettings?.['GLOBAL']?.phone_number || '6281284976852';
+  const cleanPhone = dynamicPhone.replace(/\D/g, '');
 
   const handleQuickContact = (type: 'wa' | 'phone' | 'install' | 'trade', service?: string) => {
     if (type === 'wa') {
-      window.open(`https://wa.me/${waNumber}?text=Halo%20${encodeURIComponent(businessName)}%2C%20saya%20butuh%20layanan%20AC.`, '_blank');
+      window.open(`https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(businessName)}%2C%20saya%20butuh%20layanan%20AC.`, '_blank');
     } else if (type === 'phone') {
-      window.open(`tel:+6281284976852`, '_self');
+      window.open(`tel:+${cleanPhone}`, '_self');
     } else if (type === 'install') {
       const text = service ? `Halo ${businessName}, saya ingin memesan layanan ${service}.` : `Halo ${businessName}, saya ingin pesan layanan AC.`;
-      window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`, '_blank');
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
     } else if (type === 'trade') {
-      window.open(`https://wa.me/${waNumber}?text=Halo%20${encodeURIComponent(businessName)}%2C%20saya%2520ingin%2520tanya%2520jual%2520beli%2520AC%2520baru%252Fbekas.`, '_blank');
+      window.open(`https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(businessName)}%2C%20saya%2520ingin%2520tanya%2520jual%2520beli%2520AC%2520baru%252Fbekas.`, '_blank');
     }
   };
 
@@ -91,13 +103,13 @@ export default function SugarACCompanyProfile() {
               {/* The pt-2 transparent area bridges the gap so hover isn't lost */}
               <div className="absolute right-0 top-full pt-2 w-48 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition duration-200">
                 <div className="bg-white rounded-xl shadow-xl border border-slate-100 py-1">
-                  {['Palembang', 'Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur'].map((b) => (
+                  {(regions || []).map((r) => (
                     <button
-                      key={b}
-                      onClick={() => setSelectedBranch(b)}
+                      key={r.id}
+                      onClick={() => setSelectedBranch(r.name)}
                       className="w-full px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 text-left text-xs font-bold text-slate-700 block transition"
                     >
-                      Cabang {b}
+                      Cabang {r.name}
                     </button>
                   ))}
                 </div>
@@ -141,13 +153,13 @@ export default function SugarACCompanyProfile() {
               <div className="pt-4 mt-2 border-t border-slate-100">
                 <span className="text-[10px] text-slate-400 mb-3 block uppercase tracking-widest">Pilih Cabang</span>
                 <div className="grid grid-cols-2 gap-2">
-                  {['Palembang', 'Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur'].map((b) => (
+                  {(regions || []).map((r) => (
                     <button
-                      key={b}
-                      onClick={() => { setSelectedBranch(b); setIsMobileMenuOpen(false); }}
-                      className={`text-left px-3 py-2.5 rounded-xl text-xs font-bold transition ${selectedBranch === b ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+                      key={r.id}
+                      onClick={() => { setSelectedBranch(r.name); setIsMobileMenuOpen(false); }}
+                      className={`text-left px-3 py-2.5 rounded-xl text-xs font-bold transition ${selectedBranch === r.name ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
                     >
-                      {b}
+                      {r.name}
                     </button>
                   ))}
                 </div>
