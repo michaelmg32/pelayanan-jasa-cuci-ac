@@ -941,13 +941,8 @@ export default function PelangganDashboard() {
                               </p>
                             </div>
                             <div className="text-right shrink-0">
-                              {Number(order.voucher_discount || 0) > 0 && (
-                                <span className="text-[10px] text-slate-400 line-through font-mono block">
-                                  {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
-                                </span>
-                              )}
                               <span className="text-xs font-black text-indigo-700 font-mono block">
-                                {formatRupiah(order.finalPrice || Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}
+                                {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
                               </span>
                             </div>
                           </div>
@@ -1168,7 +1163,7 @@ export default function PelangganDashboard() {
                               {selectedPayMethod === 'CASH' && (
                                 <div className="bg-white border border-emerald-100 p-3.5 rounded-lg text-[10px] text-slate-700 space-y-2">
                                   <p className="font-bold text-emerald-700">💵 Pembayaran Tunai</p>
-                                  <p className="font-medium">Instruksi: Siapkan uang tunai sebesar <strong className="text-slate-900 font-extrabold">{formatRupiah(order.finalPrice || Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}</strong> untuk teknisi di lokasi dengan rincian berikut:</p>
+                                  <p className="font-medium">Instruksi: Siapkan uang tunai sebesar <strong className="text-slate-900 font-extrabold">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</strong> untuk teknisi di lokasi dengan rincian berikut:</p>
                                   <div className="border-t border-slate-100 pt-2 space-y-1 text-slate-600 text-[10px]">
                                     <div className="flex justify-between">
                                       <span>Biaya Jasa Utama:</span>
@@ -1185,15 +1180,9 @@ export default function PelangganDashboard() {
                                         ))}
                                       </div>
                                     )}
-                                    {Number(order.voucher_discount || 0) > 0 && (
-                                      <div className="flex justify-between text-red-650 font-bold mt-1">
-                                        <span>Diskon Voucher ({order.voucher_code}):</span>
-                                        <span className="font-mono">-{formatRupiah(order.voucher_discount)}</span>
-                                      </div>
-                                    )}
                                     <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 mt-1.5">
                                       <span>Grand Total:</span>
-                                      <span className="font-mono text-emerald-600 text-xs">{formatRupiah(order.finalPrice || Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}</span>
+                                      <span className="font-mono text-emerald-600 text-xs">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -1218,15 +1207,9 @@ export default function PelangganDashboard() {
                                         ))}
                                       </div>
                                     )}
-                                    {Number(order.voucher_discount || 0) > 0 && (
-                                      <div className="flex justify-between text-red-650 font-bold mt-1">
-                                        <span>Diskon Voucher ({order.voucher_code}):</span>
-                                        <span className="font-mono">-{formatRupiah(order.voucher_discount)}</span>
-                                      </div>
-                                    )}
                                     <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 mt-1.5">
                                       <span>Grand Total:</span>
-                                      <span className="font-mono text-indigo-700 text-xs">{formatRupiah(order.finalPrice || Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}</span>
+                                      <span className="font-mono text-indigo-700 text-xs">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</span>
                                     </div>
                                   </div>
 
@@ -1475,13 +1458,8 @@ export default function PelangganDashboard() {
                             <h4 className="font-bold text-xs text-slate-800 mt-1">{order.customerName}</h4>
                           </div>
                           <div className="text-right shrink-0">
-                            {Number(order.voucher_discount || 0) > 0 && (
-                              <span className="text-[10px] text-slate-400 line-through font-mono block">
-                                {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
-                              </span>
-                            )}
                             <span className="text-xs font-black text-emerald-600 font-mono block">
-                              {formatRupiah(order.finalPrice || Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}
+                              {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
                             </span>
                             <span className={`text-[8px] font-black uppercase px-1.5 block mt-0.5 ${order.status === OrderStatus.DIBATALKAN ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                               {order.status === OrderStatus.DIBATALKAN ? 'DIBATALKAN' : 'CLOSED'}
