@@ -161,7 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const interval = setInterval(async () => {
       // Don't poll protected endpoints if no user is logged in
-      if (!activeUserState) return;
+      if (!activeUser) return;
 
       try {
         const [fetchedOrders, fetchedUsers] = await Promise.all([
