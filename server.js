@@ -436,7 +436,7 @@ app.get('/api/settings', async (req, res) => {
 
 // PUT App Settings (Update Settings)
 app.put('/api/settings', verifyToken, async (req, res) => {
-  const { business_name, business_logo, bank_name, bank_account_number, bank_account_holder, qris_image } = req.body;
+  const { business_name, business_logo, bank_name, bank_account_number, bank_account_holder, qris_image, phone_number } = req.body;
   const region_id = req.user.region_id || null;
   let connection;
   try {
@@ -453,6 +453,7 @@ app.put('/api/settings', verifyToken, async (req, res) => {
       if (bank_account_number !== undefined) updates.push({ key: 'bank_account_number', val: bank_account_number });
       if (bank_account_holder !== undefined) updates.push({ key: 'bank_account_holder', val: bank_account_holder });
       if (qris_image !== undefined) updates.push({ key: 'qris_image', val: qris_image });
+      if (phone_number !== undefined) updates.push({ key: 'phone_number', val: phone_number });
     }
 
     for (const u of updates) {
