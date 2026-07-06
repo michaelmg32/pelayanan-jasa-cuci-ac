@@ -22,7 +22,8 @@ import {
   AlertTriangle,
   ThumbsUp,
   Check,
-  Settings
+  Settings,
+  Wind
 } from 'lucide-react';
 
 export default function SugarACCompanyProfile() {
