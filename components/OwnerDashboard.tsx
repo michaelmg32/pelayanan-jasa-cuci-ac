@@ -1411,21 +1411,6 @@ export default function OwnerDashboard() {
                     />
                   </div>
 
-                  {/* Kontak Usaha (Hanya untuk pemilik cabang) */}
-                  {activeUser?.region_id && (
-                    <div className="space-y-1 pt-3 border-t border-slate-100">
-                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nomor WhatsApp / Telepon</label>
-                      <input
-                        type="text"
-                        value={editPhoneNumber}
-                        onChange={(e) => setEditPhoneNumber(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
-                        placeholder="Contoh: 6281234567890"
-                      />
-                      <p className="text-[8px] text-slate-400">Gunakan format 62 (contoh: 62812...) untuk tautan WhatsApp yang valid.</p>
-                    </div>
-                  )}
-
                   {/* Logo Usaha */}
                   <div className="space-y-2">
                     <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
@@ -1469,6 +1454,19 @@ export default function OwnerDashboard() {
                 </>
               ) : (
                 <>
+                  {/* Kontak Usaha */}
+                  <div className="space-y-1 pb-3">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nomor WhatsApp / Telepon</label>
+                    <input
+                      type="text"
+                      value={editPhoneNumber}
+                      onChange={(e) => setEditPhoneNumber(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
+                      placeholder="Contoh: 6281234567890"
+                    />
+                    <p className="text-[8px] text-slate-400">Gunakan format 62 (contoh: 62812...) untuk tautan WhatsApp yang valid.</p>
+                  </div>
+
                   {/* Rekening Bank Manual & QRIS */}
                   <div className="border-t border-slate-100 pt-3 space-y-3">
                     <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
