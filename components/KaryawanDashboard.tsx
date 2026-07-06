@@ -719,13 +719,13 @@ export default function KaryawanDashboard() {
       const firstKey = individualUnits[0]?.key;
       const firstPhoto = acHistoryInputs[firstKey]?.photoBefore || '';
 
-      await api.updateOrder(orderId, {
+      const updatedOrder = await api.updateOrder(orderId, {
         status: OrderStatus.PENGERJAAN,
         photoBefore: firstPhoto
       });
       setOrders(prevOrders =>
         prevOrders.map(o =>
-          o.id === orderId ? { ...o, status: OrderStatus.PENGERJAAN, photoBefore: firstPhoto } : o
+          o.id === orderId ? updatedOrder : o
         )
       );
     } catch (error) {
@@ -775,7 +775,7 @@ export default function KaryawanDashboard() {
       const firstKey = individualUnits[0]?.key;
       const firstPhotoAfter = acHistoryInputs[firstKey]?.photoAfter || '';
 
-      await api.updateOrder(orderId, {
+      const updatedOrder = await api.updateOrder(orderId, {
         status: OrderStatus.PAYMENT,
         photoAfter: firstPhotoAfter,
         addonsCost,
@@ -789,18 +789,7 @@ export default function KaryawanDashboard() {
 
       setOrders(prevOrders =>
         prevOrders.map(o =>
-          o.id === orderId
-            ? {
-              ...o,
-              status: OrderStatus.PAYMENT,
-              photoAfter: firstPhotoAfter,
-              addonsCost,
-              completionNotes: completionNotes.trim() || 'Servis AC selesai.',
-              totalCost,
-              finalPrice,
-              addonsUsed: addonsUsed
-            }
-            : o
+          o.id === orderId ? updatedOrder : o
         )
       );
 
