@@ -23,8 +23,8 @@ import {
   ThumbsUp,
   Check,
   Settings,
-  Wind
-  Instagram,
+  Wind,
+  Instagram
 } from 'lucide-react';
 
 export default function SugarACCompanyProfile() {
