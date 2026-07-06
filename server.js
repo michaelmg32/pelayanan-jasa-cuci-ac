@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -27,6 +29,56 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Ensure upload directories exist inside public/uploads
+const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Serve /uploads statically from public/uploads
+app.use('/uploads', express.static(uploadDir));
+
+function saveBase64Image(base64Str, prefix = 'img') {
+  if (!base64Str || typeof base64Str !== 'string') {
+    return base64Str;
+  }
+
+  // If it's already a path/URL, don't re-upload
+  if (base64Str.startsWith('/') || base64Str.startsWith('http')) {
+    return base64Str;
+  }
+
+  // Check if it is a base64 data url
+  const matches = base64Str.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    return base64Str; // Return as-is if not base64 data url
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  // Determine file extension
+  let extension = 'webp';
+  if (mimeType === 'image/png') {
+    extension = 'png';
+  } else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+    extension = 'jpg';
+  } else if (mimeType === 'image/gif') {
+    extension = 'gif';
+  }
+
+  // Generate unique filename
+  const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${extension}`;
+  const filePath = path.join(uploadDir, filename);
+
+  // Save the binary image file
+  fs.writeFileSync(filePath, buffer);
+
+  // Return the web-accessible relative URL path
+  return `/uploads/${filename}`;
+}
 
 // JWT Verification Middleware
 const verifyToken = (req, res, next) => {
@@ -446,13 +498,19 @@ app.put('/api/settings', verifyToken, async (req, res) => {
     if (!region_id) {
       // Pusat only
       if (business_name !== undefined) updates.push({ key: 'business_name', val: business_name });
-      if (business_logo !== undefined) updates.push({ key: 'business_logo', val: business_logo });
+      if (business_logo !== undefined) {
+        const logoSaved = saveBase64Image(business_logo, 'business_logo');
+        updates.push({ key: 'business_logo', val: logoSaved });
+      }
     } else {
       // Cabang only
       if (bank_name !== undefined) updates.push({ key: 'bank_name', val: bank_name });
       if (bank_account_number !== undefined) updates.push({ key: 'bank_account_number', val: bank_account_number });
       if (bank_account_holder !== undefined) updates.push({ key: 'bank_account_holder', val: bank_account_holder });
-      if (qris_image !== undefined) updates.push({ key: 'qris_image', val: qris_image });
+      if (qris_image !== undefined) {
+        const qrisSaved = saveBase64Image(qris_image, 'qris_image');
+        updates.push({ key: 'qris_image', val: qrisSaved });
+      }
       if (phone_number !== undefined) updates.push({ key: 'phone_number', val: phone_number });
     }
 
@@ -690,6 +748,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Insert new user
     const newId = id || `usr_${Date.now()}`;
+    const ktpPhotoUrl = saveBase64Image(ktpPhoto, `user_${newId}_ktp`);
+    const selfiePhotoUrl = saveBase64Image(selfiePhoto, `user_${newId}_selfie`);
+
     await connection.query(
       'INSERT INTO users (id, name, email, phone, address, role, password, ktpPhoto, selfiePhoto, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
@@ -700,8 +761,8 @@ app.post('/api/auth/register', async (req, res) => {
         address || null,
         registrationRole,
         hashedPassword,
-        ktpPhoto || null,
-        selfiePhoto || null,
+        ktpPhotoUrl || null,
+        selfiePhotoUrl || null,
         status
       ]
     );
@@ -879,8 +940,19 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
       updateValues.push(req.body.lng);
     }
     if (photo !== undefined) {
+      const photoSaved = saveBase64Image(photo, `user_${id}_photo`);
       updateFields.push('photo = ?');
-      updateValues.push(photo);
+      updateValues.push(photoSaved);
+    }
+    if (req.body.ktpPhoto !== undefined) {
+      const ktpSaved = saveBase64Image(req.body.ktpPhoto, `user_${id}_ktp`);
+      updateFields.push('ktpPhoto = ?');
+      updateValues.push(ktpSaved);
+    }
+    if (req.body.selfiePhoto !== undefined) {
+      const selfieSaved = saveBase64Image(req.body.selfiePhoto, `user_${id}_selfie`);
+      updateFields.push('selfiePhoto = ?');
+      updateValues.push(selfieSaved);
     }
     if (region_id !== undefined) {
       updateFields.push('region_id = ?');
@@ -1442,6 +1514,27 @@ app.post('/api/orders', async (req, res) => {
 
   try {
     const connection = await pool.getConnection();
+
+    // Process and save base64 images locally
+    const photoBeforeUrl = saveBase64Image(photoBefore, `order_${id}_before`);
+    const photoAfterUrl = saveBase64Image(photoAfter, `order_${id}_after`);
+    const paymentProofUrl = saveBase64Image(paymentProof, `order_${id}_proof`);
+
+    let parsedAcDetail = acDetail;
+    if (typeof acDetail === 'string') {
+      try {
+        parsedAcDetail = JSON.parse(acDetail);
+      } catch (e) {}
+    }
+    if (Array.isArray(parsedAcDetail)) {
+      parsedAcDetail = parsedAcDetail.map((ac, idx) => {
+        const copyAc = { ...ac };
+        if (copyAc.photoBefore) copyAc.photoBefore = saveBase64Image(copyAc.photoBefore, `order_${id}_ac_${idx}_before`);
+        if (copyAc.photoAfter) copyAc.photoAfter = saveBase64Image(copyAc.photoAfter, `order_${id}_ac_${idx}_after`);
+        return copyAc;
+      });
+    }
+
     await connection.query(
       `INSERT INTO orders (
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
@@ -1454,9 +1547,9 @@ app.post('/api/orders', async (req, res) => {
       [
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
         status, schedule, scheduledDate, scheduledTime,
-        JSON.stringify(serviceIds), JSON.stringify(addonIds), JSON.stringify(acDetail), notes,
+        JSON.stringify(serviceIds), JSON.stringify(addonIds), JSON.stringify(parsedAcDetail), notes,
         serviceCost || 0, addonsCost || 0, totalPrice, totalCost,
-        photoBefore, photoAfter, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof || null, region_id || null
+        photoBeforeUrl, photoAfterUrl, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProofUrl || null, region_id || null
       ]
     );
     await syncOrderAddonTransactions(connection, id);
@@ -1483,21 +1576,21 @@ app.post('/api/orders', async (req, res) => {
       scheduledTime,
       serviceIds,
       addonIds,
-      acDetail,
+      acDetail: parsedAcDetail,
       notes,
       serviceCost,
       addonsCost,
       totalPrice,
       totalCost,
-      photoBefore,
-      photoAfter,
+      photoBefore: photoBeforeUrl,
+      photoAfter: photoAfterUrl,
       paymentMethod,
       paymentStatus,
       rating,
       ratingNotes,
       latitude,
       longitude,
-      paymentProof,
+      paymentProof: paymentProofUrl,
       createdAt: new Date().toISOString()
     });
   } catch (error) {
@@ -1516,6 +1609,32 @@ app.put('/api/orders/:id', async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
+
+    // Process base64 photo variables
+    let photoBeforeUrl = photoBefore;
+    let photoAfterUrl = photoAfter;
+    let paymentProofUrl = paymentProof;
+    let parsedAcDetail = acDetail;
+
+    if (photoBefore !== undefined) photoBeforeUrl = saveBase64Image(photoBefore, `order_${id}_before`);
+    if (photoAfter !== undefined) photoAfterUrl = saveBase64Image(photoAfter, `order_${id}_after`);
+    if (paymentProof !== undefined) paymentProofUrl = saveBase64Image(paymentProof, `order_${id}_proof`);
+
+    if (acDetail !== undefined) {
+      if (typeof acDetail === 'string') {
+        try {
+          parsedAcDetail = JSON.parse(acDetail);
+        } catch (e) {}
+      }
+      if (Array.isArray(parsedAcDetail)) {
+        parsedAcDetail = parsedAcDetail.map((ac, idx) => {
+          const copyAc = { ...ac };
+          if (copyAc.photoBefore) copyAc.photoBefore = saveBase64Image(copyAc.photoBefore, `order_${id}_ac_${idx}_before`);
+          if (copyAc.photoAfter) copyAc.photoAfter = saveBase64Image(copyAc.photoAfter, `order_${id}_ac_${idx}_after`);
+          return copyAc;
+        });
+      }
+    }
 
     // Get existing order status before update to detect transitions
     const [existingOrders] = await connection.query('SELECT status, rescheduleStatus FROM orders WHERE id = ?', [id]);
@@ -1680,13 +1799,13 @@ app.put('/api/orders/:id', async (req, res) => {
     if (assignedEmployeeName !== undefined) { updateFields.push('assignedEmployeeName = ?'); updateValues.push(assignedEmployeeName); }
     if (notes !== undefined) { updateFields.push('notes = ?'); updateValues.push(notes); }
     if (totalPrice !== undefined) { updateFields.push('totalPrice = ?'); updateValues.push(totalPrice); }
-    if (photoBefore !== undefined) { updateFields.push('photoBefore = ?'); updateValues.push(photoBefore); }
-    if (photoAfter !== undefined) { updateFields.push('photoAfter = ?'); updateValues.push(photoAfter); }
+    if (photoBefore !== undefined) { updateFields.push('photoBefore = ?'); updateValues.push(photoBeforeUrl); }
+    if (photoAfter !== undefined) { updateFields.push('photoAfter = ?'); updateValues.push(photoAfterUrl); }
     if (paymentMethod !== undefined) { updateFields.push('paymentMethod = ?'); updateValues.push(paymentMethod); }
     if (paymentStatus !== undefined) { updateFields.push('paymentStatus = ?'); updateValues.push(paymentStatus); }
     if (rating !== undefined) { updateFields.push('rating = ?'); updateValues.push(rating); }
     if (ratingNotes !== undefined) { updateFields.push('ratingNotes = ?'); updateValues.push(ratingNotes); }
-    if (acDetail !== undefined) { updateFields.push('acDetail = ?'); updateValues.push(JSON.stringify(acDetail)); }
+    if (acDetail !== undefined) { updateFields.push('acDetail = ?'); updateValues.push(JSON.stringify(parsedAcDetail)); }
     if (serviceCost !== undefined) { updateFields.push('serviceCost = ?'); updateValues.push(serviceCost); }
     if (addonsCost !== undefined) { updateFields.push('addonsCost = ?'); updateValues.push(addonsCost); }
     if (totalCost !== undefined) { updateFields.push('totalCost = ?'); updateValues.push(totalCost); }
@@ -1699,7 +1818,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (cancelReason !== undefined) { updateFields.push('cancelReason = ?'); updateValues.push(cancelReason); }
     if (workerCancelReason !== undefined) { updateFields.push('workerCancelReason = ?'); updateValues.push(workerCancelReason); }
     if (invoiceSent !== undefined) { updateFields.push('invoiceSent = ?'); updateValues.push(invoiceSent ? 1 : 0); }
-    if (paymentProof !== undefined) { updateFields.push('paymentProof = ?'); updateValues.push(paymentProof); }
+    if (paymentProof !== undefined) { updateFields.push('paymentProof = ?'); updateValues.push(paymentProofUrl); }
 
     if (finalPaymentUrl !== undefined) { updateFields.push('paymentUrl = ?'); updateValues.push(finalPaymentUrl); }
     if (finalPaymentInvoiceId !== undefined) { updateFields.push('paymentInvoiceId = ?'); updateValues.push(finalPaymentInvoiceId); }
@@ -1723,9 +1842,11 @@ app.put('/api/orders/:id', async (req, res) => {
       await connection.query('DELETE FROM order_ac_history WHERE orderId = ?', [id]);
       for (const hist of req.body.acHistoryList) {
         if (hist.customerAcId && hist.serviceName) {
+          const histBefore = saveBase64Image(hist.photoBefore, `ac_${hist.customerAcId}_before`);
+          const histAfter = saveBase64Image(hist.photoAfter, `ac_${hist.customerAcId}_after`);
           await connection.query(
             'INSERT INTO order_ac_history (orderId, customerAcId, serviceName, photoBefore, photoAfter, notes) VALUES (?, ?, ?, ?, ?, ?)',
-            [id, hist.customerAcId, hist.serviceName, hist.photoBefore || null, hist.photoAfter || null, hist.notes || null]
+            [id, hist.customerAcId, hist.serviceName, histBefore || null, histAfter || null, hist.notes || null]
           );
         }
       }

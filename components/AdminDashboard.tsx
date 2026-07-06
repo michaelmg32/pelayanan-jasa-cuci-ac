@@ -263,7 +263,7 @@ export default function AdminDashboard() {
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          const compressedBase64 = canvas.toDataURL('image/webp', quality);
           resolve(compressedBase64);
         };
         img.onerror = (err) => reject(err);
