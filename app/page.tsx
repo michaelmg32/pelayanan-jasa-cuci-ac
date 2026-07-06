@@ -102,7 +102,7 @@ export default function SugarACCompanyProfile() {
                 router.push('/login');
               }
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11.5px] px-4.5 py-2.5 rounded-xl uppercase tracking-wider shadow-md shadow-blue-600/15 cursor-pointer transition hidden sm:block"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-6 py-2.5 rounded-full uppercase tracking-widest shadow-md shadow-blue-600/20 transition hidden sm:block"
           >
             {activeUser ? 'Dashboard' : 'Login'}
           </button>
@@ -110,49 +110,42 @@ export default function SugarACCompanyProfile() {
       </header>
 
       {/* ================= HERO SECTION ================= */}
-      <section id="hero" className="py-12 md:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          <div className="text-left space-y-6">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-              <Compass size={12} /> Cabang Resmi {selectedBranch}
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight">
-              Layanan Service AC <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-650">{selectedBranch}</span> & Sekitarnya
+      <section id="hero" className="relative min-h-[600px] md:min-h-[700px] flex items-center overflow-hidden bg-slate-100">
+        {/* Background Image with Gradient Mask */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/hero_technicians.png" 
+            alt="Sugar AC Technicians Team" 
+            className="w-full h-full object-cover object-right lg:object-center"
+          />
+          {/* Gradient overlay to ensure text readability on the left */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-transparent hidden md:block"></div>
+          {/* Solid/Semi-solid overlay for mobile where text covers the whole image */}
+          <div className="absolute inset-0 bg-white/85 md:hidden"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20 mt-8">
+          <div className="max-w-3xl space-y-7">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 leading-[1.1] uppercase tracking-tight">
+              Layanan Service AC <br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-650">{selectedBranch}</span>
             </h1>
-            <p className="text-sm md:text-base text-slate-550 leading-relaxed max-w-xl font-medium">
+            <p className="text-sm md:text-base text-slate-700 leading-relaxed font-semibold max-w-xl">
               Sugar AC adalah mitra terpercaya untuk segala kebutuhan layanan AC Anda. Tim teknisi ahli kami siap memberikan solusi perbaikan AC bocor, tidak dingin, cuci AC berkala, hingga bongkar pasang AC dengan garansi resmi.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-4 pt-5">
               <button
                 onClick={() => handleQuickContact('wa')}
-                className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3.5 px-6 rounded-2xl uppercase tracking-wider shadow-lg shadow-emerald-600/20 cursor-pointer flex items-center justify-center gap-2 transition"
+                className="bg-slate-900 hover:bg-blue-600 text-white font-black text-xs py-4 px-10 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto shadow-xl"
               >
-                <MessageCircle size={16} /> WhatsApp Kami
+                Pesan Sekarang
               </button>
               <button
                 onClick={() => handleQuickContact('phone')}
-                className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3.5 px-6 rounded-2xl uppercase tracking-wider shadow-lg shadow-slate-900/10 cursor-pointer flex items-center justify-center gap-2 transition"
+                className="bg-blue-600 hover:bg-slate-900 text-white font-black text-xs py-4 px-10 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto shadow-xl"
               >
-                <Phone size={16} /> Telepon Langsung
+                Hubungi Kami
               </button>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/10 to-indigo-650/15 rounded-3xl -rotate-2 scale-102"></div>
-            <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100">
-              <img 
-                src="/hero_technicians.png" 
-                alt="Sugar AC Technicians Team" 
-                className="w-full object-cover aspect-video sm:aspect-4/3 lg:aspect-video"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/80 to-transparent p-4 text-white text-left flex justify-between items-center">
-                <div>
-                  <h4 className="font-extrabold text-xs">Tim Teknisi Profesional</h4>
-                  <p className="text-[10px] text-slate-300">Siap berkunjung ke rumah & kantor Anda</p>
-                </div>
-                <span className="text-[10px] bg-blue-600 px-2 py-0.5 rounded font-black uppercase tracking-wider">Bersertifikat</span>
-              </div>
             </div>
           </div>
         </div>
