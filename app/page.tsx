@@ -57,7 +57,7 @@ export default function SugarACCompanyProfile() {
     <div className="bg-slate-50 min-h-screen font-sans text-slate-800 pb-20 md:pb-0 relative overflow-x-hidden">
       {/* ================= HEADER NAVBAR ================= */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 h-16 flex items-center justify-between">
+        <div className="w-full px-6 lg:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25 overflow-hidden">
               {appSettings?.['GLOBAL']?.business_logo ? (
