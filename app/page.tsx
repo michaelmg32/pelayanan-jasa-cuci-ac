@@ -234,7 +234,7 @@ export default function SugarACCompanyProfile() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveServiceTab(tab.id)}
-                  className={`flex items-center gap-3 w-full text-left px-5 py-4 rounded-2xl transition duration-200 snap-center shrink-0 lg:shrink whitespace-nowrap lg:whitespace-normal font-extrabold text-sm border ${activeServiceTab === tab.id ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
+                  className={`flex items-center justify-center lg:justify-start gap-2 lg:gap-3 w-auto lg:w-full text-left px-5 lg:px-5 py-3.5 lg:py-4 rounded-xl lg:rounded-2xl transition duration-200 snap-center shrink-0 whitespace-nowrap lg:whitespace-normal font-extrabold text-[13px] lg:text-sm border ${activeServiceTab === tab.id ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
                 >
                   <span className={activeServiceTab === tab.id ? 'text-white' : 'text-blue-500'}>{tab.icon}</span>
                   {tab.title}
