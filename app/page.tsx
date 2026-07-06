@@ -32,6 +32,9 @@ export default function SugarACCompanyProfile() {
   // Region and branch selection
   const [selectedBranch, setSelectedBranch] = useState('Palembang');
 
+  // Active Service Tab
+  const [activeServiceTab, setActiveServiceTab] = useState('Cuci AC');
+
   const businessName = appSettings?.business_name || 'Sugar AC';
   const waNumber = '6281284976852'; // Prefilled default WA contact
 
@@ -267,40 +270,149 @@ export default function SugarACCompanyProfile() {
       </section>
 
       {/* ================= SERVICES & PACKAGES SECTION ================= */}
-      <section id="services" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-xl mx-auto space-y-2 mb-10">
-          <h2 className="text-3xl font-black text-slate-900">Rekomendasi Paket Layanan AC</h2>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Pilih Jasa Yang Sesuai dengan Kebutuhan Anda</p>
-        </div>
+      <section id="services" className="py-16 bg-slate-50 border-y border-slate-150">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2 mb-10">
+            <h2 className="text-3xl font-black text-slate-900">Layanan & Jasa Sugar AC</h2>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Solusi Terpadu Untuk Segala Kebutuhan AC Anda</p>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { title: 'Cuci AC Rutin', desc: 'Pembersihan evaporator, filter, blower, & outdoor unit agar AC bersih & dingin maksimal.', price: 'Rp 75.000', label: 'Terpopuler' },
-            { title: 'Bongkar Pasang AC', desc: 'Pemindahan lokasi unit AC lama atau pemasangan AC baru secara aman tanpa kebocoran.', price: 'Rp 250.000', label: 'Bestseller' },
-            { title: 'Isi Ulang Freon R32', desc: 'Pengisian ulang tekanan cairan pendingin agar sistem bekerja optimal & hembusan udara beku.', price: 'Rp 150.000', label: 'Rekomendasi' },
-            { title: 'Perbaikan AC Rusak', desc: 'Deteksi & servis kerusakan AC mati total, kompresor bising, sensor error, dll.', price: 'Hubungi Admin', label: 'Terpercaya' },
-          ].map((srv, idx) => (
-            <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs text-left flex flex-col justify-between hover:border-blue-500 hover:shadow-md transition">
-              <div>
-                <span className="text-[8px] bg-blue-50 border border-blue-150 text-blue-700 font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                  {srv.label}
-                </span>
-                <h4 className="font-extrabold text-sm text-slate-800 mt-2.5">{srv.title}</h4>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{srv.desc}</p>
-              </div>
-              <div className="mt-5 pt-3 border-t border-slate-100 flex justify-between items-center">
-                <span className="text-xs font-black text-blue-700 font-mono">{srv.price}</span>
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Sidebar Tabs */}
+            <div className="w-full lg:w-1/3 flex lg:flex-col gap-2 overflow-x-auto pb-4 lg:pb-0 hide-scrollbar snap-x">
+              {[
+                { id: 'Cuci AC', title: 'Cuci AC Rutin', icon: <Wind size={18} /> },
+                { id: 'Perbaikan AC', title: 'Perbaikan AC', icon: <Settings size={18} /> },
+                { id: 'Bongkar Pasang', title: 'Bongkar Pasang AC', icon: <Wrench size={18} /> },
+                { id: 'Service Bocor', title: 'Service AC Bocor', icon: <Shield size={18} /> },
+                { id: 'Freon', title: 'Isi & Tambah Freon', icon: <AlertTriangle size={18} /> }
+              ].map((tab) => (
                 <button
-                  onClick={() => {
-                    handleQuickContact('install', srv.title);
-                  }}
-                  className="bg-slate-900 hover:bg-blue-600 text-white font-bold text-[9px] px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
+                  key={tab.id}
+                  onClick={() => setActiveServiceTab(tab.id)}
+                  className={`flex items-center gap-3 w-full text-left px-5 py-4 rounded-2xl transition duration-200 snap-center shrink-0 lg:shrink whitespace-nowrap lg:whitespace-normal font-extrabold text-sm border ${activeServiceTab === tab.id ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'}`}
                 >
-                  Pilih
+                  <span className={activeServiceTab === tab.id ? 'text-white' : 'text-blue-500'}>{tab.icon}</span>
+                  {tab.title}
                 </button>
+              ))}
+            </div>
+
+            {/* Content Area */}
+            <div className="w-full lg:w-2/3">
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+                {activeServiceTab === 'Cuci AC' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900">Cuci AC Secara Rutin</h3>
+                      <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2">
+                        Cuci AC adalah salah satu upaya penting untuk membuat AC lebih dingin dan awet. Pembersihan AC ini bertujuan untuk menghilangkan kotoran, kerak lendir, dan debu yang dapat mengganggu kinerja AC Anda. Dengan melakukan Cuci AC secara rutin, Anda dapat menikmati kualitas udara yang lebih baik dan memastikan AC Anda tetap berfungsi optimal.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Ringkasan Pekerjaan:</h4>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-[11.5px] text-slate-600 font-medium">
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Membersihkan Indoor & Outdoor AC untuk performa maksimal.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mencuci Evaporator & Condenser untuk efisiensi pendinginan.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Menembak saluran pembuangan air AC agar tidak tersumbat.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mencuci Filter Udara dan Body AC dari debu yang menempel.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {activeServiceTab === 'Perbaikan AC' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900">Layanan Perbaikan AC</h3>
+                      <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2">
+                        Dengan layanan perbaikan AC kami, Anda dapat dengan mudah mengatasi berbagai masalah AC Anda. Teknisi kami yang berpengalaman siap membantu memastikan AC Anda berfungsi optimal dengan jaminan perbaikan tanpa biaya tersembunyi.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Ringkasan Pekerjaan:</h4>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-[11.5px] text-slate-600 font-medium">
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Memperbaiki AC tidak dingin, bocor air, atau bersuara bising.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Perbaikan masalah pada motor fan indoor maupun outdoor.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mengganti komponen rusak seperti kapasitor dan kompresor.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Perbaikan kelistrikan, modul Inverter / Non-Inverter, & PCB.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {activeServiceTab === 'Bongkar Pasang' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900">Bongkar Pasang / Instalasi AC</h3>
+                      <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2">
+                        Dapatkan layanan profesional dan handal untuk memastikan AC Anda terpasang dengan sempurna dan dibongkar dengan hati-hati. Tim berpengalaman kami siap memberikan kenyamanan dan kualitas udara optimal di rumah atau kantor Anda.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Proses Pengerjaan:</h4>
+                      <ul className="space-y-3 text-[11.5px] text-slate-600 font-medium">
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">1.</span> <strong>Penilaian Lokasi:</strong> Menentukan lokasi terbaik untuk sirkulasi udara dan estetika ruangan.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">2.</span> <strong>Pemilihan Unit:</strong> Membantu rekomendasi efisiensi energi jika memasang unit baru.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">3.</span> <strong>Pemasangan Profesional:</strong> Pemasangan pipa dan kabel yang presisi dan sangat rapi.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">4.</span> <strong>Uji Coba:</strong> Verifikasi kinerja setelah pemasangan dan pengenalan cara merawat AC.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {activeServiceTab === 'Service Bocor' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900">Service AC Bocor / Menetes</h3>
+                      <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2">
+                        Teknisi profesional kami akan segera mendiagnosa dan memperbaiki masalah tetesan air AC di ruangan Anda secara teliti. Kami mengutamakan kepuasan dan hasil pengerjaan yang bersih, tuntas, serta bebas masalah di kemudian hari.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Tahapan Penanganan:</h4>
+                      <ul className="space-y-3 text-[11.5px] text-slate-600 font-medium">
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">1.</span> <strong>Diagnosa Mendalam:</strong> Pemeriksaan menyeluruh menemukan titik utama kebocoran (pipa / pembuangan).</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">2.</span> <strong>Penanganan Penyumbatan:</strong> Pembersihan lendir/kotoran penyebab air menetes dari talang air.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">3.</span> <strong>Penggantian Komponen:</strong> Mengganti isolasi atau pipa pembuangan yang rusak atau bocor.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">4.</span> <strong>Pengecekan Freon:</strong> Memeriksa apakah kebocoran air disertai masalah kebocoran gas pendingin.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {activeServiceTab === 'Freon' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900">Pengisian & Tambah Freon AC</h3>
+                      <p className="text-[12px] text-slate-500 font-medium leading-relaxed mt-2">
+                        Freon adalah gas pendingin penting dalam proses kerja AC. Kehabisan freon adalah penyebab utama AC tidak dingin. Layanan kami mencakup pengisian tekanan yang tepat sekaligus memastikan tidak ada kebocoran di jalur sistem pendingin.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Ringkasan Pekerjaan:</h4>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-[11.5px] text-slate-600 font-medium">
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Cek Tekanan Freon menggunakan manifold gauge.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mendeteksi titik kebocoran pada instalasi pipa AC.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mengisi atau Menambah takaran Freon sesuai kapasitas.</li>
+                        <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mengencangkan nepel baut untuk mencegah freon terbuang lagi.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Siap Membantu Anda</div>
+                  <button
+                    onClick={() => handleQuickContact('wa')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-6 py-3 rounded-xl uppercase tracking-wider transition shadow-lg shadow-blue-500/20"
+                  >
+                    Pesan Layanan
+                  </button>
+                </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
