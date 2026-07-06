@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/auth-context';
 import * as api from '@/lib/api';
-import { 
-  Phone, 
-  MessageCircle, 
-  Wrench, 
-  CheckCircle, 
-  MapPin, 
-  HelpCircle, 
-  Info, 
+import {
+  Phone,
+  MessageCircle,
+  Wrench,
+  CheckCircle,
+  MapPin,
+  HelpCircle,
+  Info,
   Star,
   Users,
   Compass,
@@ -77,7 +77,7 @@ export default function SugarACCompanyProfile() {
             <a href="#services" className="hover:text-blue-600 transition">Pelayanan Kami</a>
             <a href="#education" className="hover:text-blue-600 transition">Edukasi Perawatan</a>
             <a href="#why-us" className="hover:text-blue-600 transition">Tentang Kami</a>
-            
+
             {/* Custom Branch selector dropdown in Header */}
             <div className="relative group">
               <button className="flex items-center gap-1 hover:text-blue-600 transition">
@@ -117,9 +117,9 @@ export default function SugarACCompanyProfile() {
       <section id="hero" className="relative min-h-[600px] md:min-h-[650px] flex items-center overflow-hidden bg-slate-50">
         {/* Background Image (Right half on Desktop, Full on Mobile) */}
         <div className="absolute inset-y-0 right-0 w-full md:w-[60%] lg:w-[65%] z-0">
-          <img 
-            src="/hero_technicians.png" 
-            alt="Sugar AC Technicians Team" 
+          <img
+            src="/hero_technicians.png"
+            alt="Sugar AC Technicians Team"
             className="w-full h-full object-cover object-center"
           />
           {/* Seamless, extra-wide gradient blend to the left solid background */}
@@ -131,8 +131,8 @@ export default function SugarACCompanyProfile() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20 mt-8">
           <div className="max-w-xl lg:max-w-2xl space-y-7">
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 leading-[1.15] tracking-tight">
-              Layanan Service AC Terbaik <br className="hidden md:block" />
-              di <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-black">{selectedBranch}</span> & Sekitarnya
+              Layanan Service AC <br className="hidden md:block" />
+              di <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-black">{selectedBranch}</span>
             </h1>
             <p className="text-[15px] md:text-base text-slate-600 leading-relaxed font-medium">
               Sugar AC adalah mitra terpercaya untuk segala kebutuhan layanan AC Anda. Tim teknisi ahli kami siap memberikan solusi perbaikan AC bocor, tidak dingin, cuci AC berkala, hingga bongkar pasang AC dengan garansi resmi.
@@ -196,7 +196,7 @@ export default function SugarACCompanyProfile() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Ringkasan Pekerjaan:</h4>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600" /> Ringkasan Pekerjaan:</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-[11.5px] text-slate-600 font-medium">
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Membersihkan Indoor & Outdoor AC untuk performa maksimal.</li>
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mencuci Evaporator & Condenser untuk efisiensi pendinginan.</li>
@@ -216,7 +216,7 @@ export default function SugarACCompanyProfile() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Ringkasan Pekerjaan:</h4>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600" /> Ringkasan Pekerjaan:</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-[11.5px] text-slate-600 font-medium">
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Memperbaiki AC tidak dingin, bocor air, atau bersuara bising.</li>
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Perbaikan masalah pada motor fan indoor maupun outdoor.</li>
@@ -236,7 +236,7 @@ export default function SugarACCompanyProfile() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Proses Pengerjaan:</h4>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600" /> Proses Pengerjaan:</h4>
                       <ul className="space-y-3 text-[11.5px] text-slate-600 font-medium">
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">1.</span> <strong>Penilaian Lokasi:</strong> Menentukan lokasi terbaik untuk sirkulasi udara dan estetika ruangan.</li>
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">2.</span> <strong>Pemilihan Unit:</strong> Membantu rekomendasi efisiensi energi jika memasang unit baru.</li>
@@ -256,7 +256,7 @@ export default function SugarACCompanyProfile() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Tahapan Penanganan:</h4>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600" /> Tahapan Penanganan:</h4>
                       <ul className="space-y-3 text-[11.5px] text-slate-600 font-medium">
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">1.</span> <strong>Diagnosa Mendalam:</strong> Pemeriksaan menyeluruh menemukan titik utama kebocoran (pipa / pembuangan).</li>
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">2.</span> <strong>Penanganan Penyumbatan:</strong> Pembersihan lendir/kotoran penyebab air menetes dari talang air.</li>
@@ -276,7 +276,7 @@ export default function SugarACCompanyProfile() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600"/> Ringkasan Pekerjaan:</h4>
+                      <h4 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-blue-600" /> Ringkasan Pekerjaan:</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-[11.5px] text-slate-600 font-medium">
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Cek Tekanan Freon menggunakan manifold gauge.</li>
                         <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Mendeteksi titik kebocoran pada instalasi pipa AC.</li>
@@ -302,7 +302,7 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-{/* ================= AC ISSUES EDUCATION SECTION ================= */}
+      {/* ================= AC ISSUES EDUCATION SECTION ================= */}
       <section id="education" className="py-16 bg-white border-y border-slate-150">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
@@ -395,7 +395,7 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-{/* ================= ADVANTAGES SECTION ================= */}
+      {/* ================= ADVANTAGES SECTION ================= */}
       <section id="advantages" className="py-12 bg-white border-y border-slate-150">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-xl mx-auto space-y-2 mb-10">
@@ -443,9 +443,9 @@ export default function SugarACCompanyProfile() {
             </div>
 
             <div className="bg-slate-100 rounded-3xl overflow-hidden border border-slate-200/60 shadow-lg">
-              <img 
-                src="/advantages_ac.png" 
-                alt="Washing AC Unit" 
+              <img
+                src="/advantages_ac.png"
+                alt="Washing AC Unit"
                 className="w-full aspect-video object-cover"
               />
             </div>
@@ -453,7 +453,7 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-{/* ================= WHY CHOOSE SUGAR AC SECTION ================= */}
+      {/* ================= WHY CHOOSE SUGAR AC SECTION ================= */}
       <section id="why-us" className="py-16 bg-gradient-to-b from-blue-50/50 to-white border-b border-slate-150">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-2xl mx-auto space-y-2 mb-12">
@@ -524,7 +524,7 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-{/* ================= MOBILE STICKY FOOTER ================= */}
+      {/* ================= MOBILE STICKY FOOTER ================= */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-slate-950 text-white border-t border-slate-900 py-2.5 px-4 block md:hidden">
         <div className="grid grid-cols-4 gap-2 text-center text-[9px] font-bold">
           <button
@@ -534,7 +534,7 @@ export default function SugarACCompanyProfile() {
             <Phone size={16} className="text-blue-450" />
             <span>Telepon</span>
           </button>
-          
+
           <button
             onClick={() => handleQuickContact('install')}
             className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition"
