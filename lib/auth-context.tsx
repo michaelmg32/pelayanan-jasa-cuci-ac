@@ -105,11 +105,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setDbConnected(false);
         }
 
+        // Check for session before protected fetching
+        const savedUserId = typeof window !== 'undefined' ? localStorage.getItem('active_user_id') : null;
+
         // Fetch all data
-        const [fetchedRegions, fetchedUsers, fetchedOrders, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings, fetchedServicePrices] = await Promise.all([
+        const [fetchedRegions, fetchedModels, fetchedServices, fetchedCategories, fetchedAddons, fetchedSettings, fetchedServicePrices] = await Promise.all([
           api.fetchRegions ? api.fetchRegions() : Promise.resolve([]),
-          api.fetchUsers(),
-          api.fetchOrders(),
           api.fetchModels(),
           api.fetchServices(),
           api.fetchCategories(),
@@ -119,8 +120,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ]);
 
         if (setRegions) setRegions(fetchedRegions);
-        setUsers(fetchedUsers);
-        setOrders(fetchedOrders);
         setModels(fetchedModels);
         setServices(fetchedServices);
         setServicePrices(fetchedServicePrices);
@@ -128,14 +127,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAddons(fetchedAddons);
         if (fetchedSettings) { setAppSettings(fetchedSettings); }
 
-        // Restore active user session from localStorage
-        if (typeof window !== 'undefined') {
-          const savedUserId = localStorage.getItem('active_user_id');
-          if (savedUserId) {
+        // Fetch protected users & orders only if session exists
+        if (savedUserId) {
+          try {
+            const [fetchedUsers, fetchedOrders] = await Promise.all([
+              api.fetchUsers(),
+              api.fetchOrders(),
+            ]);
+            setUsers(fetchedUsers);
+            setOrders(fetchedOrders);
+
             const matchedUser = fetchedUsers.find((u: User) => u.id === savedUserId);
             if (matchedUser) {
               setActiveUserState(matchedUser);
             }
+          } catch (e) {
+            console.warn("Could not fetch protected data, session might be invalid");
           }
         }
       } catch (error) {
@@ -153,6 +160,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!dbConnected) return;
 
     const interval = setInterval(async () => {
+      // Don't poll protected endpoints if no user is logged in
+      if (!activeUserState) return;
+
       try {
         const [fetchedOrders, fetchedUsers] = await Promise.all([
           api.fetchOrders(),

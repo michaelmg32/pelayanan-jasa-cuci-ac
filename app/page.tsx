@@ -24,7 +24,8 @@ import {
   Check,
   Settings,
   Wind,
-  Instagram
+  Instagram,
+  Menu
 } from 'lucide-react';
 
 export default function SugarACCompanyProfile() {
@@ -36,6 +37,9 @@ export default function SugarACCompanyProfile() {
 
   // Active Service Tab
   const [activeServiceTab, setActiveServiceTab] = useState('Cuci AC');
+  
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const businessName = appSettings?.['GLOBAL']?.business_name || 'Sugar AC';
   const waNumber = '6281284976852'; // Prefilled default WA contact
@@ -54,7 +58,7 @@ export default function SugarACCompanyProfile() {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans text-slate-800 pb-20 md:pb-0 relative overflow-x-hidden">
+    <div className="bg-slate-50 min-h-screen font-sans text-slate-800 relative overflow-x-hidden">
       {/* ================= HEADER NAVBAR ================= */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="w-full px-6 lg:px-12 h-16 flex items-center justify-between">
@@ -101,19 +105,70 @@ export default function SugarACCompanyProfile() {
             </div>
           </nav>
 
-          <button
-            onClick={() => {
-              if (activeUser) {
-                router.push(`/dashboard/${activeUser.role.toLowerCase()}`);
-              } else {
-                router.push('/login');
-              }
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-6 py-2.5 rounded-full uppercase tracking-widest shadow-md shadow-blue-600/20 transition hidden sm:block"
-          >
-            {activeUser ? 'Dashboard' : 'Login'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (activeUser) {
+                  router.push(`/dashboard/${activeUser.role.toLowerCase()}`);
+                } else {
+                  router.push('/login');
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-6 py-2.5 rounded-full uppercase tracking-widest shadow-md shadow-blue-600/20 transition hidden sm:block"
+            >
+              {activeUser ? 'Dashboard' : 'Login'}
+            </button>
+            
+            {/* Hamburger Button for Mobile */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden text-slate-600 hover:text-blue-600 p-2 focus:outline-none"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
+
+        {/* MOBILE MENU DROPDOWN */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-slate-100 px-6 py-5 shadow-2xl absolute w-full left-0 top-16 z-50 rounded-b-2xl animate-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col gap-4 text-sm font-bold text-slate-700">
+              <a href="#hero" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Beranda</a>
+              <a href="#services" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Pelayanan Kami</a>
+              <a href="#education" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Edukasi Perawatan</a>
+              <a href="#why-us" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Tentang Kami</a>
+              
+              <div className="pt-4 mt-2 border-t border-slate-100">
+                <span className="text-[10px] text-slate-400 mb-3 block uppercase tracking-widest">Pilih Cabang</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Palembang', 'Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur'].map((b) => (
+                    <button
+                      key={b}
+                      onClick={() => { setSelectedBranch(b); setIsMobileMenuOpen(false); }}
+                      className={`text-left px-3 py-2.5 rounded-xl text-xs font-bold transition ${selectedBranch === b ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (activeUser) {
+                    router.push(`/dashboard/${activeUser.role.toLowerCase()}`);
+                  } else {
+                    router.push('/login');
+                  }
+                }}
+                className="mt-4 bg-blue-600 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest text-center shadow-lg shadow-blue-600/20 sm:hidden"
+              >
+                {activeUser ? 'Dashboard' : 'Login'}
+              </button>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* ================= HERO SECTION ================= */}
@@ -527,42 +582,7 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-      {/* ================= MOBILE STICKY FOOTER ================= */}
-      <div className="fixed bottom-0 inset-x-0 z-40 bg-slate-950 text-white border-t border-slate-900 py-2.5 px-4 block md:hidden">
-        <div className="grid grid-cols-4 gap-2 text-center text-[9px] font-bold">
-          <button
-            onClick={() => handleQuickContact('phone')}
-            className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition"
-          >
-            <Phone size={16} className="text-blue-450" />
-            <span>Telepon</span>
-          </button>
-
-          <button
-            onClick={() => handleQuickContact('install')}
-            className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition"
-          >
-            <Wrench size={16} className="text-blue-450" />
-            <span>Pasang AC</span>
-          </button>
-
-          <button
-            onClick={() => handleQuickContact('trade')}
-            className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition"
-          >
-            <Compass size={16} className="text-blue-450" />
-            <span>Jual Beli AC</span>
-          </button>
-
-          <button
-            onClick={() => handleQuickContact('wa')}
-            className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition"
-          >
-            <MessageCircle size={16} className="text-emerald-400" />
-            <span>WhatsApp</span>
-          </button>
-        </div>
-      </div>
+      {/* Mobile Sticky Footer removed as requested */}
     </div>
   );
 }
