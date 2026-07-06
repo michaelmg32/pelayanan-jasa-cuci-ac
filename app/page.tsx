@@ -57,7 +57,7 @@ export default function SugarACCompanyProfile() {
     <div className="bg-slate-50 min-h-screen font-sans text-slate-800 pb-20 md:pb-0 relative overflow-x-hidden">
       {/* ================= HEADER NAVBAR ================= */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25 overflow-hidden">
               {appSettings?.['GLOBAL']?.business_logo ? (
@@ -80,20 +80,23 @@ export default function SugarACCompanyProfile() {
 
             {/* Custom Branch selector dropdown in Header */}
             <div className="relative group">
-              <button className="flex items-center gap-1 hover:text-blue-600 transition">
+              <button className="flex items-center gap-1 hover:text-blue-600 transition py-2">
                 <span>Cabang: {selectedBranch}</span>
                 <span className="text-[10px]">▼</span>
               </button>
-              <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition duration-200">
-                {['Palembang', 'Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur'].map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setSelectedBranch(b)}
-                    className="w-full px-4 py-2 hover:bg-slate-50 text-left text-xs font-bold text-slate-700 block transition"
-                  >
-                    Cabang {b}
-                  </button>
-                ))}
+              {/* The pt-2 transparent area bridges the gap so hover isn't lost */}
+              <div className="absolute right-0 top-full pt-2 w-48 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition duration-200">
+                <div className="bg-white rounded-xl shadow-xl border border-slate-100 py-1">
+                  {['Palembang', 'Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur'].map((b) => (
+                    <button
+                      key={b}
+                      onClick={() => setSelectedBranch(b)}
+                      className="w-full px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 text-left text-xs font-bold text-slate-700 block transition"
+                    >
+                      Cabang {b}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </nav>
@@ -128,7 +131,7 @@ export default function SugarACCompanyProfile() {
           <div className="absolute inset-0 bg-slate-50/90 md:hidden"></div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20 mt-8">
+        <div className="relative z-10 max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 w-full py-20 mt-8">
           <div className="max-w-xl lg:max-w-2xl space-y-7">
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 leading-[1.15] tracking-tight">
               Layanan Service AC <br className="hidden md:block" />
@@ -157,7 +160,7 @@ export default function SugarACCompanyProfile() {
 
       {/* ================= SERVICES & PACKAGES SECTION ================= */}
       <section id="services" className="py-16 bg-slate-50 border-y border-slate-150">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-10">
             <h2 className="text-3xl font-black text-slate-900">Layanan & Jasa Sugar AC</h2>
             <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Solusi Terpadu Untuk Segala Kebutuhan AC Anda</p>
@@ -304,7 +307,7 @@ export default function SugarACCompanyProfile() {
 
       {/* ================= AC ISSUES EDUCATION SECTION ================= */}
       <section id="education" className="py-16 bg-white border-y border-slate-150">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
             <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Edukasi Perawatan AC</span>
             <h2 className="text-3xl font-black text-slate-900">Kenali Masalah Umum Pada AC Anda</h2>
@@ -397,7 +400,7 @@ export default function SugarACCompanyProfile() {
 
       {/* ================= ADVANTAGES SECTION ================= */}
       <section id="advantages" className="py-12 bg-white border-y border-slate-150">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16">
           <div className="text-center max-w-xl mx-auto space-y-2 mb-10">
             <h2 className="text-2xl font-black text-slate-900">Keunggulan {businessName}</h2>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Kenapa Mempercayakan AC Anda Kepada Kami?</p>
@@ -455,7 +458,7 @@ export default function SugarACCompanyProfile() {
 
       {/* ================= WHY CHOOSE SUGAR AC SECTION ================= */}
       <section id="why-us" className="py-16 bg-gradient-to-b from-blue-50/50 to-white border-b border-slate-150">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 text-center">
           <div className="max-w-2xl mx-auto space-y-2 mb-12">
             <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Kepercayaan Anda Prioritas Kami</span>
             <h2 className="text-3xl font-black text-slate-900">Kenapa Harus Memakai Jasa Sugar AC?</h2>
@@ -510,7 +513,7 @@ export default function SugarACCompanyProfile() {
 
       {/* ================= SOCIAL MEDIA BANNER SECTION ================= */}
       <section className="py-12 bg-blue-600 text-white border-y border-blue-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 text-center space-y-6">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Instagram size={32} className="text-white" />
           </div>
