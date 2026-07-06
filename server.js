@@ -455,6 +455,54 @@ const initializeDatabaseSettings = async () => {
     `);
     console.log("✅ Auto-migrated 'order_ac_history' table in database");
 
+    // Auto-migration: Create vouchers table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS vouchers (
+        id VARCHAR(50) PRIMARY KEY,
+        code VARCHAR(50) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        discount_type ENUM('percentage', 'fixed') NOT NULL,
+        discount_value DECIMAL(10, 2) NOT NULL,
+        min_order_amount DECIMAL(10, 2) DEFAULT 0,
+        max_discount_amount DECIMAL(10, 2) NULL,
+        start_date DATETIME NOT NULL,
+        end_date DATETIME NOT NULL,
+        max_uses_total INT NULL,
+        new_user_only BOOLEAN DEFAULT FALSE,
+        is_active BOOLEAN DEFAULT TRUE,
+        region_id VARCHAR(50) NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_code_region (code, region_id)
+      )
+    `);
+    console.log("✅ Auto-migrated 'vouchers' table in database");
+
+    // Auto-migration: Create voucher_usages table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS voucher_usages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        voucher_id VARCHAR(50) NOT NULL,
+        user_id VARCHAR(50) NOT NULL,
+        order_id VARCHAR(50) NOT NULL,
+        used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_user_voucher_order (user_id, voucher_id, order_id)
+      )
+    `);
+    console.log("✅ Auto-migrated 'voucher_usages' table in database");
+
+    // Auto-migration: Add voucher columns to orders table
+    const [ordersCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'voucher_code'");
+    if (ordersCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN voucher_code VARCHAR(50) NULL");
+      await connection.query("ALTER TABLE orders ADD COLUMN voucher_discount DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added voucher columns to 'orders' table in database");
+    }
+
 
 
   } catch (err) {
@@ -1509,7 +1557,8 @@ app.post('/api/orders', async (req, res) => {
     id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
     status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes,
     serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
-    paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof, region_id
+    paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof, region_id,
+    voucherCode, voucherDiscount
   } = req.body;
 
   try {
@@ -1540,18 +1589,31 @@ app.post('/api/orders', async (req, res) => {
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
         status, schedule, scheduledDate, scheduledTime, serviceIds, addonIds, acDetail, notes,
         serviceCost, addonsCost, totalPrice, totalCost, photoBefore, photoAfter,
-        paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof, region_id
+        paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProof, region_id,
+        voucher_code, voucher_discount
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )`,
       [
         id, customerId, customerName, customerPhone, address, workerId, assignedEmployeeName,
         status, schedule, scheduledDate, scheduledTime,
         JSON.stringify(serviceIds), JSON.stringify(addonIds), JSON.stringify(parsedAcDetail), notes,
         serviceCost || 0, addonsCost || 0, totalPrice, totalCost,
-        photoBeforeUrl, photoAfterUrl, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProofUrl || null, region_id || null
+        photoBeforeUrl, photoAfterUrl, paymentMethod, paymentStatus, rating, ratingNotes, latitude, longitude, paymentProofUrl || null, region_id || null,
+        voucherCode || null, voucherDiscount ? Number(voucherDiscount) : 0
       ]
     );
+
+    // Record voucher usage if applicable
+    if (voucherCode) {
+      const [vch] = await connection.query('SELECT id FROM vouchers WHERE code = ? AND region_id = ?', [voucherCode, region_id]);
+      if (vch.length > 0) {
+        await connection.query(
+          'INSERT INTO voucher_usages (voucher_id, user_id, order_id) VALUES (?, ?, ?)',
+          [vch[0].id, customerId, id]
+        );
+      }
+    }
     await syncOrderAddonTransactions(connection, id);
     await recalculateOrderMargin(connection, id);
     connection.release();
@@ -1591,6 +1653,8 @@ app.post('/api/orders', async (req, res) => {
       latitude,
       longitude,
       paymentProof: paymentProofUrl,
+      voucher_code: voucherCode || null,
+      voucher_discount: voucherDiscount ? Number(voucherDiscount) : 0,
       createdAt: new Date().toISOString()
     });
   } catch (error) {
@@ -2536,6 +2600,287 @@ app.get('/api/customer-ac/:id/history', verifyToken, async (req, res) => {
     );
     connection.release();
     res.json(rows);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== VOUCHERS API =====
+
+// Get all vouchers (filtered by region_id for branch admins)
+app.get('/api/vouchers', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    let query = 'SELECT vouchers.*, regions.name as regionName FROM vouchers JOIN regions ON vouchers.region_id = regions.id';
+    let params = [];
+    
+    // Filter based on role and region_id
+    if (req.user.role === 'admin' && req.user.region_id) {
+      query += ' WHERE vouchers.region_id = ?';
+      params.push(req.user.region_id);
+    } else if (req.query.region_id) {
+      query += ' WHERE vouchers.region_id = ?';
+      params.push(req.query.region_id);
+    }
+    
+    query += ' ORDER BY vouchers.createdAt DESC';
+    const [rows] = await connection.query(query, params);
+    connection.release();
+    res.json(rows);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new voucher
+app.post('/api/vouchers', verifyToken, async (req, res) => {
+  // Only Admin or Owner can manage vouchers
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Akses ditolak.' });
+  }
+  
+  const { code, name, discount_type, discount_value, min_order_amount, max_discount_amount, start_date, end_date, max_uses_total, new_user_only, region_id } = req.body;
+  
+  if (!code || !name || !discount_type || discount_value === undefined || !start_date || !end_date) {
+    return res.status(400).json({ error: 'Mohon isi semua field wajib.' });
+  }
+  
+  // Enforce region_id for branch admin
+  const finalRegionId = req.user.role === 'admin' ? req.user.region_id : region_id;
+  if (!finalRegionId) {
+    return res.status(400).json({ error: 'Wilayah / cabang wajib ditentukan.' });
+  }
+  
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // Check if code already exists in this region
+    const [existing] = await connection.query('SELECT id FROM vouchers WHERE code = ? AND region_id = ?', [code.toUpperCase().trim(), finalRegionId]);
+    if (existing.length > 0) {
+      connection.release();
+      return res.status(400).json({ error: 'Kode voucher ini sudah digunakan di wilayah ini.' });
+    }
+    
+    const newId = 'vch_' + Date.now();
+    await connection.query(
+      `INSERT INTO vouchers (
+        id, code, name, discount_type, discount_value, min_order_amount, max_discount_amount, 
+        start_date, end_date, max_uses_total, new_user_only, region_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newId, code.toUpperCase().trim(), name.trim(), discount_type, Number(discount_value),
+        Number(min_order_amount || 0), max_discount_amount ? Number(max_discount_amount) : null,
+        start_date, end_date, max_uses_total ? Number(max_uses_total) : null,
+        new_user_only ? 1 : 0, finalRegionId
+      ]
+    );
+    
+    const [inserted] = await connection.query('SELECT * FROM vouchers WHERE id = ?', [newId]);
+    connection.release();
+    
+    await logActivity(req, 'Membuat Voucher', `Membuat voucher baru: ${code.toUpperCase()} (${name})`);
+    res.status(201).json(inserted[0]);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update voucher
+app.put('/api/vouchers/:id', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Akses ditolak.' });
+  }
+  
+  const { id } = req.params;
+  const { code, name, discount_type, discount_value, min_order_amount, max_discount_amount, start_date, end_date, max_uses_total, new_user_only, is_active } = req.body;
+  
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // Check if voucher exists
+    const [existing] = await connection.query('SELECT * FROM vouchers WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Voucher tidak ditemukan.' });
+    }
+    
+    // Branch admin cannot modify other regions' vouchers
+    if (req.user.role === 'admin' && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Akses ditolak untuk wilayah lain.' });
+    }
+    
+    let updateFields = [];
+    let updateValues = [];
+    
+    if (code !== undefined) {
+      // Check if duplicate code exists in the same region
+      const [dup] = await connection.query('SELECT id FROM vouchers WHERE code = ? AND region_id = ? AND id != ?', [code.toUpperCase().trim(), existing[0].region_id, id]);
+      if (dup.length > 0) {
+        connection.release();
+        return res.status(400).json({ error: 'Kode voucher ini sudah digunakan di wilayah ini.' });
+      }
+      updateFields.push('code = ?');
+      updateValues.push(code.toUpperCase().trim());
+    }
+    if (name !== undefined) { updateFields.push('name = ?'); updateValues.push(name.trim()); }
+    if (discount_type !== undefined) { updateFields.push('discount_type = ?'); updateValues.push(discount_type); }
+    if (discount_value !== undefined) { updateFields.push('discount_value = ?'); updateValues.push(Number(discount_value)); }
+    if (min_order_amount !== undefined) { updateFields.push('min_order_amount = ?'); updateValues.push(Number(min_order_amount)); }
+    if (max_discount_amount !== undefined) { updateFields.push('max_discount_amount = ?'); updateValues.push(max_discount_amount ? Number(max_discount_amount) : null); }
+    if (start_date !== undefined) { updateFields.push('start_date = ?'); updateValues.push(start_date); }
+    if (end_date !== undefined) { updateFields.push('end_date = ?'); updateValues.push(end_date); }
+    if (max_uses_total !== undefined) { updateFields.push('max_uses_total = ?'); updateValues.push(max_uses_total ? Number(max_uses_total) : null); }
+    if (new_user_only !== undefined) { updateFields.push('new_user_only = ?'); updateValues.push(new_user_only ? 1 : 0); }
+    if (is_active !== undefined) { updateFields.push('is_active = ?'); updateValues.push(is_active ? 1 : 0); }
+    
+    if (updateFields.length > 0) {
+      updateValues.push(id);
+      await connection.query(`UPDATE vouchers SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);
+      await logActivity(req, 'Memperbarui Voucher', `Memperbarui voucher ID: ${id}`);
+    }
+    
+    const [updated] = await connection.query('SELECT * FROM vouchers WHERE id = ?', [id]);
+    connection.release();
+    res.json(updated[0]);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete voucher
+app.delete('/api/vouchers/:id', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Akses ditolak.' });
+  }
+  
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [existing] = await connection.query('SELECT code, region_id FROM vouchers WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Voucher tidak ditemukan.' });
+    }
+    
+    if (req.user.role === 'admin' && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Akses ditolak untuk wilayah lain.' });
+    }
+    
+    await connection.query('DELETE FROM vouchers WHERE id = ?', [id]);
+    connection.release();
+    await logActivity(req, 'Menghapus Voucher', `Menghapus voucher: ${existing[0].code}`);
+    res.json({ success: true, message: 'Voucher berhasil dihapus' });
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Validate voucher
+app.post('/api/vouchers/validate', verifyToken, async (req, res) => {
+  const { code, region_id, userId, orderAmount } = req.body;
+  
+  if (!code || !region_id || !userId || orderAmount === undefined) {
+    return res.status(400).json({ error: 'code, region_id, userId, and orderAmount are required.' });
+  }
+  
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // Find active voucher matching code and region
+    const [vouchers] = await connection.query(
+      'SELECT * FROM vouchers WHERE code = ? AND region_id = ? AND is_active = 1',
+      [code.toUpperCase().trim(), region_id]
+    );
+    
+    if (vouchers.length === 0) {
+      connection.release();
+      return res.status(400).json({ error: 'Voucher tidak valid atau tidak dapat digunakan di wilayah ini.' });
+    }
+    
+    const voucher = vouchers[0];
+    const now = new Date();
+    
+    // Check expiry dates
+    if (now < new Date(voucher.start_date) || now > new Date(voucher.end_date)) {
+      connection.release();
+      return res.status(400).json({ error: 'Voucher sudah kadaluarsa atau belum dimulai.' });
+    }
+    
+    // Check minimum order amount
+    if (Number(orderAmount) < Number(voucher.min_order_amount)) {
+      connection.release();
+      return res.status(400).json({ error: `Minimal transaksi untuk voucher ini adalah Rp ${Number(voucher.min_order_amount).toLocaleString('id-ID')}.` });
+    }
+    
+    // Check max usages total if configured
+    if (voucher.max_uses_total !== null) {
+      const [usageCount] = await connection.query('SELECT COUNT(*) as count FROM voucher_usages WHERE voucher_id = ?', [voucher.id]);
+      if (usageCount[0].count >= voucher.max_uses_total) {
+        connection.release();
+        return res.status(400).json({ error: 'Kuota penggunaan voucher ini sudah habis.' });
+      }
+    }
+    
+    // Check if user has already used this voucher
+    const [userUsage] = await connection.query('SELECT COUNT(*) as count FROM voucher_usages WHERE user_id = ? AND voucher_id = ?', [userId, voucher.id]);
+    if (userUsage[0].count > 0) {
+      connection.release();
+      return res.status(400).json({ error: 'Anda sudah pernah menggunakan voucher ini.' });
+    }
+    
+    // Check if new user only limit
+    if (voucher.new_user_only) {
+      const [orderCount] = await connection.query(
+        "SELECT COUNT(*) as count FROM orders WHERE customerId = ? AND status != 'DIBATALKAN'",
+        [userId]
+      );
+      if (orderCount[0].count > 0) {
+        connection.release();
+        return res.status(400).json({ error: 'Voucher ini hanya berlaku untuk pengguna baru.' });
+      }
+    }
+    
+    // Calculate discount amount
+    let discount = 0;
+    if (voucher.discount_type === 'fixed') {
+      discount = Number(voucher.discount_value);
+    } else { // percentage
+      discount = Number(orderAmount) * (Number(voucher.discount_value) / 100);
+      if (voucher.max_discount_amount !== null && discount > Number(voucher.max_discount_amount)) {
+        discount = Number(voucher.max_discount_amount);
+      }
+      // Round discount to nearest Rp 100 as suggested
+      discount = Math.round(discount / 100) * 100;
+    }
+    
+    // Ensure discount doesn't exceed order amount
+    if (discount > Number(orderAmount)) {
+      discount = Number(orderAmount);
+    }
+    
+    connection.release();
+    res.json({
+      valid: true,
+      voucherId: voucher.id,
+      code: voucher.code,
+      name: voucher.name,
+      discount_type: voucher.discount_type,
+      discount_value: voucher.discount_value,
+      min_order_amount: voucher.min_order_amount,
+      computed_discount: discount
+    });
   } catch (error) {
     if (connection) connection.release();
     res.status(500).json({ error: error.message });

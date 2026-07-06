@@ -133,6 +133,44 @@ export default function PelangganDashboard() {
   // Payment Selection State
   const [orderPaymentMethods, setOrderPaymentMethods] = useState<{ [orderId: string]: 'CASH' | 'TRANSFER' }>({});
 
+  // Voucher Booking States
+  const [vchInputCode, setVchInputCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState<any | null>(null);
+  const [voucherError, setVoucherError] = useState('');
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
+
+  const handleApplyVoucher = async () => {
+    if (!vchInputCode.trim()) {
+      setVoucherError('Mohon masukkan kode voucher.');
+      return;
+    }
+    if (!activeUser) return;
+
+    try {
+      setIsValidatingVoucher(true);
+      setVoucherError('');
+      const data = await api.validateVoucher({
+        code: vchInputCode.trim().toUpperCase(),
+        region_id: selectedRegionId,
+        userId: activeUser.id,
+        orderAmount: estimatedCost
+      });
+      setAppliedVoucher(data);
+      setVoucherError('');
+    } catch (err: any) {
+      setAppliedVoucher(null);
+      setVoucherError(err.message || 'Kode voucher tidak valid.');
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVchInputCode('');
+    setVoucherError('');
+  };
+
   // Profile Form States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
   const [editName, setEditName] = useState(activeUser?.name || '');
@@ -412,6 +450,8 @@ export default function PelangganDashboard() {
       const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderId = `ORD-${yymmdd}-${rand}`;
 
+      const discount = appliedVoucher ? Number(appliedVoucher.computed_discount) : 0;
+      const finalPrice = Math.max(0, estimatedCost - discount);
       const totalCost = estimatedCost;
       const totalQuantity = cartServices.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -439,11 +479,13 @@ export default function PelangganDashboard() {
         addonsCost: 0,
         totalCost: totalCost,
         totalPrice: totalCost,
-        finalPrice: totalCost,
+        finalPrice: finalPrice,
         quantity: totalQuantity,
         latitude: lat,
         longitude: lng,
         region_id: selectedRegionId,
+        voucherCode: appliedVoucher ? appliedVoucher.code : null,
+        voucherDiscount: discount
       });
 
       // Refresh orders from API
@@ -453,6 +495,8 @@ export default function PelangganDashboard() {
       setNotes('');
       setLat(activeUser.lat);
       setLng(activeUser.lng);
+      setAppliedVoucher(null);
+      setVchInputCode('');
       setCartServices([]);
       setShowNewOrderModal(false);
       setShowConfirmOrderModal(false);
@@ -2101,14 +2145,75 @@ export default function PelangganDashboard() {
                     />
                   </div>
 
+                  {/* Voucher Promo */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                      11. Voucher Promo (Opsional)
+                    </label>
+                    {appliedVoucher ? (
+                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-250 p-2.5 rounded-xl">
+                        <div className="text-left">
+                          <span className="font-mono text-xs font-black text-emerald-800 uppercase block">{appliedVoucher.code}</span>
+                          <span className="text-[10px] text-emerald-600 block">{appliedVoucher.name} (-{formatRupiah(appliedVoucher.computed_discount)})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveVoucher}
+                          className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-extrabold text-[9px] px-2.5 py-1.5 rounded-lg uppercase transition cursor-pointer"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={vchInputCode}
+                          onChange={e => setVchInputCode(e.target.value)}
+                          placeholder="Masukkan kode voucher (contoh: PROMOAC)"
+                          className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none font-mono uppercase font-bold"
+                          disabled={isValidatingVoucher}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyVoucher}
+                          disabled={isValidatingVoucher || !vchInputCode.trim()}
+                          className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-extrabold text-[10px] px-4 rounded-xl uppercase transition cursor-pointer"
+                        >
+                          {isValidatingVoucher ? '...' : 'Gunakan'}
+                        </button>
+                      </div>
+                    )}
+                    {voucherError && (
+                      <p className="text-[9.5px] text-red-500 font-semibold mt-1 flex items-center gap-1">
+                        ⚠️ {voucherError}
+                      </p>
+                    )}
+                    {appliedVoucher && !voucherError && (
+                      <p className="text-[9.5px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                        ✓ Voucher berhasil digunakan!
+                      </p>
+                    )}
+                  </div>
+
                   {/* Billing Estimate */}
                   <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200 p-3.5 rounded-xl space-y-2">
-                    <span className="text-[8px] font-black text-indigo-700 uppercase tracking-widest block">Estimasi Biaya Jasa (Sesuai Daftar)</span>
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-[10px] text-slate-600">
-                        Total {cartServices.reduce((sum, item) => sum + item.quantity, 0)} Unit
-                      </span>
-                      <span className="text-lg font-black text-indigo-700 font-mono">{formatRupiah(estimatedCost)}</span>
+                    <span className="text-[8px] font-black text-indigo-700 uppercase tracking-widest block">Estimasi Rincian Biaya</span>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between text-[11px] text-slate-650">
+                        <span>Subtotal Jasa ({cartServices.reduce((sum, item) => sum + item.quantity, 0)} Unit)</span>
+                        <span className="font-mono">{formatRupiah(estimatedCost)}</span>
+                      </div>
+                      {appliedVoucher && (
+                        <div className="flex justify-between text-[11px] text-red-650 font-bold">
+                          <span>Diskon Voucher ({appliedVoucher.code})</span>
+                          <span className="font-mono">-{formatRupiah(appliedVoucher.computed_discount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-black text-indigo-750 text-sm border-t border-indigo-200/50 pt-1.5 mt-1.5">
+                        <span>Total Pembayaran</span>
+                        <span className="font-mono">{formatRupiah(Math.max(0, estimatedCost - (appliedVoucher ? Number(appliedVoucher.computed_discount) : 0)))}</span>
+                      </div>
                     </div>
                     <p className="text-[8.5px] text-slate-500 italic">*Tidak termasuk sparepart/komponen tambahan yang mungkin dibutuhkan</p>
                   </div>
@@ -2174,12 +2279,26 @@ export default function PelangganDashboard() {
               </div>
 
               {/* Total Cost */}
-              <div className="bg-indigo-50 border border-indigo-150 p-4 rounded-2xl flex justify-between items-center">
-                <div>
-                  <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block">Total Pembayaran</span>
-                  <span className="text-xs text-slate-500">{cartServices.reduce((sum, item) => sum + item.quantity, 0)} Unit Layanan</span>
+              <div className="bg-indigo-50 border border-indigo-150 p-4 rounded-2xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Subtotal Jasa</span>
+                  <span className="text-xs font-bold font-mono text-slate-700">{formatRupiah(estimatedCost)}</span>
                 </div>
-                <span className="text-lg font-black text-indigo-700 font-mono">{formatRupiah(estimatedCost)}</span>
+                {appliedVoucher && (
+                  <div className="flex justify-between items-center text-red-600 font-bold">
+                    <span className="text-[10px] uppercase">Potongan Voucher ({appliedVoucher.code})</span>
+                    <span className="text-xs font-mono">-{formatRupiah(appliedVoucher.computed_discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center border-t border-indigo-200/50 pt-2">
+                  <div>
+                    <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block">Total Pembayaran</span>
+                    <span className="text-[10px] text-slate-500">{cartServices.reduce((sum, item) => sum + item.quantity, 0)} Unit Layanan</span>
+                  </div>
+                  <span className="text-lg font-black text-indigo-700 font-mono">
+                    {formatRupiah(Math.max(0, estimatedCost - (appliedVoucher ? Number(appliedVoucher.computed_discount) : 0)))}
+                  </span>
+                </div>
               </div>
 
               {confirmErrorMsg && (
@@ -2437,14 +2556,20 @@ export default function PelangganDashboard() {
                     <span className="font-mono">{formatRupiah(selectedHistoryOrder.serviceCost)}</span>
                   </div>
                   {selectedHistoryOrder.addonsCost > 0 && (
-                    <div className="flex justify-between text-[11px] text-slate-600 mt-1">
+                    <div className="flex justify-between text-[11px] text-slate-650 mt-1">
                       <span>Biaya Perlengkapan Tambahan</span>
                       <span className="font-mono">{formatRupiah(selectedHistoryOrder.addonsCost)}</span>
                     </div>
                   )}
+                  {Number(selectedHistoryOrder.voucher_discount || 0) > 0 && (
+                    <div className="flex justify-between text-[11px] text-red-650 font-bold mt-1">
+                      <span>Diskon Voucher ({selectedHistoryOrder.voucher_code})</span>
+                      <span className="font-mono">-{formatRupiah(selectedHistoryOrder.voucher_discount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-black text-indigo-700 text-sm mt-2 pt-2 border-t border-slate-200">
                     <span>Total Pembayaran</span>
-                    <span className="font-mono">{formatRupiah(Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0))}</span>
+                    <span className="font-mono">{formatRupiah(selectedHistoryOrder.finalPrice || (Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0) - Number(selectedHistoryOrder.voucher_discount || 0)))}</span>
                   </div>
                 </div>
 

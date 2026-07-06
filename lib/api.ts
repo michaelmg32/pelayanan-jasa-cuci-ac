@@ -683,3 +683,94 @@ export const scanCustomerAC = async (barcodeId: string) => {
     throw error;
   }
 };
+
+// ===== VOUCHERS API =====
+export const fetchVouchers = async (region_id?: string) => {
+  try {
+    const url = region_id ? `${API_BASE_URL}/vouchers?region_id=${region_id}` : `${API_BASE_URL}/vouchers`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(), cache: 'no-store',
+    });
+    if (!response.ok) throw new Error('Failed to fetch vouchers');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching vouchers:', error);
+    return [];
+  }
+};
+
+export const createVoucher = async (voucherData: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers`, {
+      method: 'POST',
+      headers: getAuthHeaders(), cache: 'no-store',
+      body: JSON.stringify(voucherData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to create voucher');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating voucher:', error);
+    throw error;
+  }
+};
+
+export const updateVoucher = async (voucherId: string, voucherData: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/${voucherId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(), cache: 'no-store',
+      body: JSON.stringify(voucherData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to update voucher');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating voucher:', error);
+    throw error;
+  }
+};
+
+export const deleteVoucher = async (voucherId: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/${voucherId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(), cache: 'no-store',
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to delete voucher');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting voucher:', error);
+    throw error;
+  }
+};
+
+export const validateVoucher = async (validationData: {
+  code: string;
+  region_id: string;
+  userId: string;
+  orderAmount: number;
+}) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vouchers/validate`, {
+      method: 'POST',
+      headers: getAuthHeaders(), cache: 'no-store',
+      body: JSON.stringify(validationData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Voucher tidak valid');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error validating voucher:', error);
+    throw error;
+  }
+};

@@ -43,10 +43,11 @@ import {
   ChevronUp,
   Download,
   Clock,
+  Tag
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
-type TabType = 'JOBS_TRACKER' | 'MASTER_DATA' | 'USER_MANAGEMENT' | 'PROFIL' | 'STAFF_PERFORMANCE';
+type TabType = 'JOBS_TRACKER' | 'MASTER_DATA' | 'USER_MANAGEMENT' | 'PROFIL' | 'STAFF_PERFORMANCE' | 'VOUCHERS';
 
 export default function AdminDashboard() {
   const {
@@ -205,6 +206,129 @@ export default function AdminDashboard() {
   const [editConfirmPassword, setEditConfirmPassword] = useState('');
   const [saveProfileSuccess, setSaveProfileSuccess] = useState(false);
   const [profileErrorMsg, setProfileErrorMsg] = useState('');
+
+  // Voucher Management States
+  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<any | null>(null);
+
+  const [vchCode, setVchCode] = useState('');
+  const [vchName, setVchName] = useState('');
+  const [vchDiscountType, setVchDiscountType] = useState<'percentage' | 'fixed'>('fixed');
+  const [vchDiscountValue, setVchDiscountValue] = useState(0);
+  const [vchMinOrderAmount, setVchMinOrderAmount] = useState(0);
+  const [vchMaxDiscountAmount, setVchMaxDiscountAmount] = useState<number | ''>('');
+  const [vchStartDate, setVchStartDate] = useState('');
+  const [vchEndDate, setVchEndDate] = useState('');
+  const [vchMaxUsesTotal, setVchMaxUsesTotal] = useState<number | ''>('');
+  const [vchNewUserOnly, setVchNewUserOnly] = useState(false);
+  const [vchIsActive, setVchIsActive] = useState(true);
+
+  const loadVouchers = async () => {
+    try {
+      setLoadingVouchers(true);
+      const data = await api.fetchVouchers(activeUser?.region_id);
+      setVouchers(data);
+    } catch (err) {
+      console.error('Error loading vouchers:', err);
+    } finally {
+      setLoadingVouchers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'VOUCHERS') {
+      loadVouchers();
+    }
+  }, [activeTab]);
+
+  const handleOpenVoucherModal = (vch: any | null = null) => {
+    setSelectedVoucher(vch);
+    if (vch) {
+      setVchCode(vch.code);
+      setVchName(vch.name);
+      setVchDiscountType(vch.discount_type);
+      setVchDiscountValue(Number(vch.discount_value));
+      setVchMinOrderAmount(Number(vch.min_order_amount));
+      setVchMaxDiscountAmount(vch.max_discount_amount !== null ? Number(vch.max_discount_amount) : '');
+      setVchStartDate(vch.start_date ? vch.start_date.substring(0, 16).replace(' ', 'T') : '');
+      setVchEndDate(vch.end_date ? vch.end_date.substring(0, 16).replace(' ', 'T') : '');
+      setVchMaxUsesTotal(vch.max_uses_total !== null ? Number(vch.max_uses_total) : '');
+      setVchNewUserOnly(!!vch.new_user_only);
+      setVchIsActive(!!vch.is_active);
+    } else {
+      setVchCode('');
+      setVchName('');
+      setVchDiscountType('fixed');
+      setVchDiscountValue(0);
+      setVchMinOrderAmount(0);
+      setVchMaxDiscountAmount('');
+      const now = new Date();
+      const nextMonth = new Date();
+      nextMonth.setMonth(now.getMonth() + 1);
+      setVchStartDate(now.toISOString().substring(0, 16));
+      setVchEndDate(nextMonth.toISOString().substring(0, 16));
+      setVchMaxUsesTotal('');
+      setVchNewUserOnly(false);
+      setVchIsActive(true);
+    }
+    setShowVoucherModal(true);
+  };
+
+  const handleSaveVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vchCode.trim() || !vchName.trim()) {
+      alert('❌ Kode dan Nama voucher wajib diisi.');
+      return;
+    }
+
+    const payload = {
+      code: vchCode.toUpperCase().trim(),
+      name: vchName.trim(),
+      discount_type: vchDiscountType,
+      discount_value: Number(vchDiscountValue),
+      min_order_amount: Number(vchMinOrderAmount),
+      max_discount_amount: vchMaxDiscountAmount === '' ? null : Number(vchMaxDiscountAmount),
+      start_date: vchStartDate.replace('T', ' '),
+      end_date: vchEndDate.replace('T', ' '),
+      max_uses_total: vchMaxUsesTotal === '' ? null : Number(vchMaxUsesTotal),
+      new_user_only: vchNewUserOnly,
+      is_active: vchIsActive,
+      region_id: activeUser?.region_id
+    };
+
+    try {
+      setIsLoading(true);
+      if (selectedVoucher) {
+        await api.updateVoucher(selectedVoucher.id, payload);
+        alert('✓ Voucher berhasil diperbarui!');
+      } else {
+        await api.createVoucher(payload);
+        alert('✓ Voucher baru berhasil ditambahkan!');
+      }
+      setShowVoucherModal(false);
+      loadVouchers();
+    } catch (err: any) {
+      alert(`❌ Gagal menyimpan voucher: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteVoucher = async (id: string, code: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus voucher "${code}"?`)) return;
+    try {
+      setIsLoading(true);
+      await api.deleteVoucher(id);
+      alert('✓ Voucher berhasil dihapus!');
+      loadVouchers();
+    } catch (err: any) {
+      alert(`❌ Gagal menghapus voucher: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Sync edits when user props update
   useEffect(() => {
@@ -1306,6 +1430,19 @@ return (
               <span>Kinerja Staff</span>
             </span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('VOUCHERS')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'VOUCHERS'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-600 border-transparent hover:text-slate-800'
+              }`}
+          >
+            <span className="flex items-center gap-2">
+              <Tag size={15} />
+              <span>Kelola Voucher</span>
+            </span>
+          </button>
         </div>
       )}
 
@@ -2334,6 +2471,333 @@ return (
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ===================== TAB: VOUCHERS ===================== */}
+        {activeTab === 'VOUCHERS' && (
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-sm uppercase text-slate-800">Kelola Voucher Diskon</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Atur kode voucher promo diskon untuk wilayah/cabang Anda</p>
+              </div>
+              <button
+                onClick={() => handleOpenVoucherModal()}
+                className="bg-slate-900 text-white font-extrabold text-[10px] py-2.5 px-4 rounded-xl uppercase flex items-center gap-1.5 hover:bg-slate-800 transition cursor-pointer shadow-sm"
+              >
+                <Plus size={13} />
+                <span>Tambah Voucher</span>
+              </button>
+            </div>
+
+            {loadingVouchers ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-3 bg-white border border-slate-200 rounded-2xl">
+                <Loader className="animate-spin text-indigo-600" size={24} />
+                <span className="text-xs text-slate-500 font-bold">Memuat daftar voucher...</span>
+              </div>
+            ) : vouchers.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center space-y-3">
+                <div className="p-3.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+                  <Tag size={24} />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wide">Belum Ada Voucher</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-xs leading-normal">
+                    Buat kode promo voucher pertama Anda untuk meningkatkan transaksi pelanggan di wilayah ini.
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleOpenVoucherModal()}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] py-2 px-4 rounded-xl uppercase transition cursor-pointer"
+                >
+                  Buat Voucher Sekarang
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {vouchers.map((vch) => {
+                  const now = new Date();
+                  const isExpired = now > new Date(vch.end_date);
+                  const isNotStarted = now < new Date(vch.start_date);
+                  const isLive = vch.is_active && !isExpired && !isNotStarted;
+
+                  return (
+                    <div key={vch.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative flex flex-col justify-between hover:shadow-md transition">
+                      <div>
+                        {/* Status Badges */}
+                        <div className="flex justify-between items-start">
+                          <span className="font-mono text-xs font-black uppercase text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                            {vch.code}
+                          </span>
+                          <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            isLive ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                            isExpired ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                            isNotStarted ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                            'bg-slate-50 text-slate-500 border border-slate-100'
+                          }`}>
+                            {isLive ? 'Aktif' : isExpired ? 'Expired' : isNotStarted ? 'Masa Datang' : 'Nonaktif'}
+                          </span>
+                        </div>
+
+                        <h4 className="font-extrabold text-xs text-slate-800 mt-3">{vch.name}</h4>
+                        
+                        <div className="mt-2 space-y-1.5 text-[11px] text-slate-650">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Potongan:</span>
+                            <strong className="text-slate-800">
+                              {vch.discount_type === 'fixed' 
+                                ? `Rp ${Number(vch.discount_value).toLocaleString('id-ID')}` 
+                                : `${Number(vch.discount_value)}%`}
+                            </strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Min. Transaksi:</span>
+                            <span className="font-bold text-slate-700">Rp {Number(vch.min_order_amount).toLocaleString('id-ID')}</span>
+                          </div>
+                          {vch.discount_type === 'percentage' && vch.max_discount_amount && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Maks. Potongan:</span>
+                              <span className="font-bold text-slate-700">Rp {Number(vch.max_discount_amount).toLocaleString('id-ID')}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Berlaku s/d:</span>
+                            <span className="font-mono text-slate-700 text-[10px]">
+                              {new Date(vch.end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Labels for options */}
+                        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100">
+                          {vch.new_user_only === 1 && (
+                            <span className="text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+                              🆕 Pengguna Baru
+                            </span>
+                          )}
+                          {vch.max_uses_total !== null && (
+                            <span className="text-[8px] font-black uppercase text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                              👥 Kuota: {vch.max_uses_total}
+                            </span>
+                          )}
+                          <span className="text-[8px] font-black uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                            📍 {vch.regionName || 'Cabang'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 mt-4 pt-2">
+                        <button
+                          onClick={() => handleOpenVoucherModal(vch)}
+                          className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-extrabold text-[9px] py-2 rounded-xl uppercase flex items-center justify-center gap-1 border border-slate-150 transition cursor-pointer"
+                        >
+                          <Edit size={10} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVoucher(vch.id, vch.code)}
+                          className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold text-[9px] py-2 rounded-xl uppercase flex items-center justify-center gap-1 border border-rose-100 transition cursor-pointer"
+                        >
+                          <Trash2 size={10} />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* VOUCHER CREATE/EDIT MODAL */}
+            {showVoucherModal && (
+              <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-zoom-in">
+                  <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white">
+                    <div>
+                      <span className="text-[8px] bg-indigo-650 px-2 py-0.5 rounded font-black uppercase text-white">Voucher System</span>
+                      <h4 className="text-sm font-extrabold text-white mt-1">{selectedVoucher ? 'Edit Voucher Diskon' : 'Tambah Voucher Baru'}</h4>
+                    </div>
+                    <button
+                      onClick={() => setShowVoucherModal(false)}
+                      className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveVoucher} className="p-5 space-y-4 text-left max-h-[80vh] overflow-y-auto">
+                    <div>
+                      <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Kode Voucher</label>
+                      <input
+                        type="text"
+                        value={vchCode}
+                        onChange={e => setVchCode(e.target.value)}
+                        placeholder="CONTOH: PROMOAC10"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-slate-900 transition uppercase font-mono font-bold"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Voucher</label>
+                      <input
+                        type="text"
+                        value={vchName}
+                        onChange={e => setVchName(e.target.value)}
+                        placeholder="Nama promo, misal: Promo Awal Tahun"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-slate-900 transition font-bold"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Tipe Potongan</label>
+                        <select
+                          value={vchDiscountType}
+                          onChange={e => setVchDiscountType(e.target.value as any)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                          disabled={isLoading}
+                        >
+                          <option value="fixed">Nominal Tetap (Rupiah)</option>
+                          <option value="percentage">Persentase (%)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nilai Diskon</label>
+                        <input
+                          type="number"
+                          value={vchDiscountValue}
+                          onChange={e => setVchDiscountValue(Number(e.target.value))}
+                          placeholder={vchDiscountType === 'fixed' ? 'Nominal Rp' : 'Persen %'}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-slate-900 transition font-bold"
+                          min="1"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Min. Transaksi (Rp)</label>
+                        <input
+                          type="number"
+                          value={vchMinOrderAmount}
+                          onChange={e => setVchMinOrderAmount(Number(e.target.value))}
+                          placeholder="Min belanja pelanggan"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                          min="0"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Maks. Potongan (Rp)</label>
+                        <input
+                          type="number"
+                          value={vchMaxDiscountAmount}
+                          onChange={e => setVchMaxDiscountAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="Kosongkan jika tak dibatasi"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                          min="0"
+                          disabled={isLoading || vchDiscountType === 'fixed'}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Mulai Berlaku</label>
+                        <input
+                          type="datetime-local"
+                          value={vchStartDate}
+                          onChange={e => setVchStartDate(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[11px] px-2.5 py-2 rounded-xl outline-none"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Selesai Berlaku</label>
+                        <input
+                          type="datetime-local"
+                          value={vchEndDate}
+                          onChange={e => setVchEndDate(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[11px] px-2.5 py-2 rounded-xl outline-none"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Kuota Pemakaian Total</label>
+                      <input
+                        type="number"
+                        value={vchMaxUsesTotal}
+                        onChange={e => setVchMaxUsesTotal(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Jumlah kuota voucher (Kosongkan jika tak dibatasi)"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                        min="1"
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-3 py-2 border-t border-b border-slate-100">
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={vchNewUserOnly}
+                          onChange={e => setVchNewUserOnly(e.target.checked)}
+                          className="rounded text-indigo-650 border-slate-300 focus:ring-indigo-500 h-4 w-4"
+                          disabled={isLoading}
+                        />
+                        <div>
+                          <span className="text-xs font-bold text-slate-800 block">Khusus Pengguna Baru</span>
+                          <span className="text-[10px] text-slate-400 block -mt-0.5">Hanya berlaku untuk pesanan pertama user di wilayah ini</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={vchIsActive}
+                          onChange={e => setVchIsActive(e.target.checked)}
+                          className="rounded text-indigo-650 border-slate-300 focus:ring-indigo-500 h-4 w-4"
+                          disabled={isLoading}
+                        />
+                        <div>
+                          <span className="text-xs font-bold text-slate-800 block">Voucher Aktif</span>
+                          <span className="text-[10px] text-slate-400 block -mt-0.5">Aktifkan voucher ini agar dapat dicari & divalidasi</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowVoucherModal(false)}
+                        disabled={isLoading}
+                        className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-600 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition text-center"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full bg-slate-900 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md"
+                      >
+                        {isLoading && <Loader size={12} className="animate-spin" />}
+                        {isLoading ? 'Menyimpan...' : 'Simpan Voucher'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
