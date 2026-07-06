@@ -17,9 +17,9 @@ interface LoginScreenProps {
   availableUsers: User[];
 }
 
-export default function LoginScreen({ onLogin, onRegisterCustomer, availableUsers }: LoginScreenProps) {
+export default function RegisterKaryawanScreen({ onLogin, onRegisterCustomer, availableUsers }: LoginScreenProps) {
   const { appSettings } = useApp();
-  const [formMode, setFormMode] = useState<'login' | 'register_pelanggan'>('login');
+  const [formMode, setFormMode] = useState<'register_karyawan'>('register_karyawan');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -160,7 +160,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isKaryawan = false;
+    const isKaryawan = formMode === 'register_karyawan';
 
     if (isKaryawan) {
       if (!regName.trim() || !regEmail.trim() || !regPhone.trim() || !regAddress.trim() || !password.trim()) {
@@ -224,7 +224,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
         setPassword('');
         setKtpPhoto(null);
         setSelfiePhoto(null);
-        setFormMode('login');
+        window.location.href = '/';
       } else {
         if (data.user) {
           if (data.token) {
@@ -251,7 +251,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
         throw new Error('Google credential token is missing.');
       }
 
-      const targetRole = 'pelanggan';
+      const targetRole = formMode === 'register_karyawan' ? 'karyawan' : 'pelanggan';
 
       const response = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
@@ -351,7 +351,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setGoogleAddress('');
       setGoogleKtp(null);
       setGoogleSelfie(null);
-      setFormMode('login');
+      window.location.href = '/';
     } catch (error) {
       console.error('Google step 2 registration error:', error);
       setErrorMsg('Gagal mengirim data tambahan Google.');
@@ -384,123 +384,32 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             <p className="text-[10px] text-slate-400 font-bold tracking-wider mt-2 uppercase">Sistem Jasa AC Multi-Role Terpadu</p>
           </div>
 
-          {/* Tab Selection */}
-          <div className="flex border-b border-slate-100 mb-5 relative">
-            <button
-              type="button"
-              onClick={() => { setFormMode('login'); setErrorMsg(''); }}
-              className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'login' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Masuk
-              {formMode === 'login' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setFormMode('register_pelanggan'); setErrorMsg(''); }}
-              className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'register_pelanggan' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Pelanggan
-              {formMode === 'register_pelanggan' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-              )}
-            </button>
-          </div>
-
           {errorMsg && (
             <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3 rounded-2xl mb-4 text-center font-semibold animate-shake">
               {errorMsg}
             </div>
           )}
+          <div className="mb-6 text-center">
+            <h3 className="text-lg font-bold text-slate-800">Daftar sebagai Karyawan</h3>
+            <p className="text-xs text-slate-500 mt-1">Silakan lengkapi data diri Anda di bawah ini.</p>
+          </div>
 
-          {formMode === 'login' ? (
-            /* LOGIN PANEL */
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail Pengguna</label>
-                <div className="relative group">
-                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
-                  <input
-                    type="email"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                    required
-                  />
-                </div>
+          {/* REGISTRATION FORM (KARYAWAN) */}
+          <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Nama Lengkap</label>
+              <div className="relative group">
+                <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                <input
+                  type="text"
+                  placeholder="Masukkan Nama Lengkap Karyawan"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                  required
+                />
               </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center ml-1">
-                  <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Kata Sandi</label>
-                </div>
-                <div className="relative group">
-                  <Key size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full mt-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.98] text-sm flex items-center justify-center gap-2 transition duration-200 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader size={15} className="animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    <LogIn size={15} />
-                    Masuk Sekarang
-                  </>
-                )}
-              </button>
-
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink-0 mx-3 text-slate-400 text-[10px] uppercase font-bold tracking-widest">Atau</span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-
-              <div className="flex justify-center">
-                <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleLoginSuccess}
-                    onError={() => setErrorMsg('Login dengan Google gagal.')}
-                    theme="filled_blue"
-                    shape="pill"
-                  />
-                </GoogleOAuthProvider>
-              </div>
-            </form>
-          ) : formMode === 'register_pelanggan' ? (
-            /* REGISTRATION FORM (PELANGGAN) */
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-              <div className="space-y-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Nama Lengkap</label>
-                <div className="relative group">
-                  <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
-                  <input
-                    type="text"
-                    placeholder="Masukkan Nama Lengkap"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
-                    required
-                  />
-                </div>
-              </div>
+            </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail</label>
@@ -508,7 +417,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                   <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <input
                     type="email"
-                    placeholder="Masukkan Email"
+                    placeholder="karyawan@company.com"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
@@ -518,12 +427,12 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">No. Whatsapp</label>
+                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">No. WhatsApp</label>
                 <div className="relative group">
                   <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <input
                     type="tel"
-                    placeholder="Masukkan No. Whatsapp"
+                    placeholder="Masukkan No. Whatsapp Aktif"
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
                     className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
@@ -537,12 +446,50 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 <div className="relative group">
                   <MapPin size={15} className="absolute left-3.5 top-5 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <textarea
-                    placeholder="Masukkan Alamat Lengkap"
+                    placeholder="Masukkan Alamat Lengkap Sesuai KTP"
                     value={regAddress}
                     onChange={(e) => setRegAddress(e.target.value)}
                     className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200 h-16 resize-none"
                     required
                   ></textarea>
+                </div>
+              </div>
+
+              {/* Document Uploads */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Foto KTP</label>
+                  <label className={`w-full h-20 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${ktpPhoto ? 'border-emerald-500 bg-emerald-50/20 text-emerald-600' : 'border-slate-300 hover:border-blue-500 bg-slate-50/50 hover:bg-white text-slate-400 hover:text-blue-500'}`}>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setKtpPhoto)} className="hidden" />
+                    {ktpPhoto ? (
+                      <>
+                        <Check size={16} className="mb-0.5 text-emerald-500 animate-bounce" />
+                        <span className="text-[9px] font-bold text-emerald-600">KTP Terunggah</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={16} className="mb-0.5" />
+                        <span className="text-[9px] font-bold">Unggah KTP</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Foto Selfie</label>
+                  <label className={`w-full h-20 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${selfiePhoto ? 'border-emerald-500 bg-emerald-50/20 text-emerald-600' : 'border-slate-300 hover:border-blue-500 bg-slate-50/50 hover:bg-white text-slate-400 hover:text-blue-500'}`}>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setSelfiePhoto)} className="hidden" />
+                    {selfiePhoto ? (
+                      <>
+                        <Check size={16} className="mb-0.5 text-emerald-500 animate-bounce" />
+                        <span className="text-[9px] font-bold text-emerald-600">Selfie Terunggah</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={16} className="mb-0.5" />
+                        <span className="text-[9px] font-bold">Unggah Selfie</span>
+                      </>
+                    )}
+                  </label>
                 </div>
               </div>
 
@@ -574,12 +521,28 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 ) : (
                   <>
                     <UserPlus size={15} />
-                    Daftar Sekarang
+                    Daftar Karyawan
                   </>
                 )}
               </button>
+
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink-0 mx-3 text-slate-400 text-[10px] uppercase font-bold tracking-widest">Atau</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              <div className="flex justify-center">
+                <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleLoginSuccess}
+                    onError={() => setErrorMsg('Login dengan Google gagal.')}
+                    theme="filled_blue"
+                    shape="pill"
+                  />
+                </GoogleOAuthProvider>
+              </div>
             </form>
-          ) : null}
         </div>
       </div>
 
