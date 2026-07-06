@@ -24,6 +24,7 @@ import {
   Check,
   Settings,
   Wind
+  Instagram,
 } from 'lucide-react';
 
 export default function SugarACCompanyProfile() {
@@ -152,119 +153,6 @@ export default function SugarACCompanyProfile() {
                 </div>
                 <span className="text-[10px] bg-blue-600 px-2 py-0.5 rounded font-black uppercase tracking-wider">Bersertifikat</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= ADVANTAGES SECTION ================= */}
-      <section id="advantages" className="py-12 bg-white border-y border-slate-150">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-xl mx-auto space-y-2 mb-10">
-            <h2 className="text-2xl font-black text-slate-900">Keunggulan {businessName}</h2>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Kenapa Mempercayakan AC Anda Kepada Kami?</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="space-y-6 text-left">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <h4 className="font-black text-sm text-slate-800">Teknisi AC Ahli & Berpengalaman</h4>
-                  <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">
-                    Layanan kami dikerjakan oleh tim teknisi AC profesional yang telah dibekali pelatihan intensif, sertifikasi kompetensi, serta pemahaman mendalam tentang semua jenis & merek AC (Daikin, Panasonic, LG, Sharp, dll).
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                  <MapPin size={18} />
-                </div>
-                <div>
-                  <h4 className="font-black text-sm text-slate-800">Layanan Panggilan Terdekat & Cepat</h4>
-                  <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">
-                    Dengan beberapa kantor cabang yang tersebar di wilayah {selectedBranch}, kami memastikan kedatangan teknisi ke lokasi Anda secara tepat waktu tanpa menunggu lama saat AC Anda mendadak bermasalah.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                  <Shield size={18} />
-                </div>
-                <div>
-                  <h4 className="font-black text-sm text-slate-800">Garansi Penuh & Harga Transparan</h4>
-                  <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">
-                    Semua jenis jasa pencucian, perbaikan kebocoran freon, dan penggantian sparepart dilindungi garansi resmi. Harga yang ditagihkan transparan sesuai dengan daftar paket layanan kami.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-100 rounded-3xl overflow-hidden border border-slate-200/60 shadow-lg">
-              <img 
-                src="/advantages_ac.png" 
-                alt="Washing AC Unit" 
-                className="w-full aspect-video object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= WHY CHOOSE SUGAR AC SECTION ================= */}
-      <section id="why-us" className="py-16 bg-gradient-to-b from-blue-50/50 to-white border-b border-slate-150">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-2xl mx-auto space-y-2 mb-12">
-            <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Kepercayaan Anda Prioritas Kami</span>
-            <h2 className="text-3xl font-black text-slate-900">Kenapa Harus Memakai Jasa Sugar AC?</h2>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">
-              Kami berkomitmen memberikan standar layanan cuci & perbaikan AC terbaik dengan berbagai keuntungan yang tidak Anda temukan di tempat lain.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                <Shield size={22} />
-              </div>
-              <h4 className="font-extrabold text-sm text-slate-800">Garansi Pengerjaan 30 Hari</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Setiap layanan cuci AC dan penggantian suku cadang dilengkapi dengan garansi 30 hari. Jika AC Anda kembali bermasalah, teknisi kami siap datang kembali tanpa biaya tambahan.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                <ThumbsUp size={22} />
-              </div>
-              <h4 className="font-extrabold text-sm text-slate-800">Harga Jujur & Transparan</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Tarif jasa kami transparan tanpa ada biaya siluman. Teknisi kami akan melakukan diagnosa terlebih dahulu dan memberikan rincian estimasi biaya secara jujur di awal sebelum pengerjaan dimulai.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                <Users size={22} />
-              </div>
-              <h4 className="font-extrabold text-sm text-slate-800">Teknisi Jujur & Terlatih</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Semua teknisi Sugar AC memiliki seragam resmi, tanda pengenal diri, bersikap ramah, sopan, dan telah melewati tahap penyaringan ketat serta pelatihan khusus tentang kepuasan pelanggan.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
-              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
-                <Settings size={22} />
-              </div>
-              <h4 className="font-extrabold text-sm text-slate-800">Peralatan Modern & Bersih</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Kami menggunakan pompa jet air bertekanan tinggi khusus, terpal pelindung anti air untuk menjaga dinding & lantai tetap bersih, serta alat ukur kebocoran freon digital berakurasi tinggi.
-              </p>
             </div>
           </div>
         </div>
@@ -417,7 +305,7 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-      {/* ================= AC ISSUES EDUCATION SECTION ================= */}
+{/* ================= AC ISSUES EDUCATION SECTION ================= */}
       <section id="education" className="py-16 bg-white border-y border-slate-150">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
@@ -510,38 +398,136 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-      {/* ================= SOLUTIONS BANNER SECTION ================= */}
-      <section className="py-12 bg-slate-900 text-white border-y border-slate-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          <div className="text-left space-y-6">
-            <h2 className="text-3xl font-black leading-tight text-white">Solusi AC Terbaik untuk Rumah dan Kantor Anda</h2>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Jasa AC Bergaransi | Berdiri Sejak Tahun 2013</p>
-            <p className="text-xs text-slate-300 leading-relaxed font-medium">
-              Jika AC Anda sering bermasalah (evaporator membeku, air menetes di kamar, mati sendiri), jangan tunggu hingga kompresor terbakar. Tim Sugar AC menyediakan solusi diagnosa akurat, reparasi kelistrikan AC, penggantian kapasitor, dinamo fan, hingga cuci besar (*chemical cleaning*).
-            </p>
-            <div className="flex gap-4 items-center bg-white/5 border border-white/10 p-4 rounded-2xl max-w-sm">
-              <div className="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-black">
-                📞
-              </div>
-              <div>
-                <span className="text-[8px] text-slate-400 font-bold uppercase block tracking-wider">Layanan Telepon 24 Jam</span>
-                <a href="tel:+6281284976852" className="text-xs font-black text-white hover:text-blue-400 transition font-mono">+62 812 8497 6852</a>
-              </div>
-            </div>
+{/* ================= ADVANTAGES SECTION ================= */}
+      <section id="advantages" className="py-12 bg-white border-y border-slate-150">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-xl mx-auto space-y-2 mb-10">
+            <h2 className="text-2xl font-black text-slate-900">Keunggulan {businessName}</h2>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Kenapa Mempercayakan AC Anda Kepada Kami?</p>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden p-2 shadow-2xl">
-            <img 
-              src="/solutions_banner.png" 
-              alt="Sugar AC Quality Services banner" 
-              className="w-full rounded-2xl aspect-video object-cover"
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div className="space-y-6 text-left">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                  <Users size={18} />
+                </div>
+                <div>
+                  <h4 className="font-black text-sm text-slate-800">Teknisi AC Ahli & Berpengalaman</h4>
+                  <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">
+                    Layanan kami dikerjakan oleh tim teknisi AC profesional yang telah dibekali pelatihan intensif, sertifikasi kompetensi, serta pemahaman mendalam tentang semua jenis & merek AC (Daikin, Panasonic, LG, Sharp, dll).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <h4 className="font-black text-sm text-slate-800">Layanan Panggilan Terdekat & Cepat</h4>
+                  <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">
+                    Dengan beberapa kantor cabang yang tersebar di wilayah {selectedBranch}, kami memastikan kedatangan teknisi ke lokasi Anda secara tepat waktu tanpa menunggu lama saat AC Anda mendadak bermasalah.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                  <Shield size={18} />
+                </div>
+                <div>
+                  <h4 className="font-black text-sm text-slate-800">Garansi Penuh & Harga Transparan</h4>
+                  <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">
+                    Semua jenis jasa pencucian, perbaikan kebocoran freon, dan penggantian sparepart dilindungi garansi resmi. Harga yang ditagihkan transparan sesuai dengan daftar paket layanan kami.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-100 rounded-3xl overflow-hidden border border-slate-200/60 shadow-lg">
+              <img 
+                src="/advantages_ac.png" 
+                alt="Washing AC Unit" 
+                className="w-full aspect-video object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>
 
+{/* ================= WHY CHOOSE SUGAR AC SECTION ================= */}
+      <section id="why-us" className="py-16 bg-gradient-to-b from-blue-50/50 to-white border-b border-slate-150">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-2xl mx-auto space-y-2 mb-12">
+            <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Kepercayaan Anda Prioritas Kami</span>
+            <h2 className="text-3xl font-black text-slate-900">Kenapa Harus Memakai Jasa Sugar AC?</h2>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">
+              Kami berkomitmen memberikan standar layanan cuci & perbaikan AC terbaik dengan berbagai keuntungan yang tidak Anda temukan di tempat lain.
+            </p>
+          </div>
 
-      {/* ================= MOBILE STICKY FOOTER ================= */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                <Shield size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Garansi Pengerjaan 30 Hari</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Setiap layanan cuci AC dan penggantian suku cadang dilengkapi dengan garansi 30 hari. Jika AC Anda kembali bermasalah, teknisi kami siap datang kembali tanpa biaya tambahan.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                <ThumbsUp size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Harga Jujur & Transparan</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Tarif jasa kami transparan tanpa ada biaya siluman. Teknisi kami akan melakukan diagnosa terlebih dahulu dan memberikan rincian estimasi biaya secara jujur di awal sebelum pengerjaan dimulai.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                <Users size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Teknisi Jujur & Terlatih</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Semua teknisi Sugar AC memiliki seragam resmi, tanda pengenal diri, bersikap ramah, sopan, dan telah melewati tahap penyaringan ketat serta pelatihan khusus tentang kepuasan pelanggan.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs space-y-3 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                <Settings size={22} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-800">Peralatan Modern & Bersih</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                Kami menggunakan pompa jet air bertekanan tinggi khusus, terpal pelindung anti air untuk menjaga dinding & lantai tetap bersih, serta alat ukur kebocoran freon digital berakurasi tinggi.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= SOCIAL MEDIA BANNER SECTION ================= */}
+      <section className="py-12 bg-blue-600 text-white border-y border-blue-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Instagram size={32} className="text-white" />
+          </div>
+          <h2 className="text-3xl font-black leading-tight text-white">Ikuti Media Sosial Kami</h2>
+          <p className="text-sm text-blue-100 font-medium max-w-2xl mx-auto">
+            Dapatkan tips perawatan AC harian, promo menarik, dan lihat hasil kerja teknisi kami secara langsung di Instagram.
+          </p>
+          <a href="https://instagram.com/sugarac" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-white text-blue-600 font-extrabold text-sm px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+            <Instagram size={18} /> @sugarac
+          </a>
+        </div>
+      </section>
+
+{/* ================= MOBILE STICKY FOOTER ================= */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-slate-950 text-white border-t border-slate-900 py-2.5 px-4 block md:hidden">
         <div className="grid grid-cols-4 gap-2 text-center text-[9px] font-bold">
           <button
