@@ -37,7 +37,7 @@ export default function SugarACCompanyProfile() {
   // Active Service Tab
   const [activeServiceTab, setActiveServiceTab] = useState('Cuci AC');
 
-  const businessName = appSettings?.business_name || 'Sugar AC';
+  const businessName = appSettings?.['GLOBAL']?.business_name || 'Sugar AC';
   const waNumber = '6281284976852'; // Prefilled default WA contact
 
   const handleQuickContact = (type: 'wa' | 'phone' | 'install' | 'trade', service?: string) => {
@@ -59,8 +59,12 @@ export default function SugarACCompanyProfile() {
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25">
-              ❄️
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25 overflow-hidden">
+              {appSettings?.['GLOBAL']?.business_logo ? (
+                <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <span>❄️</span>
+              )}
             </div>
             <div>
               <span className="text-base font-black tracking-wider text-slate-900 block">{businessName.toUpperCase()}</span>
@@ -110,41 +114,41 @@ export default function SugarACCompanyProfile() {
       </header>
 
       {/* ================= HERO SECTION ================= */}
-      <section id="hero" className="relative min-h-[600px] md:min-h-[700px] flex items-center overflow-hidden bg-slate-100">
-        {/* Background Image with Gradient Mask */}
-        <div className="absolute inset-0 z-0">
+      <section id="hero" className="relative min-h-[600px] md:min-h-[650px] flex items-center overflow-hidden bg-slate-50">
+        {/* Background Image (Right half on Desktop, Full on Mobile) */}
+        <div className="absolute inset-y-0 right-0 w-full md:w-[55%] lg:w-[60%] z-0">
           <img 
             src="/hero_technicians.png" 
             alt="Sugar AC Technicians Team" 
-            className="w-full h-full object-cover object-right lg:object-center"
+            className="w-full h-full object-cover object-center"
           />
-          {/* Gradient overlay to ensure text readability on the left */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-transparent hidden md:block"></div>
-          {/* Solid/Semi-solid overlay for mobile where text covers the whole image */}
-          <div className="absolute inset-0 bg-white/85 md:hidden"></div>
+          {/* Seamless gradient blend to the left solid background */}
+          <div className="hidden md:block absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-slate-50 to-transparent"></div>
+          {/* Strong overlay for mobile so text stays readable */}
+          <div className="absolute inset-0 bg-slate-50/90 md:hidden"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20 mt-8">
-          <div className="max-w-3xl space-y-7">
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 leading-[1.1] uppercase tracking-tight">
+          <div className="max-w-lg lg:max-w-xl space-y-7">
+            <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-black text-slate-900 leading-[1.05] uppercase tracking-tighter">
               Layanan Service AC <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-650">{selectedBranch}</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{selectedBranch}</span>
             </h1>
-            <p className="text-sm md:text-base text-slate-700 leading-relaxed font-semibold max-w-xl">
+            <p className="text-sm md:text-[15px] text-slate-600 leading-relaxed font-semibold">
               Sugar AC adalah mitra terpercaya untuk segala kebutuhan layanan AC Anda. Tim teknisi ahli kami siap memberikan solusi perbaikan AC bocor, tidak dingin, cuci AC berkala, hingga bongkar pasang AC dengan garansi resmi.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-5">
               <button
                 onClick={() => handleQuickContact('wa')}
-                className="bg-slate-900 hover:bg-blue-600 text-white font-black text-xs py-4 px-10 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto shadow-xl"
+                className="bg-slate-900 hover:bg-blue-600 text-white font-extrabold text-[11px] py-4 px-8 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto flex items-center justify-center gap-2"
               >
-                Pesan Sekarang
+                <MessageCircle size={16} /> Pesan Sekarang
               </button>
               <button
                 onClick={() => handleQuickContact('phone')}
-                className="bg-blue-600 hover:bg-slate-900 text-white font-black text-xs py-4 px-10 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto shadow-xl"
+                className="bg-blue-600 hover:bg-slate-900 text-white font-extrabold text-[11px] py-4 px-8 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2"
               >
-                Hubungi Kami
+                <Phone size={16} /> Hubungi Kami
               </button>
             </div>
           </div>
