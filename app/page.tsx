@@ -116,25 +116,25 @@ export default function SugarACCompanyProfile() {
       {/* ================= HERO SECTION ================= */}
       <section id="hero" className="relative min-h-[600px] md:min-h-[650px] flex items-center overflow-hidden bg-slate-50">
         {/* Background Image (Right half on Desktop, Full on Mobile) */}
-        <div className="absolute inset-y-0 right-0 w-full md:w-[55%] lg:w-[60%] z-0">
+        <div className="absolute inset-y-0 right-0 w-full md:w-[60%] lg:w-[65%] z-0">
           <img 
             src="/hero_technicians.png" 
             alt="Sugar AC Technicians Team" 
             className="w-full h-full object-cover object-center"
           />
-          {/* Seamless gradient blend to the left solid background */}
-          <div className="hidden md:block absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-slate-50 to-transparent"></div>
+          {/* Seamless, extra-wide gradient blend to the left solid background */}
+          <div className="hidden md:block absolute inset-y-0 left-0 w-80 lg:w-96 bg-gradient-to-r from-slate-50 via-slate-50/90 to-transparent"></div>
           {/* Strong overlay for mobile so text stays readable */}
           <div className="absolute inset-0 bg-slate-50/90 md:hidden"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20 mt-8">
-          <div className="max-w-lg lg:max-w-xl space-y-7">
-            <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-black text-slate-900 leading-[1.05] uppercase tracking-tighter">
-              Layanan Service AC <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{selectedBranch}</span>
+          <div className="max-w-xl lg:max-w-2xl space-y-7">
+            <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 leading-[1.15] tracking-tight">
+              Layanan Service AC Terbaik <br className="hidden md:block" />
+              di <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-black">{selectedBranch}</span> & Sekitarnya
             </h1>
-            <p className="text-sm md:text-[15px] text-slate-600 leading-relaxed font-semibold">
+            <p className="text-[15px] md:text-base text-slate-600 leading-relaxed font-medium">
               Sugar AC adalah mitra terpercaya untuk segala kebutuhan layanan AC Anda. Tim teknisi ahli kami siap memberikan solusi perbaikan AC bocor, tidak dingin, cuci AC berkala, hingga bongkar pasang AC dengan garansi resmi.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-5">
