@@ -454,7 +454,7 @@ export default function KaryawanDashboard() {
       setIsLoading(true);
       setErrorMsg('');
 
-      await api.updateUser(activeUser!.id, {
+      const updatedUser = await api.updateUser(activeUser!.id, {
         name: editName.trim(),
         email: activeUser!.email,
         phone: editPhone.trim(),
@@ -464,17 +464,8 @@ export default function KaryawanDashboard() {
         lng: editLng,
         photo: editPhoto,
       });
-
-      const updatedUser = {
-        ...activeUser!,
-        name: editName.trim(),
-        phone: editPhone.trim(),
-        address: editAddress.trim(),
-        lat: editLat,
-        lng: editLng,
-        photo: editPhoto,
-      };
       setActiveUser(updatedUser);
+      setEditPhoto(updatedUser.photo || '');
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);

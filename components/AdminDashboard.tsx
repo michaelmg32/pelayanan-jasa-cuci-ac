@@ -294,7 +294,7 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true);
       setProfileErrorMsg('');
-      await api.updateUser(activeUser!.id, {
+      const updatedUser = await api.updateUser(activeUser!.id, {
         name: editProfileName.trim(),
         email: activeUser!.email,
         phone: editProfilePhone.trim(),
@@ -302,14 +302,8 @@ export default function AdminDashboard() {
         address: editProfileAddress.trim(),
         photo: editProfilePhoto,
       });
-      const updatedUser = {
-        ...activeUser!,
-        name: editProfileName.trim(),
-        phone: editProfilePhone.trim(),
-        address: editProfileAddress.trim(),
-        photo: editProfilePhoto,
-      };
       setActiveUser(updatedUser);
+      setEditProfilePhoto(updatedUser.photo || '');
       setSaveProfileSuccess(true);
       setProfileViewMode('readonly');
       setTimeout(() => setSaveProfileSuccess(false), 2500);

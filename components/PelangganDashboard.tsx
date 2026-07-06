@@ -492,7 +492,7 @@ export default function PelangganDashboard() {
       setIsLoading(true);
       setErrorMsg('');
 
-      await api.updateUser(activeUser!.id, {
+      const updatedUser = await api.updateUser(activeUser!.id, {
         name: editName.trim(),
         email: activeUser!.email,
         phone: editPhone.trim(),
@@ -502,17 +502,8 @@ export default function PelangganDashboard() {
         lng: editLng,
         photo: editPhoto,
       });
-
-      const updatedUser = {
-        ...activeUser!,
-        name: editName.trim(),
-        phone: editPhone.trim(),
-        address: editAddress.trim(),
-        lat: editLat,
-        lng: editLng,
-        photo: editPhoto,
-      };
       setActiveUser(updatedUser);
+      setEditPhoto(updatedUser.photo || '');
 
       setSaveSuccess(true);
       setProfileViewMode('readonly');
