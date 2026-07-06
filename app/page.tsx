@@ -37,7 +37,9 @@ export default function SugarACCompanyProfile() {
 
   useEffect(() => {
     if (regions && regions.length > 0 && !selectedBranch) {
-      setSelectedBranch(regions[0].name);
+      // Prioritaskan Palembang / region-utama jika ada
+      const utamaRegion = regions.find(r => r.id === 'region-utama' || r.name.toLowerCase() === 'palembang');
+      setSelectedBranch(utamaRegion ? utamaRegion.name : regions[0].name);
     }
   }, [regions, selectedBranch]);
 
@@ -74,8 +76,8 @@ export default function SugarACCompanyProfile() {
       {/* ================= HEADER NAVBAR ================= */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="w-full px-6 lg:px-12 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25 overflow-hidden">
+          <a href="/" className="flex items-center gap-2.5 group cursor-pointer">
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-blue-500/25 overflow-hidden group-hover:scale-105 transition-transform duration-300">
               {appSettings?.['GLOBAL']?.business_logo ? (
                 <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
               ) : (
@@ -83,10 +85,10 @@ export default function SugarACCompanyProfile() {
               )}
             </div>
             <div>
-              <span className="text-base font-black tracking-wider text-slate-900 block">{businessName.toUpperCase()}</span>
+              <span className="text-base font-black tracking-wider text-slate-900 block group-hover:text-blue-600 transition-colors duration-300">{businessName.toUpperCase()}</span>
               <span className="text-[9px] font-bold text-blue-600 block uppercase tracking-widest -mt-0.5">Solusi AC Sejuk</span>
             </div>
-          </div>
+          </a>
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
             <a href="#hero" className="hover:text-blue-600 transition">Beranda</a>

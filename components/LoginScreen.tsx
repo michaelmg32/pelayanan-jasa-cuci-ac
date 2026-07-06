@@ -373,13 +373,13 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
 
           {/* Brand Logo & Tagline */}
           <div className="flex flex-col items-center justify-center mb-6 shrink-0">
-            <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 mb-3 transform hover:rotate-6 transition duration-300 cursor-pointer overflow-hidden">
+            <a href="/" className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 mb-3 transform hover:rotate-6 hover:scale-105 transition duration-300 cursor-pointer overflow-hidden block">
               {appSettings?.['GLOBAL']?.business_logo ? (
                 <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <Wind size={28} className="text-white shrink-0 animate-pulse" />
               )}
-            </div>
+            </a>
             <h2 className="text-xl font-extrabold tracking-tight text-slate-800 leading-none">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h2>
             <p className="text-[10px] text-slate-400 font-bold tracking-wider mt-2 uppercase">Sistem Jasa AC Multi-Role Terpadu</p>
           </div>
