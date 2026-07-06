@@ -149,4 +149,6 @@ export interface Order {
   paymentInvoiceId?: string; // Xendit Invoice ID
   paymentUrl?: string; // Xendit Payment URL
   invoiceSent?: boolean;
+  voucher_code?: string;
+  voucher_discount?: number;
 }

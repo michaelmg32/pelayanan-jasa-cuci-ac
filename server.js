@@ -1304,8 +1304,9 @@ const recalculateOrderMargin = async (connection, orderId) => {
         }
       }
 
+      const discount = Number(order.voucher_discount) || 0;
       const totalCost = Number(order.serviceCost) || 0;
-      const finalPrice = totalCost + totalAddonsSales;
+      const finalPrice = Math.max(0, totalCost + totalAddonsSales - discount);
       const hpp_orders = totalAddonsHpp;
       const margin = finalPrice - hpp_orders;
 
@@ -1710,12 +1711,13 @@ app.put('/api/orders/:id', async (req, res) => {
     if (paymentMethod === 'TRANSFER') {
       try {
         const [existing] = await connection.query(
-          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, addonsCost, customerName, customerPhone, acDetail, addonsUsed FROM orders WHERE id = ?',
+          'SELECT paymentUrl, paymentInvoiceId, totalCost, serviceCost, addonsCost, customerName, customerPhone, acDetail, addonsUsed, voucher_code, voucher_discount FROM orders WHERE id = ?',
           [id]
         );
         if (existing.length > 0) {
           const orderData = existing[0];
-          const amount = Number(orderData.serviceCost || 0) + Number(orderData.addonsCost || 0);
+          const discount = Number(orderData.voucher_discount || 0);
+          const amount = Math.max(0, Number(orderData.serviceCost || 0) + Number(orderData.addonsCost || 0) - discount);
 
           let reuseInvoice = false;
           if (orderData.paymentUrl && orderData.paymentInvoiceId) {
@@ -1806,6 +1808,15 @@ app.put('/api/orders/:id', async (req, res) => {
                   price: Number(ad.price) || 0,
                   category: 'Sparepart/Addons'
                 });
+              });
+            }
+
+            if (discount > 0) {
+              items.push({
+                name: `Diskon Voucher: ${orderData.voucher_code || 'PROMO'}`,
+                quantity: 1,
+                price: -discount,
+                category: 'Diskon'
               });
             }
 

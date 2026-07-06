@@ -242,7 +242,7 @@ export default function KaryawanDashboard() {
         return 'Rp' + Number(num || 0).toLocaleString('id-ID');
       };
 
-      const finalAmount = task.finalPrice || ((task.serviceCost || 0) + (task.addonsCost || 0)) || task.totalCost || 0;
+      const finalAmount = task.finalPrice || Math.max(0, (task.serviceCost || 0) + (task.addonsCost || 0) - (task.voucher_discount || 0)) || task.totalCost || 0;
 
       // Build acDetails HTML safely
       let acDetailsList = '';
@@ -635,7 +635,7 @@ export default function KaryawanDashboard() {
         acDetail: formattedAcDetails,
         serviceCost: newServiceCost,
         totalCost: newServiceCost,
-        finalPrice: newServiceCost + (currentOrder.addonsCost || 0),
+        finalPrice: Math.max(0, newServiceCost + (currentOrder.addonsCost || 0) - (currentOrder.voucher_discount || 0)),
         quantity: formattedAcDetails.reduce((sum, item) => sum + item.quantity, 0)
       });
 
@@ -647,7 +647,7 @@ export default function KaryawanDashboard() {
               acDetail: formattedAcDetails,
               serviceCost: newServiceCost,
               totalCost: newServiceCost,
-              finalPrice: newServiceCost + (o.addonsCost || 0),
+              finalPrice: Math.max(0, newServiceCost + (o.addonsCost || 0) - (o.voucher_discount || 0)),
               quantity: formattedAcDetails.reduce((sum, item) => sum + item.quantity, 0)
             }
             : o
@@ -758,7 +758,7 @@ export default function KaryawanDashboard() {
       const addonsCost = addonsUsed.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
       const serviceCost = task?.serviceCost || 0;
       const totalCost = serviceCost;
-      const finalPrice = serviceCost + addonsCost;
+      const finalPrice = Math.max(0, serviceCost + addonsCost - (task?.voucher_discount || 0));
 
       // Compile AC history logs to be saved in DB
       const acHistoryList = individualUnits.map(unit => {
@@ -1359,7 +1359,7 @@ export default function KaryawanDashboard() {
                               </div>
                               <div className="flex justify-between items-center bg-white p-1.5 rounded-lg border">
                                 <span>Tagihan:</span>
-                                <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(task.finalPrice || ((task.serviceCost || 0) + (task.addonsCost || 0)) || task.totalCost || 0)}</strong>
+                                <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(task.finalPrice || Math.max(0, (task.serviceCost || 0) + (task.addonsCost || 0) - (task.voucher_discount || 0)) || task.totalCost || 0)}</strong>
                               </div>
 
                               <button
