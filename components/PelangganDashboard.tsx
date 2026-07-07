@@ -942,7 +942,7 @@ export default function PelangganDashboard() {
                             </div>
                             <div className="text-right shrink-0">
                               <span className="text-xs font-black text-indigo-700 font-mono block">
-                                {formatRupiah(order.finalPrice || (Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}
+                                {formatRupiah(Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}
                               </span>
                               {Number(order.voucher_discount || 0) > 0 && (
                                 <span className="block text-[9px] text-red-500 font-bold mt-0.5">Voucher: -{formatRupiah(order.voucher_discount)}</span>
@@ -2572,7 +2572,7 @@ export default function PelangganDashboard() {
                   )}
                   <div className="flex justify-between font-black text-indigo-700 text-sm mt-2 pt-2 border-t border-slate-200">
                     <span>Total Pembayaran</span>
-                    <span className="font-mono">{formatRupiah(selectedHistoryOrder.finalPrice || (Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0) - Number(selectedHistoryOrder.voucher_discount || 0)))}</span>
+                    <span className="font-mono">{formatRupiah(Math.max(0, Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0) - Number(selectedHistoryOrder.voucher_discount || 0)))}</span>
                   </div>
                 </div>
 

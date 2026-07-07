@@ -4068,7 +4068,7 @@ return (
                     )}
                     <div className="flex justify-between font-black text-slate-800 border-t pt-2 mt-1">
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
-                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.finalPrice || (Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0) - Number(selectedOrderDetail.voucher_discount || 0)))}</span>
+                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(Math.max(0, Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0) - Number(selectedOrderDetail.voucher_discount || 0)))}</span>
                     </div>
                     {/* {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
                       <div className="flex justify-between font-bold text-emerald-750 bg-emerald-50 border border-emerald-100 p-2 rounded-lg mt-2">

@@ -242,7 +242,7 @@ export default function KaryawanDashboard() {
         return 'Rp' + Number(num || 0).toLocaleString('id-ID');
       };
 
-      const finalAmount = task.finalPrice || Math.max(0, (task.serviceCost || 0) + (task.addonsCost || 0) - (task.voucher_discount || 0)) || task.totalCost || 0;
+      const finalAmount = Math.max(0, (task.serviceCost || 0) + (task.addonsCost || 0) - (task.voucher_discount || 0)) || task.totalCost || 0;
 
       // Build acDetails HTML safely
       let acDetailsList = '';
@@ -1357,9 +1357,21 @@ export default function KaryawanDashboard() {
                                 <span>Mekanisme:</span>
                                 <strong className="text-slate-800 uppercase">{task.paymentMethod === 'TRANSFER' ? 'TRANSFER' : 'TUNAI'}</strong>
                               </div>
-                              <div className="flex justify-between items-center bg-white p-1.5 rounded-lg border">
-                                <span>Tagihan:</span>
-                                <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(task.finalPrice || Math.max(0, (task.serviceCost || 0) + (task.addonsCost || 0) - (task.voucher_discount || 0)) || task.totalCost || 0)}</strong>
+                              <div className="flex flex-col gap-1 bg-white p-2 rounded-lg border">
+                                <div className="flex justify-between items-center text-[10.5px] text-slate-500">
+                                  <span>Total Jasa:</span>
+                                  <span className="font-mono">{formatRupiah(Number(task.serviceCost || 0) + Number(task.addonsCost || 0))}</span>
+                                </div>
+                                {Number(task.voucher_discount || 0) > 0 && (
+                                  <div className="flex justify-between items-center text-[10px] text-red-500 font-bold">
+                                    <span>Voucher ({task.voucher_code})</span>
+                                    <span className="font-mono">-{formatRupiah(task.voucher_discount)}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center border-t pt-1 mt-0.5">
+                                  <span className="font-bold">Tagihan:</span>
+                                  <strong className="text-indigo-700 font-mono text-[11.5px]">{formatRupiah(Math.max(0, (task.serviceCost || 0) + (task.addonsCost || 0) - (task.voucher_discount || 0)) || task.totalCost || 0)}</strong>
+                                </div>
                               </div>
 
                               <button
@@ -1485,8 +1497,11 @@ export default function KaryawanDashboard() {
                             <h4 className="font-bold text-xs text-slate-800 mt-0.5">{task.customerName}</h4>
                           </div>
                           <div className="text-right">
-                            <span className="text-xs font-black text-emerald-600 block">{formatRupiah(Number(task.serviceCost || 0) + Number(task.addonsCost || 0))}</span>
-                            <span className="text-[8px] bg-emerald-50 text-emerald-600 font-black uppercase px-1.5 block mt-0.5">CLOSED</span>
+                            <span className="text-xs font-black text-emerald-600 block">{formatRupiah(Math.max(0, Number(task.serviceCost || 0) + Number(task.addonsCost || 0) - Number(task.voucher_discount || 0)))}</span>
+                            {Number(task.voucher_discount || 0) > 0 && (
+                              <span className="block text-[8px] text-red-500 font-bold mt-0.5">Voucher: -{formatRupiah(task.voucher_discount)}</span>
+                            )}
+                            <span className="text-[8px] bg-emerald-50 text-emerald-600 font-black uppercase px-1.5 block mt-0.5 w-fit ml-auto">CLOSED</span>
                           </div>
                         </div>
 
@@ -2141,9 +2156,15 @@ export default function KaryawanDashboard() {
                     <span className="font-mono">{formatRupiah(selectedHistoryOrder.addonsCost)}</span>
                   </div>
                 )}
+                {Number(selectedHistoryOrder.voucher_discount || 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-red-650 font-bold mt-1">
+                    <span>Diskon Voucher ({selectedHistoryOrder.voucher_code})</span>
+                    <span className="font-mono">-{formatRupiah(selectedHistoryOrder.voucher_discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-black text-emerald-700 text-sm mt-2 pt-2 border-t border-slate-200">
                   <span>Total Harga Layanan</span>
-                  <span className="font-mono">{formatRupiah(Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0))}</span>
+                  <span className="font-mono">{formatRupiah(Math.max(0, Number(selectedHistoryOrder.serviceCost || 0) + Number(selectedHistoryOrder.addonsCost || 0) - Number(selectedHistoryOrder.voucher_discount || 0)))}</span>
                 </div>
               </div>
 
