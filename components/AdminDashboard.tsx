@@ -43,7 +43,8 @@ import {
   ChevronUp,
   Download,
   Clock,
-  Tag
+  Tag,
+  UserPlus
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
@@ -493,6 +494,17 @@ export default function AdminDashboard() {
   const [jobsEndDate, setJobsEndDate] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
 
+  // Add User State
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regRole, setRegRole] = useState<Role>(Role.STAFF);
+  const [regKtp, setRegKtp] = useState('');
+  const [regSelfie, setRegSelfie] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+
   // Editing User state
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<Role>(Role.USER);
@@ -919,6 +931,65 @@ export default function AdminDashboard() {
   };
 
   // User Actions
+  const handleRegKtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRegKtp(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRegSelfieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRegSelfie(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!regName.trim() || !regEmail.trim() || !regPassword) {
+      setErrorMsg('Nama, Email, dan Password wajib diisi.');
+      return;
+    }
+    try {
+      setIsRegistering(true);
+      setErrorMsg('');
+      const payload = {
+        name: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+        role: regRole,
+        region_id: activeUser?.region_id || null, // Force admin's region
+        ktpPhoto: regRole === Role.STAFF ? regKtp : null,
+        selfiePhoto: regRole === Role.STAFF ? regSelfie : null,
+      };
+      await api.createUser(payload);
+      
+      // Reset form and reload
+      setRegName('');
+      setRegEmail('');
+      setRegPhone('');
+      setRegPassword('');
+      setRegRole(Role.STAFF);
+      setRegKtp('');
+      setRegSelfie('');
+      setShowAddUserModal(false);
+      window.location.reload();
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Gagal menambahkan pengguna baru.');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   const handleSaveUserEdit = async (userId: string) => {
     try {
       setIsLoading(true);
@@ -2254,15 +2325,23 @@ return (
                 <h3 className="font-extrabold text-sm uppercase text-slate-800">Manajemen Akses & Pengguna</h3>
                 <p className="text-[11px] text-slate-500 mt-1">Edit hak akses/peran pengguna</p>
               </div>
-              <div className="relative w-full sm:w-64">
-                <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari user..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
-                />
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-64">
+                  <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari user..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs uppercase rounded-xl hover:bg-emerald-700 transition-colors w-full sm:w-auto whitespace-nowrap"
+                >
+                  + Tambah Pengguna
+                </button>
               </div>
             </div>
 
@@ -4521,6 +4600,174 @@ return (
             </div>
           </div>
         )}
+
+      {/* MODAL: Tambah Pengguna */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <UserPlus size={16} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-800">Tambah Pengguna Baru</h3>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Buat akun untuk karyawan atau admin</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition border"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              {errorMsg && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-600 p-3 rounded-xl text-xs font-semibold mb-4">
+                  {errorMsg}
+                </div>
+              )}
+
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  placeholder="Masukkan nama lengkap"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Email</label>
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                    placeholder="email@contoh.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Nomor WhatsApp</label>
+                  <input
+                    type="text"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                    placeholder="081234567890"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Kata Sandi (Password)</label>
+                <input
+                  type="password"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  placeholder="Minimal 6 karakter"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 mt-2">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Peran (Role)</label>
+                  <select
+                    value={regRole}
+                    onChange={(e) => setRegRole(e.target.value as Role)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  >
+                    <option value={Role.STAFF}>STAFF (Karyawan/Teknisi)</option>
+                    <option value={Role.ADMIN}>ADMIN (Pengurus Cabang)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Wilayah Cabang</label>
+                  <select
+                    value={activeUser?.region_id || ''}
+                    disabled
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value={activeUser?.region_id || ''}>CABANG ANDA SAAT INI</option>
+                  </select>
+                </div>
+              </div>
+
+              {regRole === Role.STAFF && (
+                <div className="space-y-4 pt-2 border-t border-slate-100 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block ml-1">Unggah KTP</label>
+                      <div className="flex flex-col gap-2">
+                        {regKtp && (
+                          <div className="w-full h-24 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                            <img src={regKtp} alt="KTP Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleRegKtpChange}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block ml-1">Foto Selfie Karyawan</label>
+                      <div className="flex flex-col gap-2">
+                        {regSelfie && (
+                          <div className="w-full h-24 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                            <img src={regSelfie} alt="Selfie Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleRegSelfieChange}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            <div className="p-4 sm:p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-xs uppercase rounded-xl hover:bg-slate-50 transition"
+                disabled={isRegistering}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreateUser}
+                disabled={isRegistering || !regName || !regEmail || !regPassword}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition flex items-center gap-2"
+              >
+                {isRegistering ? (
+                  <>
+                    <Loader size={14} className="animate-spin" /> Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={14} /> Buat Akun
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
   );
 }
