@@ -263,7 +263,7 @@ const initializeDatabaseSettings = async () => {
     }
 
     // Backfill calculations for existing orders (quantity, hpp_orders, finalPrice, margin)
-    const [existingOrders] = await connection.query("SELECT id, acDetail, serviceCost, addonsUsed FROM orders");
+    const [existingOrders] = await connection.query("SELECT id, acDetail, serviceCost, addonsUsed, voucher_discount FROM orders");
     if (existingOrders.length > 0) {
       console.log(`⏳ Migrating/Backfilling ${existingOrders.length} orders for the new margin system...`);
       for (const order of existingOrders) {
@@ -298,7 +298,8 @@ const initializeDatabaseSettings = async () => {
 
         const serviceCostTotal = Number(order.serviceCost) || 0;
         const totalCost = serviceCostTotal;
-        const finalPrice = totalCost + totalAddonsSales;
+        const discount = Number(order.voucher_discount) || 0;
+        const finalPrice = Math.max(0, totalCost + totalAddonsSales - discount);
         const hpp_orders = totalAddonsHpp;
         const margin = finalPrice - hpp_orders;
 
@@ -1267,7 +1268,7 @@ const syncOrderAddonTransactions = async (connection, orderId) => {
 
 const recalculateOrderMargin = async (connection, orderId) => {
   try {
-    const [rows] = await connection.query('SELECT acDetail, serviceCost, addonsUsed FROM orders WHERE id = ?', [orderId]);
+    const [rows] = await connection.query('SELECT acDetail, serviceCost, addonsUsed, voucher_discount FROM orders WHERE id = ?', [orderId]);
     if (rows.length > 0) {
       const order = rows[0];
 
