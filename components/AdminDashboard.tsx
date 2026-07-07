@@ -1063,8 +1063,8 @@ export default function AdminDashboard() {
   };
 
   const startEditUser = (target: User) => {
-    if (target.role === Role.OWNER || target.role === Role.ADMIN) {
-      alert('❌ Anda tidak memiliki wewenang untuk mengedit role Owner atau sesama Admin.');
+    if (target.role === Role.OWNER) {
+      alert('⚠️ Anda tidak memiliki wewenang untuk mengedit role Owner.');
       return;
     }
     setEditingUserId(target.id);
@@ -2389,7 +2389,7 @@ return (
                         <ShieldCheck size={12} /> Verifikasi
                       </button>
                     )}
-                    {u.role !== Role.OWNER && u.role !== Role.ADMIN && (
+                    {u.role !== Role.OWNER && (
                       <button
                         type="button"
                         onClick={() => startEditUser(u)}
@@ -3777,13 +3777,17 @@ return (
             <div className="p-4 space-y-4">
               <div>
                 <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Role</label>
-                <div className="w-full bg-slate-50 border border-slate-200 text-slate-500 text-xs px-3 py-2.5 rounded-xl font-extrabold select-none">
-                  {editRole === Role.USER ? 'Pelanggan' :
-                   editRole === Role.STAFF ? 'Staff/Teknisi' :
-                   editRole === Role.ADMIN ? 'Admin' :
-                   editRole === Role.OWNER ? 'Owner' : editRole}
-                </div>
-                <p className="text-[8.5px] text-slate-400 mt-1 font-medium">Hanya Owner yang dapat mengubah peran pengguna.</p>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value as Role)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                  disabled={isLoading}
+                >
+                  <option value={Role.USER}>Pelanggan</option>
+                  <option value={Role.STAFF}>Staff/Teknisi</option>
+                  <option value={Role.ADMIN}>Admin</option>
+                </select>
+                <p className="text-[8.5px] text-slate-400 mt-1 font-medium">Ubah peran pengguna (kecuali Owner).</p>
               </div>
 
               <div>
