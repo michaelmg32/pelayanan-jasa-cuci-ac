@@ -270,7 +270,7 @@ export default function OwnerDashboard() {
         phone: regPhone,
         password: regPassword,
         role: regRole,
-        region_id: regRegionId || null,
+        region_id: activeUser?.region_id || regRegionId || null,
       };
       await api.createUser(payload);
       
@@ -1177,15 +1177,30 @@ export default function OwnerDashboard() {
                 <p className="text-[11px] text-slate-400 mt-1 font-medium">Kelola wilayah cabang dan pengguna yang bertugas</p>
               </div>
 
-              <div className="w-full sm:w-64 relative">
-                <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari user..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
-                />
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="w-full sm:w-64 relative">
+                  <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari user..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-xs pl-10 pr-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    if (activeUser?.region_id) {
+                      setRegRegionId(activeUser.region_id);
+                    } else {
+                      setRegRegionId('');
+                    }
+                    setShowAddUserModal(true);
+                  }}
+                  className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs uppercase rounded-xl hover:bg-emerald-700 transition-colors w-full sm:w-auto whitespace-nowrap"
+                >
+                  + Tambah Pengguna
+                </button>
               </div>
             </div>
 
@@ -1217,12 +1232,6 @@ export default function OwnerDashboard() {
                   className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300 w-full sm:w-auto"
                 >
                   {isAddingRegion ? 'Menyimpan...' : '+ Tambah Cabang'}
-                </button>
-                <button
-                  onClick={() => setShowAddUserModal(true)}
-                  className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs uppercase rounded-xl hover:bg-emerald-700 transition-colors w-full sm:w-auto"
-                >
-                  + Tambah Pengguna
                 </button>
               </div>
             )}
@@ -1710,7 +1719,6 @@ export default function OwnerDashboard() {
                     <option value={Role.STAFF}>STAFF (Karyawan/Teknisi)</option>
                     <option value={Role.ADMIN}>ADMIN (Pengurus Cabang)</option>
                     <option value={Role.OWNER}>OWNER (Pemilik)</option>
-                    <option value={Role.USER}>PELANGGAN</option>
                   </select>
                 </div>
                 <div>
@@ -1718,7 +1726,8 @@ export default function OwnerDashboard() {
                   <select
                     value={regRegionId}
                     onChange={(e) => setRegRegionId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                    disabled={!!activeUser?.region_id}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="">PUSAT (GLOBAL)</option>
                     {regions.map(r => (
