@@ -355,9 +355,15 @@ export default function OwnerDashboard() {
   // Calculations
   const totalBaseRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.totalCost || o.serviceCost) || 0), 0);
   const totalAddonsRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.addonsCost) || 0), 0);
-  const totalRevenue = cashFlowOrders.reduce((sum, o) => sum + (Number(o.finalPrice || (Number(o.totalCost || o.serviceCost || 0) + Number(o.addonsCost || 0))) || 0), 0);
+  const totalRevenue = cashFlowOrders.reduce((sum, o) => {
+    const calcFinalPrice = Math.max(0, Number(o.serviceCost || 0) + Number(o.addonsCost || 0) - Number(o.voucher_discount || 0));
+    return sum + calcFinalPrice;
+  }, 0);
   const totalAddonsCost = cashFlowOrders.reduce((sum, o) => sum + (Number(o.hpp_orders) || 0), 0);
-  const totalMargin = cashFlowOrders.reduce((sum, o) => sum + (Number(o.margin) || 0), 0);
+  const totalMargin = cashFlowOrders.reduce((sum, o) => {
+    const calcFinalPrice = Math.max(0, Number(o.serviceCost || 0) + Number(o.addonsCost || 0) - Number(o.voucher_discount || 0));
+    return sum + (calcFinalPrice - (Number(o.hpp_orders) || 0));
+  }, 0);
 
   // Staff (Employee) Performance Stats
   const staffList = (users || []).filter(u => u.role === 'STAFF' && (reportRegionId === 'ALL' || u.region_id === reportRegionId));
@@ -491,7 +497,7 @@ export default function OwnerDashboard() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-mono font-bold text-slate-700">{formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}</div>
+                <div className="font-mono font-bold text-slate-700">{formatRupiah(Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}</div>
                 <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded inline-block mt-1 ${order.status === OrderStatus.SELESAI ? 'bg-emerald-100 text-emerald-800' :
                   order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
                     'bg-blue-100 text-blue-800'
