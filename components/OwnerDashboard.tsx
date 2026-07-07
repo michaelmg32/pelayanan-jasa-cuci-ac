@@ -25,6 +25,7 @@ import {
   Search,
   Edit,
   UserCog,
+  UserPlus,
   Clock,
 } from 'lucide-react';
 import { Role, User } from '@/types';
@@ -70,6 +71,15 @@ export default function OwnerDashboard() {
 
   // User Management States
   const [userSearch, setUserSearch] = useState('');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regRole, setRegRole] = useState<Role>(Role.STAFF);
+  const [regRegionId, setRegRegionId] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<Role>(Role.USER);
   const [editRegionId, setEditRegionId] = useState('');
@@ -246,6 +256,40 @@ export default function OwnerDashboard() {
   };
 
   // User Actions
+  const handleCreateUser = async () => {
+    if (!regName.trim() || !regEmail.trim() || !regPassword) {
+      setErrorMsg('Nama, Email, dan Password wajib diisi.');
+      return;
+    }
+    try {
+      setIsRegistering(true);
+      setErrorMsg('');
+      const payload = {
+        name: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+        role: regRole,
+        region_id: regRegionId || null,
+      };
+      await api.createUser(payload);
+      
+      // Reset form and reload
+      setRegName('');
+      setRegEmail('');
+      setRegPhone('');
+      setRegPassword('');
+      setRegRegionId('');
+      setRegRole(Role.STAFF);
+      setShowAddUserModal(false);
+      window.location.reload();
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Gagal menambahkan pengguna baru.');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   const handleSaveUserEdit = async (userId: string) => {
     try {
       setIsLoading(true);
@@ -1146,13 +1190,13 @@ export default function OwnerDashboard() {
             </div>
 
             {!activeUser?.region_id && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-2">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center gap-2">
                 <input
                   type="text"
                   placeholder="Nama Cabang Baru..."
                   value={newRegionName}
                   onChange={(e) => setNewRegionName(e.target.value)}
-                  className="flex-1 bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500"
+                  className="flex-1 bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-indigo-500 w-full"
                 />
                 <button
                   onClick={async () => {
@@ -1170,9 +1214,15 @@ export default function OwnerDashboard() {
                     }
                   }}
                   disabled={isAddingRegion || !newRegionName.trim()}
-                  className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300"
+                  className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300 w-full sm:w-auto"
                 >
                   {isAddingRegion ? 'Menyimpan...' : '+ Tambah Cabang'}
+                </button>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs uppercase rounded-xl hover:bg-emerald-700 transition-colors w-full sm:w-auto"
+                >
+                  + Tambah Pengguna
                 </button>
               </div>
             )}
@@ -1575,7 +1625,137 @@ export default function OwnerDashboard() {
         </div>
       )}
 
+      {/* MODAL: Tambah Pengguna */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <UserPlus size={16} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-800">Tambah Pengguna Baru</h3>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Buat akun untuk karyawan atau admin</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition border"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              {errorMsg && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-600 p-3 rounded-xl text-xs font-semibold mb-4">
+                  {errorMsg}
+                </div>
+              )}
+
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  placeholder="Masukkan nama lengkap"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Email</label>
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                    placeholder="email@contoh.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Nomor WhatsApp</label>
+                  <input
+                    type="text"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                    placeholder="081234567890"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Kata Sandi (Password)</label>
+                <input
+                  type="password"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  placeholder="Minimal 6 karakter"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 mt-2">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Peran (Role)</label>
+                  <select
+                    value={regRole}
+                    onChange={(e) => setRegRole(e.target.value as Role)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  >
+                    <option value={Role.STAFF}>STAFF (Karyawan/Teknisi)</option>
+                    <option value={Role.ADMIN}>ADMIN (Pengurus Cabang)</option>
+                    <option value={Role.OWNER}>OWNER (Pemilik)</option>
+                    <option value={Role.USER}>PELANGGAN</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 ml-1">Wilayah Cabang</label>
+                  <select
+                    value={regRegionId}
+                    onChange={(e) => setRegRegionId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm px-4 py-2.5 rounded-xl outline-none focus:bg-white focus:border-emerald-500 transition"
+                  >
+                    <option value="">PUSAT (GLOBAL)</option>
+                    {regions.map(r => (
+                      <option key={r.id} value={r.id}>{r.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-xs uppercase rounded-xl hover:bg-slate-50 transition"
+                disabled={isRegistering}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreateUser}
+                disabled={isRegistering || !regName || !regEmail || !regPassword}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase rounded-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition flex items-center gap-2"
+              >
+                {isRegistering ? (
+                  <>
+                    <Loader size={14} className="animate-spin" /> Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={14} /> Buat Akun
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
