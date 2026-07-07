@@ -942,8 +942,11 @@ export default function PelangganDashboard() {
                             </div>
                             <div className="text-right shrink-0">
                               <span className="text-xs font-black text-indigo-700 font-mono block">
-                                {formatRupiah(Number(order.serviceCost || 0) + Number(order.addonsCost || 0))}
+                                {formatRupiah(order.finalPrice || (Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}
                               </span>
+                              {Number(order.voucher_discount || 0) > 0 && (
+                                <span className="block text-[9px] text-red-500 font-bold mt-0.5">Voucher: -{formatRupiah(order.voucher_discount)}</span>
+                              )}
                             </div>
                           </div>
 

@@ -1713,7 +1713,12 @@ return (
 
                     <div className="flex justify-between items-center pt-2 border-t border-slate-100 font-black">
                       <span className="text-[10px] uppercase text-slate-400 tracking-wider">Total Jasa:</span>
-                      <span className="text-xs font-mono text-indigo-700">{formatRupiah(order.finalPrice || (Number(order.serviceCost || 0) + Number(order.addonsCost || 0)))}</span>
+                      <div className="text-right">
+                        <span className="text-xs font-mono text-indigo-700">{formatRupiah(order.finalPrice || (Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}</span>
+                        {Number(order.voucher_discount || 0) > 0 && (
+                          <span className="block text-[9px] text-red-500 font-bold mt-0.5">Voucher: -{formatRupiah(order.voucher_discount)}</span>
+                        )}
+                      </div>
                     </div>
 
                     {order.status === OrderStatus.SELESAI && (
@@ -4055,9 +4060,15 @@ return (
                         ))}
                       </div>
                     )}
+                    {Number(selectedOrderDetail.voucher_discount || 0) > 0 && (
+                      <div className="flex justify-between text-red-600 font-bold mt-1 text-[11px]">
+                        <span>Diskon Voucher ({selectedOrderDetail.voucher_code})</span>
+                        <span className="font-mono">-{formatRupiah(selectedOrderDetail.voucher_discount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-black text-slate-800 border-t pt-2 mt-1">
                       <span className="text-[11px] uppercase tracking-wider">Grand Total Pembayaran:</span>
-                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.finalPrice || (Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0)))}</span>
+                      <span className="text-indigo-700 font-mono text-xs">{formatRupiah(selectedOrderDetail.finalPrice || (Number(selectedOrderDetail.serviceCost || 0) + Number(selectedOrderDetail.addonsCost || 0) - Number(selectedOrderDetail.voucher_discount || 0)))}</span>
                     </div>
                     {/* {selectedOrderDetail.margin !== undefined && selectedOrderDetail.margin !== null && (
                       <div className="flex justify-between font-bold text-emerald-750 bg-emerald-50 border border-emerald-100 p-2 rounded-lg mt-2">
