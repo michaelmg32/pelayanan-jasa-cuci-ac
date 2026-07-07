@@ -911,7 +911,7 @@ app.get('/api/users', verifyToken, async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { id, name, email, phone, role, password, region_id } = req.body;
+  const { id, name, email, phone, role, password, region_id, ktpPhoto, selfiePhoto } = req.body;
   try {
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name required' });
@@ -924,8 +924,8 @@ app.post('/api/users', async (req, res) => {
     const connection = await pool.getConnection();
     const userId = id || `usr_${Date.now()}`;
     await connection.query(
-      'INSERT INTO users (id, name, email, phone, role, password, region_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, name, email, phone || null, role || 'pelanggan', hashedPassword, region_id || null]
+      'INSERT INTO users (id, name, email, phone, role, password, region_id, ktpPhoto, selfiePhoto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, name, email, phone || null, role || 'pelanggan', hashedPassword, region_id || null, ktpPhoto || null, selfiePhoto || null]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Pengguna', `Menambahkan pengguna baru: ${name} (${role})`);

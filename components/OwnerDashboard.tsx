@@ -78,6 +78,8 @@ export default function OwnerDashboard() {
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState<Role>(Role.STAFF);
   const [regRegionId, setRegRegionId] = useState('');
+  const [regKtp, setRegKtp] = useState('');
+  const [regSelfie, setRegSelfie] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -271,6 +273,8 @@ export default function OwnerDashboard() {
         password: regPassword,
         role: regRole,
         region_id: activeUser?.region_id || regRegionId || null,
+        ktpPhoto: regRole === Role.STAFF ? regKtp : null,
+        selfiePhoto: regRole === Role.STAFF ? regSelfie : null,
       };
       await api.createUser(payload);
       
@@ -281,6 +285,8 @@ export default function OwnerDashboard() {
       setRegPassword('');
       setRegRegionId('');
       setRegRole(Role.STAFF);
+      setRegKtp('');
+      setRegSelfie('');
       setShowAddUserModal(false);
       window.location.reload();
     } catch (e: any) {
@@ -381,6 +387,28 @@ export default function OwnerDashboard() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setEditQrisImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRegKtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRegKtp(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRegSelfieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRegSelfie(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -1736,6 +1764,47 @@ export default function OwnerDashboard() {
                   </select>
                 </div>
               </div>
+              
+              {regRole === Role.STAFF && (
+                <div className="space-y-4 pt-2 border-t border-slate-100 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block ml-1">Unggah KTP</label>
+                      <div className="flex flex-col gap-2">
+                        {regKtp && (
+                          <div className="w-full h-24 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                            <img src={regKtp} alt="KTP Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleRegKtpChange}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block ml-1">Foto Selfie Karyawan</label>
+                      <div className="flex flex-col gap-2">
+                        {regSelfie && (
+                          <div className="w-full h-24 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                            <img src={regSelfie} alt="Selfie Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleRegSelfieChange}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             <div className="p-4 sm:p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
