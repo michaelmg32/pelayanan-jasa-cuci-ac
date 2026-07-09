@@ -3246,7 +3246,6 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
     await logActivity(req, 'Generate Gaji', `Proses gaji bulan ${period_month} untuk ${saved} karyawan di wilayah ${targetRegion}`);
     res.json({ success: true, period_month, saved, skipped, results });
   } catch (error) {
-    if (connection) connection.release();
     res.status(500).json({ error: error.message });
   } finally {
     if (connection) connection.release();
@@ -3391,7 +3390,7 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
   }
 });
 
-
+nextApp.prepare().then(() => {
   // Semua request selain /api akan diserahkan ke Next.js
   app.all('*', (req, res) => {
     return handle(req, res);
