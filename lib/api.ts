@@ -774,3 +774,134 @@ export const validateVoucher = async (validationData: {
     throw error;
   }
 };
+
+// =====================================================================
+// PAYROLL SYSTEM API
+// =====================================================================
+
+// --- STAFF GRADES ---
+export const fetchStaffGrades = async () => {
+  const response = await fetch(`${API_BASE_URL}/staff-grades`, {
+    headers: getAuthHeaders(), cache: 'no-store'
+  });
+  if (!response.ok) throw new Error('Gagal memuat data grade.');
+  return await response.json();
+};
+
+export const createStaffGrade = async (data: {
+  name: string; description?: string; region_id?: string;
+  base_salary?: number; fixed_bonus?: number; bonus_per_order?: number;
+}) => {
+  const response = await fetch(`${API_BASE_URL}/staff-grades`, {
+    method: 'POST', headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal membuat grade.');
+  }
+  return await response.json();
+};
+
+export const updateStaffGrade = async (id: string, data: {
+  name: string; description?: string;
+  base_salary?: number; fixed_bonus?: number; bonus_per_order?: number;
+}) => {
+  const response = await fetch(`${API_BASE_URL}/staff-grades/${id}`, {
+    method: 'PUT', headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal memperbarui grade.');
+  }
+  return await response.json();
+};
+
+export const deleteStaffGrade = async (id: string) => {
+  const response = await fetch(`${API_BASE_URL}/staff-grades/${id}`, {
+    method: 'DELETE', headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal menghapus grade.');
+  }
+  return await response.json();
+};
+
+export const assignGradeToUser = async (userId: string, gradeId: string | null) => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/grade`, {
+    method: 'PUT', headers: getAuthHeaders(),
+    body: JSON.stringify({ grade_id: gradeId }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal mengatur grade karyawan.');
+  }
+  return await response.json();
+};
+
+// --- SALARY ---
+export const fetchSalaryStaff = async () => {
+  const response = await fetch(`${API_BASE_URL}/salary/staff`, {
+    headers: getAuthHeaders(), cache: 'no-store'
+  });
+  if (!response.ok) throw new Error('Gagal memuat data karyawan.');
+  return await response.json();
+};
+
+export const previewSalary = async (period_month: string, region_id?: string) => {
+  const response = await fetch(`${API_BASE_URL}/salary/generate`, {
+    method: 'POST', headers: getAuthHeaders(),
+    body: JSON.stringify({ period_month, region_id, commit: false }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal preview gaji.');
+  }
+  return await response.json();
+};
+
+export const generateSalary = async (period_month: string, region_id?: string) => {
+  const response = await fetch(`${API_BASE_URL}/salary/generate`, {
+    method: 'POST', headers: getAuthHeaders(),
+    body: JSON.stringify({ period_month, region_id, commit: true }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal generate gaji.');
+  }
+  return await response.json();
+};
+
+export const fetchSalaryRecords = async (params?: { period_month?: string; staff_id?: string }) => {
+  const query = new URLSearchParams();
+  if (params?.period_month) query.set('period_month', params.period_month);
+  if (params?.staff_id) query.set('staff_id', params.staff_id);
+  const response = await fetch(`${API_BASE_URL}/salary/records?${query.toString()}`, {
+    headers: getAuthHeaders(), cache: 'no-store'
+  });
+  if (!response.ok) throw new Error('Gagal memuat riwayat gaji.');
+  return await response.json();
+};
+
+export const updateSalaryStatus = async (id: string, status: 'PENDING' | 'PAID', notes?: string) => {
+  const response = await fetch(`${API_BASE_URL}/salary/records/${id}`, {
+    method: 'PUT', headers: getAuthHeaders(),
+    body: JSON.stringify({ status, notes }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Gagal memperbarui status gaji.');
+  }
+  return await response.json();
+};
+
+export const fetchSalarySummary = async (year?: number) => {
+  const query = year ? `?year=${year}` : '';
+  const response = await fetch(`${API_BASE_URL}/salary/summary${query}`, {
+    headers: getAuthHeaders(), cache: 'no-store'
+  });
+  if (!response.ok) throw new Error('Gagal memuat ringkasan gaji.');
+  return await response.json();
+};

@@ -152,3 +152,79 @@ export interface Order {
   voucher_code?: string;
   voucher_discount?: number;
 }
+
+// =====================================================================
+// PAYROLL SYSTEM TYPES
+// =====================================================================
+
+export interface StaffGrade {
+  id: string;
+  region_id: string;
+  regionName?: string;
+  name: string;
+  description?: string;
+  // Joined from staff_salary_configs
+  config_id?: string;
+  base_salary?: number;
+  fixed_bonus?: number;
+  bonus_per_order?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SalaryConfig {
+  id: string;
+  grade_id: string;
+  region_id: string;
+  base_salary: number;
+  fixed_bonus: number;
+  bonus_per_order: number;
+}
+
+export interface SalaryRecord {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  region_id: string;
+  regionName?: string;
+  grade_id?: string;
+  grade_name?: string;
+  period_month: string;
+  base_salary: number;
+  total_orders_completed: number;
+  order_bonus: number;
+  fixed_bonus: number;
+  total_salary: number;
+  status: 'PENDING' | 'PAID';
+  notes?: string;
+  paid_at?: string;
+  generated_by?: string;
+  createdAt?: string;
+}
+
+export interface SalarySummary {
+  region_id: string;
+  regionName: string;
+  period_month: string;
+  total_staff: number;
+  total_salary_cost: number;
+  total_base: number;
+  total_order_bonus: number;
+  total_fixed_bonus: number;
+  paid_count: number;
+  pending_count: number;
+}
+
+export interface StaffWithGrade {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  region_id?: string;
+  regionName?: string;
+  grade_id?: string;
+  grade_name?: string;
+  base_salary?: number;
+  fixed_bonus?: number;
+  bonus_per_order?: number;
+}

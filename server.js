@@ -503,6 +503,77 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE orders ADD COLUMN voucher_discount DECIMAL(10, 2) DEFAULT 0");
       console.log("✅ Added voucher columns to 'orders' table in database");
     }
+    // =====================================================================
+    // PAYROLL SYSTEM MIGRATIONS
+    // =====================================================================
+
+    // Auto-migration: Create staff_grades table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff_grades (
+        id VARCHAR(50) PRIMARY KEY,
+        region_id VARCHAR(50) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_grade_name_region (name, region_id)
+      )
+    `);
+    console.log("✅ Auto-migrated 'staff_grades' table");
+
+    // Auto-migration: Create staff_salary_configs table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff_salary_configs (
+        id VARCHAR(50) PRIMARY KEY,
+        grade_id VARCHAR(50) NOT NULL,
+        region_id VARCHAR(50) NOT NULL,
+        base_salary DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        fixed_bonus DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        bonus_per_order DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (grade_id) REFERENCES staff_grades(id) ON DELETE CASCADE,
+        FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_salary_config_grade_region (grade_id, region_id)
+      )
+    `);
+    console.log("✅ Auto-migrated 'staff_salary_configs' table");
+
+    // Auto-migration: Create salary_records table (permanent slip history)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS salary_records (
+        id VARCHAR(50) PRIMARY KEY,
+        staff_id VARCHAR(50) NOT NULL,
+        staff_name VARCHAR(255) NOT NULL,
+        region_id VARCHAR(50) NOT NULL,
+        grade_id VARCHAR(50) NULL,
+        grade_name VARCHAR(100) NULL,
+        period_month VARCHAR(7) NOT NULL,
+        base_salary DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        total_orders_completed INT NOT NULL DEFAULT 0,
+        order_bonus DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        fixed_bonus DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        total_salary DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        status ENUM('PENDING', 'PAID') NOT NULL DEFAULT 'PENDING',
+        notes TEXT NULL,
+        paid_at DATETIME NULL,
+        generated_by VARCHAR(50) NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_salary_staff_period (staff_id, period_month)
+      )
+    `);
+    console.log("✅ Auto-migrated 'salary_records' table");
+
+    // Auto-migration: Add grade_id column to users table
+    const [gradeColCheck] = await connection.query("SHOW COLUMNS FROM users LIKE 'grade_id'");
+    if (gradeColCheck.length === 0) {
+      await connection.query("ALTER TABLE users ADD COLUMN grade_id VARCHAR(50) NULL");
+      console.log("✅ Added 'grade_id' column to 'users' table");
+    }
 
 
 
@@ -2899,7 +2970,428 @@ app.post('/api/vouchers/validate', verifyToken, async (req, res) => {
   }
 });
 
-nextApp.prepare().then(() => {
+// =====================================================================
+// PAYROLL SYSTEM API ENDPOINTS
+// =====================================================================
+
+// ---- STAFF GRADES CRUD ----
+
+// GET all grades for a region
+app.get('/api/staff-grades', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    let query = `
+      SELECT sg.*, sc.base_salary, sc.fixed_bonus, sc.bonus_per_order,
+             sc.id as config_id, r.name as regionName
+      FROM staff_grades sg
+      LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id AND sc.region_id = sg.region_id
+      LEFT JOIN regions r ON sg.region_id = r.id
+    `;
+    let params = [];
+    if (user.role === 'ADMIN') {
+      query += ' WHERE sg.region_id = ?';
+      params.push(user.region_id);
+    }
+    query += ' ORDER BY sg.name ASC';
+    const [grades] = await connection.query(query, params);
+    res.json(grades);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// POST create new grade
+app.post('/api/staff-grades', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    const { name, description, region_id, base_salary = 0, fixed_bonus = 0, bonus_per_order = 0 } = req.body;
+    const targetRegion = user.role === 'ADMIN' ? user.region_id : region_id;
+    if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
+
+    const gradeId = `grade-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    await connection.query(
+      'INSERT INTO staff_grades (id, region_id, name, description) VALUES (?, ?, ?, ?)',
+      [gradeId, targetRegion, name.trim(), description?.trim() || null]
+    );
+
+    // Also create salary config for this grade
+    const configId = `salcfg-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    await connection.query(
+      'INSERT INTO staff_salary_configs (id, grade_id, region_id, base_salary, fixed_bonus, bonus_per_order) VALUES (?, ?, ?, ?, ?, ?)',
+      [configId, gradeId, targetRegion, base_salary, fixed_bonus, bonus_per_order]
+    );
+
+    await logActivity(req, 'Tambah Grade Karyawan', `Membuat grade baru: ${name} di wilayah ${targetRegion}`);
+    res.json({ success: true, id: gradeId, message: `Grade "${name}" berhasil dibuat.` });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Nama grade sudah ada di wilayah ini.' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// PUT update grade + salary config
+app.put('/api/staff-grades/:id', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    const { id } = req.params;
+    const { name, description, base_salary, fixed_bonus, bonus_per_order } = req.body;
+
+    // Verify ownership for admin
+    if (user.role === 'ADMIN') {
+      const [check] = await connection.query('SELECT id FROM staff_grades WHERE id = ? AND region_id = ?', [id, user.region_id]);
+      if (check.length === 0) return res.status(403).json({ error: 'Grade tidak ditemukan di wilayah Anda.' });
+    }
+
+    await connection.query(
+      'UPDATE staff_grades SET name = ?, description = ? WHERE id = ?',
+      [name.trim(), description?.trim() || null, id]
+    );
+
+    // Update or insert salary config
+    const [existing] = await connection.query('SELECT id FROM staff_salary_configs WHERE grade_id = ?', [id]);
+    if (existing.length > 0) {
+      await connection.query(
+        'UPDATE staff_salary_configs SET base_salary = ?, fixed_bonus = ?, bonus_per_order = ? WHERE grade_id = ?',
+        [base_salary || 0, fixed_bonus || 0, bonus_per_order || 0, id]
+      );
+    } else {
+      const [grade] = await connection.query('SELECT region_id FROM staff_grades WHERE id = ?', [id]);
+      const configId = `salcfg-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      await connection.query(
+        'INSERT INTO staff_salary_configs (id, grade_id, region_id, base_salary, fixed_bonus, bonus_per_order) VALUES (?, ?, ?, ?, ?, ?)',
+        [configId, id, grade[0].region_id, base_salary || 0, fixed_bonus || 0, bonus_per_order || 0]
+      );
+    }
+
+    await logActivity(req, 'Update Grade Karyawan', `Memperbarui grade ID: ${id}`);
+    res.json({ success: true, message: 'Grade berhasil diperbarui.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// DELETE grade
+app.delete('/api/staff-grades/:id', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    const { id } = req.params;
+
+    if (user.role === 'ADMIN') {
+      const [check] = await connection.query('SELECT id FROM staff_grades WHERE id = ? AND region_id = ?', [id, user.region_id]);
+      if (check.length === 0) return res.status(403).json({ error: 'Grade tidak ditemukan di wilayah Anda.' });
+    }
+
+    // Remove grade_id from users that use this grade
+    await connection.query('UPDATE users SET grade_id = NULL WHERE grade_id = ?', [id]);
+    await connection.query('DELETE FROM staff_grades WHERE id = ?', [id]);
+    await logActivity(req, 'Hapus Grade Karyawan', `Menghapus grade ID: ${id}`);
+    res.json({ success: true, message: 'Grade berhasil dihapus.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// PUT assign grade to a user
+app.put('/api/users/:id/grade', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    const { grade_id } = req.body;
+    await connection.query('UPDATE users SET grade_id = ? WHERE id = ?', [grade_id || null, req.params.id]);
+    res.json({ success: true, message: 'Grade karyawan berhasil diperbarui.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// ---- SALARY GENERATE & RECORDS ----
+
+// POST generate salary for a month (preview or commit)
+app.post('/api/salary/generate', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    const { period_month, region_id, commit = false } = req.body;
+    if (!period_month) return res.status(400).json({ error: 'period_month diperlukan (format: YYYY-MM).' });
+
+    const targetRegion = user.role === 'ADMIN' ? user.region_id : region_id;
+    if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
+
+    // Get all STAFF in this region
+    const [staffList] = await connection.query(
+      `SELECT u.id, u.name, u.grade_id, sg.name as grade_name,
+              sc.base_salary, sc.fixed_bonus, sc.bonus_per_order
+       FROM users u
+       LEFT JOIN staff_grades sg ON u.grade_id = sg.id
+       LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id
+       WHERE u.role = 'STAFF' AND u.region_id = ?`,
+      [targetRegion]
+    );
+
+    if (staffList.length === 0) {
+      return res.status(404).json({ error: 'Tidak ada karyawan (STAFF) di wilayah ini.' });
+    }
+
+    // Calculate completed orders for each staff this month
+    const startDate = `${period_month}-01`;
+    const endDate = new Date(new Date(startDate).getFullYear(), new Date(startDate).getMonth() + 1, 0)
+      .toISOString().split('T')[0];
+
+    const results = [];
+    for (const staff of staffList) {
+      const [ordersResult] = await connection.query(
+        `SELECT COUNT(*) as total FROM orders
+         WHERE workerId = ? AND status = 'SELESAI'
+         AND DATE(completedAt) BETWEEN ? AND ?`,
+        [staff.id, startDate, endDate]
+      );
+      const totalOrders = Number(ordersResult[0]?.total || 0);
+      const baseSalary = Number(staff.base_salary || 0);
+      const fixedBonus = Number(staff.fixed_bonus || 0);
+      const bonusPerOrder = Number(staff.bonus_per_order || 0);
+      const orderBonus = totalOrders * bonusPerOrder;
+      const totalSalary = baseSalary + fixedBonus + orderBonus;
+
+      results.push({
+        staff_id: staff.id,
+        staff_name: staff.name,
+        grade_id: staff.grade_id || null,
+        grade_name: staff.grade_name || 'Belum Ada Grade',
+        period_month,
+        base_salary: baseSalary,
+        total_orders_completed: totalOrders,
+        order_bonus: orderBonus,
+        fixed_bonus: fixedBonus,
+        total_salary: totalSalary,
+      });
+    }
+
+    if (!commit) {
+      // Preview mode — just return calculation
+      return res.json({ preview: true, period_month, region_id: targetRegion, results });
+    }
+
+    // Commit mode — save to salary_records (upsert)
+    let saved = 0;
+    let skipped = 0;
+    for (const r of results) {
+      const [existing] = await connection.query(
+        'SELECT id, status FROM salary_records WHERE staff_id = ? AND period_month = ?',
+        [r.staff_id, r.period_month]
+      );
+      if (existing.length > 0) {
+        if (existing[0].status === 'PAID') {
+          skipped++;
+          continue; // Don't overwrite already-paid records
+        }
+        await connection.query(
+          `UPDATE salary_records SET grade_id = ?, grade_name = ?, base_salary = ?,
+           total_orders_completed = ?, order_bonus = ?, fixed_bonus = ?, total_salary = ?,
+           generated_by = ?, status = 'PENDING'
+           WHERE staff_id = ? AND period_month = ?`,
+          [r.grade_id, r.grade_name, r.base_salary, r.total_orders_completed,
+           r.order_bonus, r.fixed_bonus, r.total_salary, user.id, r.staff_id, r.period_month]
+        );
+      } else {
+        const recordId = `sal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        await connection.query(
+          `INSERT INTO salary_records (id, staff_id, staff_name, region_id, grade_id, grade_name, period_month,
+           base_salary, total_orders_completed, order_bonus, fixed_bonus, total_salary, generated_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [recordId, r.staff_id, r.staff_name, targetRegion, r.grade_id, r.grade_name,
+           r.period_month, r.base_salary, r.total_orders_completed, r.order_bonus,
+           r.fixed_bonus, r.total_salary, user.id]
+        );
+      }
+      saved++;
+    }
+
+    await logActivity(req, 'Generate Gaji', `Proses gaji bulan ${period_month} untuk ${saved} karyawan di wilayah ${targetRegion}`);
+    res.json({ success: true, period_month, saved, skipped, results });
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// GET salary records
+app.get('/api/salary/records', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    const { period_month, staff_id } = req.query;
+
+    let query = `
+      SELECT sr.*, r.name as regionName
+      FROM salary_records sr
+      LEFT JOIN regions r ON sr.region_id = r.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (user.role === 'ADMIN') {
+      query += ' AND sr.region_id = ?';
+      params.push(user.region_id);
+    }
+    if (period_month) { query += ' AND sr.period_month = ?'; params.push(period_month); }
+    if (staff_id) { query += ' AND sr.staff_id = ?'; params.push(staff_id); }
+    query += ' ORDER BY sr.period_month DESC, sr.staff_name ASC';
+
+    const [records] = await connection.query(query, params);
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// PUT mark salary record as paid
+app.put('/api/salary/records/:id', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    const updateFields = ['status = ?', 'notes = ?'];
+    const values = [status, notes || null];
+
+    if (status === 'PAID') {
+      updateFields.push('paid_at = NOW()');
+    } else {
+      updateFields.push('paid_at = NULL');
+    }
+    values.push(id);
+
+    await connection.query(`UPDATE salary_records SET ${updateFields.join(', ')} WHERE id = ?`, values);
+    await logActivity(req, 'Update Status Gaji', `Mengubah status slip gaji ID: ${id} menjadi ${status}`);
+    res.json({ success: true, message: `Status gaji berhasil diubah ke ${status}.` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// GET salary summary (for owner - all regions monthly totals)
+app.get('/api/salary/summary', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    const { year } = req.query;
+    const targetYear = year || new Date().getFullYear();
+
+    let query = `
+      SELECT
+        sr.region_id,
+        r.name as regionName,
+        sr.period_month,
+        COUNT(sr.id) as total_staff,
+        SUM(sr.total_salary) as total_salary_cost,
+        SUM(sr.base_salary) as total_base,
+        SUM(sr.order_bonus) as total_order_bonus,
+        SUM(sr.fixed_bonus) as total_fixed_bonus,
+        SUM(CASE WHEN sr.status = 'PAID' THEN 1 ELSE 0 END) as paid_count,
+        SUM(CASE WHEN sr.status = 'PENDING' THEN 1 ELSE 0 END) as pending_count
+      FROM salary_records sr
+      LEFT JOIN regions r ON sr.region_id = r.id
+      WHERE sr.period_month LIKE ?
+    `;
+    const params = [`${targetYear}-%`];
+
+    if (user.role === 'ADMIN') {
+      query += ' AND sr.region_id = ?';
+      params.push(user.region_id);
+    }
+
+    query += ' GROUP BY sr.region_id, sr.period_month ORDER BY sr.period_month DESC, r.name ASC';
+    const [summary] = await connection.query(query, params);
+    res.json(summary);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// GET staff list with grades for payroll page
+app.get('/api/salary/staff', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    let query = `
+      SELECT u.id, u.name, u.email, u.phone, u.region_id, u.grade_id,
+             sg.name as grade_name, sc.base_salary, sc.fixed_bonus, sc.bonus_per_order,
+             r.name as regionName
+      FROM users u
+      LEFT JOIN staff_grades sg ON u.grade_id = sg.id
+      LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id
+      LEFT JOIN regions r ON u.region_id = r.id
+      WHERE u.role = 'STAFF'
+    `;
+    const params = [];
+    if (user.role === 'ADMIN') {
+      query += ' AND u.region_id = ?';
+      params.push(user.region_id);
+    }
+    query += ' ORDER BY u.name ASC';
+    const [staff] = await connection.query(query, params);
+    res.json(staff);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+
   // Semua request selain /api akan diserahkan ke Next.js
   app.all('*', (req, res) => {
     return handle(req, res);

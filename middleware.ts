@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
   console.log(`[Middleware] Path: ${pathname}, Token: ${token ? 'Exists' : 'Missing'}`);
   
   // If no token and trying to access protected route, redirect to login
-  if (!token && pathname.startsWith('/dashboard')) {
+  if (!token && (pathname.startsWith('/dashboard') || pathname.startsWith('/gaji'))) {
     console.log(`[Middleware] Redirecting to /login from ${pathname} (No Token)`);
     return NextResponse.redirect(new URL('/login', request.url));
   }
