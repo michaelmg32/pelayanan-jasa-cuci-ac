@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { User, Order, OrderStatus, Role, ACModel, ACCategory, ACService, ACAddon, AddonTransaction } from '@/types';
 import * as api from '@/lib/api';
+
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 import {
   LogOut,
   ClipboardList,
@@ -520,6 +523,7 @@ export default function AdminDashboard() {
   const [adminTime, setAdminTime] = useState('09:00');
   const [adminNotes, setAdminNotes] = useState('');
   const [adminCartServices, setAdminCartServices] = useState<any[]>([]);
+  const [showAdminMapPicker, setShowAdminMapPicker] = useState(false);
 
   // Add User State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -945,7 +949,7 @@ export default function AdminDashboard() {
         });
         finalUserId = newUser.id;
         
-        const magicLink = `${window.location.origin}/?m_phone=${encodeURIComponent(adminOrderNewUserPhone)}&m_pass=sugar123`;
+        const magicLink = `${window.location.origin}/login?m_phone=${encodeURIComponent(adminOrderNewUserPhone)}&m_pass=sugar123`;
         setAdminOrderMagicLink(magicLink);
       }
 
@@ -955,10 +959,15 @@ export default function AdminDashboard() {
          return;
       }
 
+      const customerName = adminOrderType === 'existing' ? adminOrderSelectedUser?.name : adminOrderNewUserName;
+      const customerPhone = adminOrderType === 'existing' ? adminOrderSelectedUser?.phone : adminOrderNewUserPhone;
+
       const totalCost = adminCartServices.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
       const newOrder = {
         id: `ord_${Date.now()}`,
         customerId: finalUserId,
+        customerName: customerName || 'Pelanggan',
+        customerPhone: customerPhone || '-',
         status: OrderStatus.MENUNGGU,
         totalCost,
         address: adminAddress,
@@ -4795,7 +4804,24 @@ return (
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Alamat Pengerjaan</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Lokasi (Peta Interaktif)</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminMapPicker(true)}
+                      className="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-200 font-bold text-[10.5px] py-2 rounded-xl uppercase flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm"
+                    >
+                      <MapPin size={13} />
+                      Pilih dari Peta Pintar
+                    </button>
+                    {adminLat !== undefined && adminLat !== null && adminLng !== undefined && adminLng !== null && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-1.5 flex items-center gap-1">
+                        <CheckCircle2 size={12} /> Titik lokasi tersimpan: {adminLat.toFixed(5)}, {adminLng.toFixed(5)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Alamat Pengerjaan (Detail)</label>
                     <textarea
                       value={adminAddress}
                       onChange={e => setAdminAddress(e.target.value)}
@@ -5226,6 +5252,37 @@ return (
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* ADMIN MAP PICKER MODAL */}
+      {showAdminMapPicker && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/80 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
+              <div>
+                <h3 className="font-bold text-slate-800">Pilih Titik Lokasi</h3>
+                <p className="text-xs text-slate-500">Sesuaikan pin lokasi dengan alamat pengerjaan</p>
+              </div>
+              <button 
+                onClick={() => setShowAdminMapPicker(false)}
+                className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 rounded-full transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 relative bg-slate-100">
+              <MapPicker 
+                onLocationSelect={(addr, lat, lng) => {
+                  setAdminLat(lat);
+                  setAdminLng(lng);
+                  if (addr) setAdminAddress(addr);
+                  setShowAdminMapPicker(false);
+                }} 
+                onCancel={() => setShowAdminMapPicker(false)} 
+              />
             </div>
           </div>
         </div>

@@ -967,7 +967,7 @@ app.get('/api/users', verifyToken, async (req, res) => {
     const userRole = req.user.role ? req.user.role.toUpperCase() : '';
     if (userRole === 'ADMIN' || userRole === 'KARYAWAN') {
        if (req.user.region_id) {
-         query += ' WHERE region_id = ?';
+         query += ' WHERE region_id = ? OR (region_id IS NULL AND LOWER(role) IN ("user", "pelanggan"))';
          params.push(req.user.region_id);
        }
     } else if (req.query.region_id) {
