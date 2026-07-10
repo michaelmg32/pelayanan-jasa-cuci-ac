@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, Role } from '@/types';
-import { Wind, Key, Mail, LogIn, UserPlus, Camera, Check, FileText, Phone, MapPin, User as UserIcon, X, Loader } from 'lucide-react';
+import { Wind, Key, Mail, LogIn, UserPlus, Camera, Check, FileText, Phone, MapPin, User as UserIcon, X, Loader, Eye, EyeOff } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { useApp } from '@/lib/auth-context';
 
@@ -24,6 +24,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Register state (Pelanggan & Karyawan)
   const [regName, setRegName] = useState('');
@@ -55,7 +56,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       setEmail(mPhone);
       setPassword(mPass);
       setFormMode('login');
-      
+
       const autoLogin = async () => {
         setIsLoading(true);
         try {
@@ -85,7 +86,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
           setIsLoading(false);
         }
       };
-      
+
       autoLogin();
     }
   }, [onLogin]);
@@ -302,7 +303,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       const response = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           credential: credentialResponse.credential,
           role: targetRole
         })
@@ -361,7 +362,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
       }
-      
+
       const randomPassword = Math.random().toString(36).substring(2, 12);
 
       const response = await fetch(`${apiUrl}/auth/register`, {
@@ -469,7 +470,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                   <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <input
                     type="text"
-                    placeholder="Contoh: 0812... atau email@domain.com"
+                    placeholder="Masukkan Email atau No Telp"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
@@ -485,13 +486,20 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 <div className="relative group">
                   <Key size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-10 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
@@ -597,13 +605,20 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 <div className="relative group">
                   <Key size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-10 py-2.5 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
