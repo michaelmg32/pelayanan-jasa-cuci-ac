@@ -934,8 +934,8 @@ export default function AdminDashboard() {
           name: adminOrderNewUserName,
           phone: adminOrderNewUserPhone,
           password: 'sugar123',
-          role: Role.PELANGGAN,
-          region_id: activeUser?.region_id
+          role: Role.USER,
+          region_id: undefined // Pelanggan dibuat secara global (bisa order di cabang mana saja)
         });
         finalUserId = newUser.id;
         
@@ -4630,7 +4630,7 @@ return (
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
                       >
                         <option value="">-- Cari Pelanggan --</option>
-                        {users.filter(u => u.role === Role.PELANGGAN).map(u => (
+                        {users.filter(u => u.role === Role.USER).map(u => (
                           <option key={u.id} value={u.id}>{u.name} ({u.phone || u.email})</option>
                         ))}
                       </select>
@@ -4710,14 +4710,14 @@ return (
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Merek AC</label>
                           <select value={adminSelectedModel} onChange={e => setAdminSelectedModel(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
                             <option value="">- Merek -</option>
-                            {acModels.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                            {models.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Tipe</label>
                           <select value={adminSelectedCategory} onChange={e => setAdminSelectedCategory(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
                             <option value="">- Tipe -</option>
-                            {acCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                           </select>
                         </div>
                       </div>
@@ -4726,7 +4726,7 @@ return (
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Layanan</label>
                           <select value={adminSelectedService} onChange={e => setAdminSelectedService(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
                             <option value="">- Pilih Layanan -</option>
-                            {services.map(s => <option key={s.id} value={s.id}>{s.name} - {formatRupiah(s.base_price)}</option>)}
+                            {services.map(s => <option key={s.id} value={s.id}>{s.name} - {formatRupiah(s.price)}</option>)}
                           </select>
                         </div>
                       </div>
@@ -4739,7 +4739,7 @@ return (
                           onClick={() => {
                             if (!adminSelectedModel || !adminSelectedCategory || !adminSelectedService) return;
                             const svc = services.find(s => s.id === adminSelectedService);
-                            const cat = acCategories.find(c => c.name === adminSelectedCategory);
+                            const cat = categories.find(c => c.name === adminSelectedCategory);
                             if (svc && cat) {
                               setAdminCartServices(prev => [...prev, {
                                 acType: adminSelectedModel,
@@ -4747,7 +4747,7 @@ return (
                                 categoryId: cat.id,
                                 serviceType: svc.name,
                                 quantity: adminQuantity,
-                                price: svc.base_price
+                                price: svc.price
                               }]);
                               setAdminSelectedService('');
                             }
