@@ -499,6 +499,8 @@ export default function AdminDashboard() {
   const [adminOrderStep, setAdminOrderStep] = useState(1);
   const [adminOrderType, setAdminOrderType] = useState<'existing' | 'new'>('existing');
   const [adminOrderSelectedUser, setAdminOrderSelectedUser] = useState<any | null>(null);
+  const [adminUserSearchQuery, setAdminUserSearchQuery] = useState('');
+  const [adminShowUserDropdown, setAdminShowUserDropdown] = useState(false);
   const [adminOrderNewUserName, setAdminOrderNewUserName] = useState('');
   const [adminOrderNewUserPhone, setAdminOrderNewUserPhone] = useState('');
   const [adminOrderSuccessId, setAdminOrderSuccessId] = useState<string | null>(null);
@@ -914,6 +916,10 @@ export default function AdminDashboard() {
     if (e) e.preventDefault();
     if (adminCartServices.length === 0) {
       setAdminOrderConfirmError('Silakan pilih setidaknya 1 layanan.');
+      return;
+    }
+    if (!adminAddress) {
+      setAdminOrderConfirmError('Alamat pengerjaan wajib diisi.');
       return;
     }
     
@@ -4616,24 +4622,49 @@ return (
                   </div>
 
                   {adminOrderType === 'existing' ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Pilih Pelanggan dari Data</label>
-                      <select
-                        value={adminOrderSelectedUser?.id || ''}
-                        onChange={(e) => {
-                          const user = users.find(u => u.id === e.target.value);
-                          setAdminOrderSelectedUser(user || null);
-                          setAdminAddress(user?.address || '');
-                          setAdminLat(user?.lat);
-                          setAdminLng(user?.lng);
-                        }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
-                      >
-                        <option value="">-- Cari Pelanggan --</option>
-                        {users.filter(u => u.role === Role.USER).map(u => (
-                          <option key={u.id} value={u.id}>{u.name} ({u.phone || u.email})</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Cari nama atau nomor telepon..."
+                          value={adminUserSearchQuery}
+                          onFocus={() => setAdminShowUserDropdown(true)}
+                          onChange={e => {
+                            setAdminUserSearchQuery(e.target.value);
+                            setAdminShowUserDropdown(true);
+                            if (!e.target.value) setAdminOrderSelectedUser(null);
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                      
+                      {adminShowUserDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                          {users.filter(u => u.role === Role.USER && (u.name.toLowerCase().includes(adminUserSearchQuery.toLowerCase()) || (u.phone || '').includes(adminUserSearchQuery))).map(u => (
+                            <button
+                              key={u.id}
+                              type="button"
+                              className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-slate-100 last:border-0 focus:outline-none focus:bg-indigo-50 transition"
+                              onClick={() => {
+                                setAdminOrderSelectedUser(u);
+                                setAdminUserSearchQuery(`${u.name} (${u.phone || u.email})`);
+                                setAdminShowUserDropdown(false);
+                                setAdminAddress(u.address || '');
+                                setAdminLat(u.lat);
+                                setAdminLng(u.lng);
+                              }}
+                            >
+                              <p className="font-bold text-slate-800 text-sm">{u.name}</p>
+                              <p className="text-xs text-slate-500">{u.phone || u.email}</p>
+                            </button>
+                          ))}
+                          {users.filter(u => u.role === Role.USER && (u.name.toLowerCase().includes(adminUserSearchQuery.toLowerCase()) || (u.phone || '').includes(adminUserSearchQuery))).length === 0 && (
+                            <div className="p-4 text-center text-slate-500 text-sm">Pelanggan tidak ditemukan.</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -4663,17 +4694,6 @@ return (
                       </div>
                     </div>
                   )}
-                  
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Alamat Pelanggan</label>
-                    <textarea
-                      value={adminAddress}
-                      onChange={e => setAdminAddress(e.target.value)}
-                      rows={2}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none"
-                      placeholder="Detail alamat..."
-                    />
-                  </div>
                 </div>
               )}
 
@@ -4726,7 +4746,7 @@ return (
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Layanan</label>
                           <select value={adminSelectedService} onChange={e => setAdminSelectedService(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
                             <option value="">- Pilih Layanan -</option>
-                            {services.map(s => <option key={s.id} value={s.id}>{s.name} - {formatRupiah(s.price)}</option>)}
+                            {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         </div>
                       </div>
@@ -4740,14 +4760,17 @@ return (
                             if (!adminSelectedModel || !adminSelectedCategory || !adminSelectedService) return;
                             const svc = services.find(s => s.id === adminSelectedService);
                             const cat = categories.find(c => c.name === adminSelectedCategory);
+                            const model = models.find(m => m.name === adminSelectedModel);
                             if (svc && cat) {
+                              const priceEntry = servicePrices.find(sp => sp.serviceId === svc.id && sp.modelId === model?.id);
+                              const resolvedPrice = priceEntry ? priceEntry.price : svc.price;
                               setAdminCartServices(prev => [...prev, {
                                 acType: adminSelectedModel,
                                 category: adminSelectedCategory,
                                 categoryId: cat.id,
                                 serviceType: svc.name,
                                 quantity: adminQuantity,
-                                price: svc.price
+                                price: resolvedPrice
                               }]);
                               setAdminSelectedService('');
                             }
@@ -4771,6 +4794,17 @@ return (
                     </div>
                   </div>
                   
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Alamat Pengerjaan</label>
+                    <textarea
+                      value={adminAddress}
+                      onChange={e => setAdminAddress(e.target.value)}
+                      rows={2}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none"
+                      placeholder="Detail alamat pengerjaan..."
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Catatan Tambahan</label>
                     <textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)} rows={2} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none resize-none" placeholder="Catatan untuk teknisi (opsional)..." />
@@ -4832,12 +4866,12 @@ return (
                     <button onClick={() => setShowAdminOrderModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition text-sm">Batal</button>
                     <button 
                       onClick={() => {
-                        if (adminOrderType === 'existing' && (!adminOrderSelectedUser || !adminAddress)) {
-                          setAdminOrderConfirmError('Pelanggan dan alamat wajib dipilih/diisi.');
+                        if (adminOrderType === 'existing' && !adminOrderSelectedUser) {
+                          setAdminOrderConfirmError('Pelanggan wajib dipilih.');
                           return;
                         }
-                        if (adminOrderType === 'new' && (!adminOrderNewUserName || !adminOrderNewUserPhone || !adminAddress)) {
-                          setAdminOrderConfirmError('Nama, Telepon, dan Alamat wajib diisi.');
+                        if (adminOrderType === 'new' && (!adminOrderNewUserName || !adminOrderNewUserPhone)) {
+                          setAdminOrderConfirmError('Nama dan Telepon wajib diisi.');
                           return;
                         }
                         setAdminOrderConfirmError('');

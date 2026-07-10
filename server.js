@@ -998,6 +998,16 @@ app.post('/api/users', async (req, res) => {
     const hashedPassword = await bcryptjs.hash(password, salt);
 
     const connection = await pool.getConnection();
+    
+    // Check if phone already exists
+    if (phone) {
+      const [existingPhone] = await connection.query('SELECT id FROM users WHERE phone = ?', [phone]);
+      if (existingPhone.length > 0) {
+        connection.release();
+        return res.status(400).json({ error: 'Nomor telepon sudah terdaftar.' });
+      }
+    }
+
     const userId = id || `usr_${Date.now()}`;
     await connection.query(
       'INSERT INTO users (id, name, email, phone, role, password, region_id, ktpPhoto, selfiePhoto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -1016,6 +1026,15 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
   const { name, email, phone, role, password, address, photo, status, region_id } = req.body;
   try {
     const connection = await pool.getConnection();
+
+    // Check if phone already exists on another user
+    if (phone) {
+      const [existingPhone] = await connection.query('SELECT id FROM users WHERE phone = ? AND id != ?', [phone, id]);
+      if (existingPhone.length > 0) {
+        connection.release();
+        return res.status(400).json({ error: 'Nomor telepon sudah terdaftar pada akun lain.' });
+      }
+    }
 
     // Build update query dynamically based on provided fields
     let updateFields = [];
