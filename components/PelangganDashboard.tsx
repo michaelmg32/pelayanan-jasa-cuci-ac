@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useApp } from '@/lib/auth-context';
 import { OrderStatus, Order } from '@/types';
@@ -65,10 +65,22 @@ export default function PelangganDashboard() {
     }
   }, [regions, selectedRegionId, activeUser]);
 
-  const models = (allModels || []).filter((m: any) => m.region_id === selectedRegionId || !m.region_id);
-  const categories = (allCategories || []).filter((c: any) => c.region_id === selectedRegionId || !c.region_id);
-  const services = (allServices || []).filter((s: any) => s.region_id === selectedRegionId || !s.region_id);
-  const addons = (allAddons || []).filter((a: any) => a.region_id === selectedRegionId || !a.region_id);
+  const models = useMemo(() => 
+    (allModels || []).filter((m: any) => m.region_id === selectedRegionId || !m.region_id),
+    [allModels, selectedRegionId]
+  );
+  const categories = useMemo(() => 
+    (allCategories || []).filter((c: any) => c.region_id === selectedRegionId || !c.region_id),
+    [allCategories, selectedRegionId]
+  );
+  const services = useMemo(() => 
+    (allServices || []).filter((s: any) => s.region_id === selectedRegionId || !s.region_id),
+    [allServices, selectedRegionId]
+  );
+  const addons = useMemo(() => 
+    (allAddons || []).filter((a: any) => a.region_id === selectedRegionId || !a.region_id),
+    [allAddons, selectedRegionId]
+  );
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'my-ac'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
