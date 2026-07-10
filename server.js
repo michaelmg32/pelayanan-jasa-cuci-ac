@@ -2215,14 +2215,14 @@ app.get('/api/categories', async (req, res) => {
 });
 
 app.post('/api/categories', verifyToken, async (req, res) => {
-  const { id, name, description, hasServices, region_id } = req.body;
+  const { id, name, description, icon, hasServices, region_id } = req.body;
   const finalRegionId = req.user && req.user.region_id ? req.user.region_id : (region_id || null);
   try {
     const connection = await pool.getConnection();
     const newId = id || `cat_${Date.now()}`;
     await connection.query(
-      'INSERT INTO ac_categories (id, name, description, hasServices, region_id) VALUES (?, ?, ?, ?, ?)',
-      [newId, name, description || null, hasServices !== undefined ? hasServices : true, finalRegionId]
+      'INSERT INTO ac_categories (id, name, description, icon, hasServices, region_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [newId, name, description || null, icon || null, hasServices !== undefined ? hasServices : true, finalRegionId]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Kategori Layanan', `Menambahkan kategori baru: ${name}`);
@@ -2234,12 +2234,12 @@ app.post('/api/categories', verifyToken, async (req, res) => {
 
 app.put('/api/categories/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const { name, description, hasServices } = req.body;
+  const { name, description, icon, hasServices } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'UPDATE ac_categories SET name = ?, description = ?, hasServices = ? WHERE id = ?',
-      [name, description || null, hasServices !== undefined ? hasServices : true, id]
+      'UPDATE ac_categories SET name = ?, description = ?, icon = ?, hasServices = ? WHERE id = ?',
+      [name, description || null, icon || null, hasServices !== undefined ? hasServices : true, id]
     );
     const [category] = await connection.query('SELECT * FROM ac_categories WHERE id = ?', [id]);
     connection.release();
