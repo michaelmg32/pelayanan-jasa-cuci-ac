@@ -944,7 +944,7 @@ export default function PelangganDashboard() {
                       
                       const renderIcon = () => {
                         if (cat.icon) {
-                          return <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover" />;
+                          return <img src={cat.icon} alt={cat.name} className="absolute inset-0 w-full h-full object-cover" />;
                         }
                         // Fallback icon
                         return (
