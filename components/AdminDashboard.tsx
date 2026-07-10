@@ -628,6 +628,7 @@ export default function AdminDashboard() {
   // Form add-new states for master data
   const [newModelName, setNewModelName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('');
   const [newCategoryHasServices, setNewCategoryHasServices] = useState(true);
 
   const [newServiceName, setNewServiceName] = useState('');
@@ -1251,10 +1252,12 @@ export default function AdminDashboard() {
       setIsLoading(true);
       const newCategory = await api.createCategory({
         name: newCategoryName,
+        icon: newCategoryIcon || null,
         hasServices: newCategoryHasServices
       });
       setCategories([...categories, newCategory]);
       setNewCategoryName('');
+      setNewCategoryIcon('');
       setNewCategoryHasServices(true);
       setErrorMsg('');
       alert('✅ Kategori AC berhasil ditambahkan');
@@ -1460,8 +1463,8 @@ export default function AdminDashboard() {
         const updated = models.map(m => m.id === id ? { ...m, name: editMasterField1 } : m);
         setModels(updated);
       } else if (editingMasterType === 'CATEGORIES') {
-        await api.updateCategory(id, { name: editMasterField1, hasServices: editMasterField2 });
-        const updated = categories.map(c => c.id === id ? { ...c, name: editMasterField1, hasServices: editMasterField2 as boolean } : c);
+        await api.updateCategory(id, { name: editMasterField1, icon: editMasterField3 || null, hasServices: editMasterField2 });
+        const updated = categories.map(c => c.id === id ? { ...c, name: editMasterField1, icon: editMasterField3 || null, hasServices: editMasterField2 as boolean } : c);
         setCategories(updated);
       } else if (editingMasterType === 'SERVICES') {
         await api.updateService(id, { name: editMasterField1, categoryId: editMasterField3 });
@@ -2103,14 +2106,23 @@ return (
               <div className="space-y-4">
                 <form onSubmit={handleAddCategory} className="bg-slate-50 border p-4 rounded-xl space-y-3">
                   <span className="text-[9px] font-black uppercase text-indigo-600 block tracking-widest">TAMBAH KATEGORI BARU</span>
-                  <input
-                    type="text"
-                    placeholder="Nama kategori..."
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    className="w-full bg-white border border-slate-200 text-slate-850 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
-                    required
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nama kategori..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-850 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Icon (Opsional, emoji atau teks)"
+                      value={newCategoryIcon}
+                      onChange={(e) => setNewCategoryIcon(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-850 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
+                    />
+                  </div>
                   <button
                     type="submit"
                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black py-2.5 rounded-xl uppercase flex items-center justify-center gap-1 transition cursor-pointer"
@@ -2137,6 +2149,7 @@ return (
                             }}
                           >
                             <td className="p-3 font-extrabold text-slate-800 flex items-center gap-2">
+                              {c.icon && <span className="text-sm mr-1">{c.icon}</span>}
                               {c.name}
                               <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">
                                 {services.filter(s => s.categoryId === c.id).length} Layanan
@@ -2144,7 +2157,7 @@ return (
                             </td>
                             <td className="p-3 text-right">
                               <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                <button onClick={() => startEditMaster('CATEGORIES', c.id, c.name, c.hasServices)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
+                                <button onClick={() => startEditMaster('CATEGORIES', c.id, c.name, c.hasServices, c.icon)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-indigo-100 transition"><Edit size={13} /></button>
                                 <button onClick={() => handleDeleteCategory(c.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 transition"><Trash2 size={13} /></button>
                               </div>
                             </td>
@@ -3698,19 +3711,32 @@ return (
               </div>
 
               {editingMasterType === 'CATEGORIES' && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="hasServices"
-                    checked={editMasterField2 as boolean}
-                    onChange={(e) => setEditMasterField2(e.target.checked)}
-                    className="w-4 h-4"
-                    disabled={isLoading}
-                  />
-                  <label htmlFor="hasServices" className="text-[10px] text-slate-700 font-semibold">
-                    Kategori ini memiliki layanan khusus
-                  </label>
-                </div>
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="hasServices"
+                      checked={editMasterField2 as boolean}
+                      onChange={(e) => setEditMasterField2(e.target.checked)}
+                      className="w-4 h-4"
+                      disabled={isLoading}
+                    />
+                    <label htmlFor="hasServices" className="text-[10px] text-slate-700 font-semibold">
+                      Kategori ini memiliki layanan khusus
+                    </label>
+                  </div>
+                  <div className="mt-2">
+                    <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Icon (Opsional)</label>
+                    <input
+                      type="text"
+                      value={editMasterField3 as string}
+                      onChange={(e) => setEditMasterField3(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
+                      placeholder="Contoh: 🔧 atau mdi:wrench"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </>
               )}
 
               {editingMasterType === 'SERVICES' && (

@@ -2507,12 +2507,20 @@ app.get('/api/addons/transactions', verifyToken, async (req, res) => {
       SELECT t.*, a.name AS addonName
       FROM ac_addon_transactions t
       JOIN ac_addons a ON t.addonId = a.id
+      WHERE 1=1
     `;
     let params = [];
     if (addonId) {
-      query += " WHERE t.addonId = ?";
+      query += " AND t.addonId = ?";
       params.push(addonId);
     }
+    
+    // Filter by region for admins
+    if (req.user.role === 'admin' && req.user.region_id) {
+      query += " AND a.region_id = ?";
+      params.push(req.user.region_id);
+    }
+    
     query += " ORDER BY t.createdAt DESC";
 
     const [transactions] = await connection.query(query, params);
