@@ -50,7 +50,12 @@ export default function PelangganDashboard() {
   
   useEffect(() => {
     if (regions && regions.length > 0 && !selectedRegionId) {
-      setSelectedRegionId(regions[0].id);
+      const palembangRegion = regions.find((r: any) => r.name.toLowerCase() === 'palembang');
+      if (palembangRegion) {
+        setSelectedRegionId(palembangRegion.id);
+      } else {
+        setSelectedRegionId(regions[0].id);
+      }
     }
   }, [regions, selectedRegionId]);
 
@@ -775,7 +780,7 @@ export default function PelangganDashboard() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
               {(appSettings?.[selectedRegionId || 'GLOBAL']?.business_logo || appSettings?.['GLOBAL']?.business_logo) ? (
-                <img src={appSettings.business_logo} alt="Logo" className="w-full h-full object-cover" />
+                <img src={appSettings?.[selectedRegionId || 'GLOBAL']?.business_logo || appSettings?.['GLOBAL']?.business_logo} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -864,7 +869,7 @@ export default function PelangganDashboard() {
           {activeTab === 'dashboard' && (
             <div>
               {/* Wave Header & Region Selector */}
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-8 rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0 text-left text-white">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-12 rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0 text-left text-white">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h2 className="text-base font-extrabold text-white mt-1.5 truncate">Halo Kak, {activeUser.name}!</h2>
@@ -890,31 +895,43 @@ export default function PelangganDashboard() {
                     </div>
                   )}
                 </div>
+              </div>
 
-                {/* Gojek-style Category Grid */}
-                <div className="mt-6">
+              {/* Gojek-style Category Grid */}
+              <div className="px-4 md:px-8 lg:px-12 -mt-6 relative z-10 mb-4">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5">
                   <div className="grid grid-cols-4 gap-y-6 gap-x-2">
                     {categories.map((cat: any, idx: number) => {
                       // Tentukan icon fallback (lucide) jika tidak ada icon di DB
                       const fallbackIcons = [
-                        <Wind size={24} className="text-blue-500" />,
-                        <Wrench size={24} className="text-emerald-500" />,
-                        <Droplets size={24} className="text-cyan-500" />,
-                        <Settings size={24} className="text-amber-500" />,
-                        <Zap size={24} className="text-rose-500" />
+                        <Wind size={26} className="text-emerald-600" />,
+                        <Wrench size={26} className="text-blue-600" />,
+                        <Droplets size={26} className="text-cyan-600" />,
+                        <Settings size={26} className="text-amber-600" />,
+                        <Zap size={26} className="text-rose-600" />
+                      ];
+
+                      const backgroundColors = [
+                        'bg-emerald-100',
+                        'bg-blue-100',
+                        'bg-cyan-100',
+                        'bg-amber-100',
+                        'bg-rose-100'
                       ];
                       
                       const renderIcon = () => {
                         if (cat.icon && cat.icon.startsWith('data:image')) {
-                          return <img src={cat.icon} alt={cat.name} className="w-8 h-8 object-contain" />;
+                          return <img src={cat.icon} alt={cat.name} className="w-9 h-9 object-contain drop-shadow-sm" />;
                         }
                         if (cat.icon) {
                           // Jika icon adalah URL biasa atau nama (bisa disesuaikan jika menyimpan nama icon lucide)
-                          return <img src={cat.icon} alt={cat.name} className="w-8 h-8 object-contain" />;
+                          return <img src={cat.icon} alt={cat.name} className="w-9 h-9 object-contain drop-shadow-sm" />;
                         }
                         // Fallback icon
                         return fallbackIcons[idx % fallbackIcons.length];
                       };
+
+                      const bgColorClass = backgroundColors[idx % backgroundColors.length];
 
                       return (
                         <div 
@@ -925,14 +942,12 @@ export default function PelangganDashboard() {
                           }}
                           className="flex flex-col items-center justify-start cursor-pointer group"
                         >
-                          <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-2 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
-                            {/* Decorative background shape */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          <div className={`w-14 h-14 ${bgColorClass} rounded-2xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden`}>
                             <div className="relative z-10">
                               {renderIcon()}
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold text-center leading-tight line-clamp-2 px-1 text-white/90">
+                          <span className="text-[10px] font-bold text-center leading-tight line-clamp-2 px-1 text-slate-700 group-hover:text-slate-900 transition-colors">
                             {cat.name}
                           </span>
                         </div>
@@ -945,10 +960,10 @@ export default function PelangganDashboard() {
                         onClick={() => setShowNewOrderModal(true)}
                         className="flex flex-col items-center justify-start cursor-pointer group"
                       >
-                         <div className="w-14 h-14 bg-white/20 rounded-2xl shadow-sm flex items-center justify-center mb-2 group-hover:bg-white/30 transition-colors">
-                           <Plus size={24} className="text-white" />
+                         <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-slate-200 transition-colors">
+                           <Plus size={26} className="text-slate-600" />
                          </div>
-                         <span className="text-[10px] font-bold text-center text-white/90">Lainnya</span>
+                         <span className="text-[10px] font-bold text-center text-slate-700">Lainnya</span>
                       </div>
                     )}
                   </div>
