@@ -540,44 +540,71 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                 </div>
               </div>
               {generateMsg && <div className={generateMsg.startsWith('✅') ? 'gaji-success-msg' : 'gaji-error-msg'}>{generateMsg}</div>}
-              {preview.length > 0 && (
-                <>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <span className="gaji-month-display">📅 {formatMonth(selectedMonth)}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginLeft: '0.75rem' }}>Preview kalkulasi — belum disimpan</span>
-                  </div>
-                  <div className="gaji-table-wrap">
-                    <table className="gaji-table">
-                      <thead>
-                        <tr>
-                          <th>Karyawan</th><th>Grade</th><th>Gaji Pokok</th>
-                          <th>Order Selesai</th><th>Bonus/Order</th><th>Bonus Tetap</th><th>Total Gaji</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {preview.map((r, i) => (
-                          <tr key={i}>
-                            <td><div style={{ fontWeight: 600 }}>{r.staff_name}</div></td>
-                            <td><span className="gaji-grade-badge" style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}>{r.grade_name}</span></td>
-                            <td>{formatRupiah(r.base_salary)}</td>
-                            <td style={{ textAlign: 'center' }}><span style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', padding: '0.15rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem' }}>{r.total_orders_completed}</span></td>
-                            <td>{formatRupiah(r.order_bonus)}</td>
-                            <td>{formatRupiah(r.fixed_bonus)}</td>
-                            <td><strong style={{ color: '#a78bfa' }}>{formatRupiah(r.total_salary)}</strong></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="gaji-preview-total">
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Total Biaya Gaji Bulan Ini</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#a78bfa' }}>{formatRupiah(totalPreview)}</div>
+              {preview.length > 0 && (() => {
+                const paidCount = preview.filter(r => r.status === 'PAID').length;
+                const isAllPaid = paidCount === preview.length;
+
+                return (
+                  <>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <span className="gaji-month-display">📅 {formatMonth(selectedMonth)}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginLeft: '0.75rem' }}>
+                        Preview kalkulasi — {isAllPaid ? 'Semua data terkunci (Lunas)' : 'belum disimpan'}
+                      </span>
                     </div>
-                    <button className="gaji-btn gaji-btn-success" onClick={handleGenerate} disabled={generating}>{generating ? '⏳ Menyimpan...' : '🔒 Kunci & Simpan Gaji'}</button>
-                  </div>
-                </>
-              )}
+                    <div className="gaji-table-wrap">
+                      <table className="gaji-table">
+                        <thead>
+                          <tr>
+                            <th>Karyawan</th><th>Grade</th><th>Gaji Pokok</th>
+                            <th>Order Selesai</th><th>Bonus/Order</th><th>Bonus Tetap</th><th>Total Gaji</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {preview.map((r, i) => {
+                            const isPaid = r.status === 'PAID';
+                            return (
+                              <tr key={i} style={isPaid ? { opacity: 0.65 } : {}}>
+                                <td>
+                                  <div style={{ fontWeight: 600 }}>{r.staff_name}</div>
+                                  {isPaid && <div style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 'bold' }}>✅ Gaji Sudah Dibayar (Lunas)</div>}
+                                </td>
+                                <td><span className="gaji-grade-badge" style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}>{r.grade_name}</span></td>
+                                <td>{formatRupiah(r.base_salary)}</td>
+                                <td style={{ textAlign: 'center' }}><span style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', padding: '0.15rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem' }}>{r.total_orders_completed}</span></td>
+                                <td>{formatRupiah(r.order_bonus)}</td>
+                                <td>{formatRupiah(r.fixed_bonus)}</td>
+                                <td>
+                                  <strong style={{ color: isPaid ? '#34d399' : '#a78bfa' }}>{formatRupiah(r.total_salary)}</strong>
+                                  {isPaid && <span style={{ display: 'block', fontSize: '0.65rem', color: '#34d399', fontStyle: 'italic' }}>Terkunci</span>}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {isAllPaid && (
+                      <div className="gaji-success-msg" style={{ marginTop: '1rem', background: 'rgba(52,211,153,0.1)', borderColor: 'rgba(52,211,153,0.3)', color: '#34d399' }}>
+                        ℹ️ <strong>Semua Sudah Lunas:</strong> Seluruh karyawan di cabang ini telah menerima pembayaran gaji bulan ini. Data kalkulasi dikunci.
+                      </div>
+                    )}
+                    <div className="gaji-preview-total">
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Total Biaya Gaji Bulan Ini</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#a78bfa' }}>{formatRupiah(totalPreview)}</div>
+                      </div>
+                      <button 
+                        className="gaji-btn gaji-btn-success" 
+                        onClick={handleGenerate} 
+                        disabled={generating || isAllPaid}
+                      >
+                        {generating ? '⏳ Menyimpan...' : isAllPaid ? '🔒 Semua Sudah Lunas' : '🔒 Kunci & Simpan Gaji'}
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             <div style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem', color: 'rgba(255,255,255,0.6)' }}>
               <strong style={{ color: '#fb923c' }}>⚠️ Perhatian:</strong> Slip yang sudah ditandai <strong>LUNAS</strong> tidak akan bisa ditimpa ulang.
