@@ -52,14 +52,18 @@ export default function PelangganDashboard() {
   
   useEffect(() => {
     if (regions && regions.length > 0 && !selectedRegionId) {
-      const palembangRegion = regions.find((r: any) => r.name.toLowerCase() === 'palembang');
-      if (palembangRegion) {
-        setSelectedRegionId(palembangRegion.id);
+      if (activeUser?.region_id) {
+        setSelectedRegionId(activeUser.region_id);
       } else {
-        setSelectedRegionId(regions[0].id);
+        const palembangRegion = regions.find((r: any) => r.name.toLowerCase() === 'palembang');
+        if (palembangRegion) {
+          setSelectedRegionId(palembangRegion.id);
+        } else {
+          setSelectedRegionId(regions[0].id);
+        }
       }
     }
-  }, [regions, selectedRegionId]);
+  }, [regions, selectedRegionId, activeUser]);
 
   const models = (allModels || []).filter((m: any) => m.region_id === selectedRegionId || !m.region_id);
   const categories = (allCategories || []).filter((c: any) => c.region_id === selectedRegionId || !c.region_id);
@@ -2041,23 +2045,17 @@ export default function PelangganDashboard() {
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                       3. Tipe AC / Model
                     </label>
-                    {selectedAcSource !== 'new' ? (
-                      <div className="w-full bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-2.5 rounded-xl font-bold">
-                        {selectedModel} (Dikunci dari AC terdaftar)
-                      </div>
-                    ) : (
-                      <select
-                        value={selectedModel}
-                        onChange={e => setSelectedModel(e.target.value)}
-                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
-                      >
-                        {models.map(m => (
-                          <option key={m.id} value={m.name}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={selectedModel}
+                      onChange={e => setSelectedModel(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
+                    >
+                      {models.map(m => (
+                        <option key={m.id} value={m.name}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Category Selection */}

@@ -71,12 +71,44 @@ export default function KaryawanDashboard() {
   }}>({});
 
   const [activeScanUnitKey, setActiveScanUnitKey] = useState<string | null>(null);
+  const [activeScanTask, setActiveScanTask] = useState<any | null>(null);
+
+  const handleLookupBarcode = async (unitKey: string, barcodeId: string | undefined, task: any) => {
+    if (!barcodeId?.trim() || !task) return;
+    try {
+      setIsLoading(true);
+      const ac = await api.scanCustomerAC(barcodeId.trim());
+      setIsLoading(false);
+
+      if (ac && ac.id) {
+        if (ac.customerId !== task.customerId) {
+          alert(`⚠️ Barcode "${ac.id}" terdaftar milik pelanggan lain (${ac.customerName || 'Pelanggan Lain'}). Hubungi admin jika ingin memindahkan kepemilikan.`);
+          return;
+        }
+
+        alert(`✓ AC Ditemukan!\nNama: ${ac.name || 'AC'}\nMerek: ${ac.brand || 'Umum'}\nTipe/PK: ${ac.modelName || 'Umum'}\n\nAC berhasil dihubungkan.`);
+
+        setAcHistoryInputs(prev => ({
+          ...prev,
+          [unitKey]: {
+            ...prev[unitKey],
+            customerAcId: ac.id,
+            name: ac.name,
+            brand: ac.brand,
+            isRegistered: true
+          }
+        }));
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      console.log('Barcode tidak terdaftar atau gagal memuat detail AC. Menyiapkan registrasi baru.');
+    }
+  };
 
   useEffect(() => {
     let scannerInstance: any = null;
 
     if (activeScanUnitKey) {
-      // Dynamic import to prevent SSR Next.js build errors
       import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
         scannerInstance = new Html5QrcodeScanner(
           'qr-reader',
@@ -100,10 +132,17 @@ export default function KaryawanDashboard() {
               ...prev,
               [activeScanUnitKey]: { ...prev[activeScanUnitKey], customerAcId: decodedText }
             }));
+            
+            // Auto lookup scanned barcode
+            if (activeScanTask) {
+              handleLookupBarcode(activeScanUnitKey, decodedText, activeScanTask);
+            }
+
             if (scannerInstance) {
               scannerInstance.clear().catch((err: any) => console.error("Scanner clear err", err));
             }
             setActiveScanUnitKey(null);
+            setActiveScanTask(null);
           },
           () => {
             // Quiet mode error handling
@@ -119,7 +158,7 @@ export default function KaryawanDashboard() {
         scannerInstance.clear().catch((err: any) => console.error("Scanner cleanup err", err));
       }
     };
-  }, [activeScanUnitKey]);
+  }, [activeScanUnitKey, activeScanTask]);
 
   const getIndividualAcUnits = (task: any) => {
     const units: any[] = [];
@@ -1299,15 +1338,27 @@ export default function KaryawanDashboard() {
                                                   ...prev,
                                                   [unit.key]: { ...prev[unit.key], customerAcId: e.target.value }
                                                 }))}
-                                                className="w-full bg-white border border-slate-200 text-xs pl-2 pr-12 py-1.5 rounded-lg outline-none focus:border-indigo-500 transition-all"
+                                                className="w-full bg-white border border-slate-200 text-xs pl-2 pr-20 py-1.5 rounded-lg outline-none focus:border-indigo-500 transition-all"
                                               />
-                                              <button
-                                                type="button"
-                                                onClick={() => setActiveScanUnitKey(unit.key)}
-                                                className="absolute right-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[9px] font-black uppercase transition-all border border-indigo-200/50"
-                                              >
-                                                📷 Scan
-                                              </button>
+                                              <div className="absolute right-1 flex items-center gap-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleLookupBarcode(unit.key, input.customerAcId, task)}
+                                                  className="px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded text-[8px] font-black uppercase transition-all border border-emerald-200"
+                                                >
+                                                  Cari
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setActiveScanUnitKey(unit.key);
+                                                    setActiveScanTask(task);
+                                                  }}
+                                                  className="px-1.5 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[8px] font-black uppercase transition-all border border-indigo-200"
+                                                >
+                                                  📷 Scan
+                                                </button>
+                                              </div>
                                             </div>
                                             <input
                                               type="text"

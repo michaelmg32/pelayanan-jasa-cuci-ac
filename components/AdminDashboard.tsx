@@ -4888,16 +4888,10 @@ return (
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Merek AC</label>
-                          {adminSelectedAcSource !== 'new' ? (
-                            <div className="w-full bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-2 rounded-md font-bold">
-                              {adminSelectedModel}
-                            </div>
-                          ) : (
-                            <select value={adminSelectedModel} onChange={e => setAdminSelectedModel(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
-                              <option value="">- Merek -</option>
-                              {models.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                            </select>
-                          )}
+                           <select value={adminSelectedModel} onChange={e => setAdminSelectedModel(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
+                            <option value="">- Merek -</option>
+                            {models.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                          </select>
                         </div>
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Tipe</label>
