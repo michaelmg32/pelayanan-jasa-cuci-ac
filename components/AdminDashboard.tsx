@@ -6,6 +6,7 @@ import { User, Order, OrderStatus, Role, ACModel, ACCategory, ACService, ACAddon
 import * as api from '@/lib/api';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
+import GajiDashboard from '@/components/GajiDashboard';
 import {
   LogOut,
   ClipboardList,
@@ -70,6 +71,7 @@ export default function AdminDashboard() {
   const alert = showAlert;
   const [inspectedPhoto, setInspectedPhoto] = useState<string | null>(null);
   const [verifyingUser, setVerifyingUser] = useState<User | null>(null);
+  const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
 
   // Extract staff members from users and sort by rating & jobs done
   const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active');
@@ -2588,20 +2590,41 @@ return (
         {/* ===================== TAB KINERJA STAFF ===================== */}
         {activeTab === 'STAFF_PERFORMANCE' && (
           <div className="p-4 space-y-4 max-w-4xl mx-auto">
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600" /> Laporan Kinerja Staff</h3>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
-              </div>
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
-                <a
-                  href="/dashboard/admin/gaji"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/15"
-                >
-                  <DollarSign size={13} />
-                  <span>Kelola & Proses Gaji</span>
-                </a>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
+            {/* Sub-Tabs Navigasi */}
+            <div className="flex border-b border-slate-200 mb-2 max-w-4xl mx-auto gap-2">
+              <button
+                onClick={() => setPerformanceSubTab('STATISTICS')}
+                className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                  performanceSubTab === 'STATISTICS'
+                    ? 'text-indigo-600 border-indigo-600 font-black'
+                    : 'text-slate-500 border-transparent hover:text-slate-700'
+                }`}
+              >
+                <BarChart2 size={14} />
+                <span>Statistik Kinerja (Daftar Karyawan)</span>
+              </button>
+              <button
+                onClick={() => setPerformanceSubTab('PAYROLL')}
+                className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                  performanceSubTab === 'PAYROLL'
+                    ? 'text-indigo-600 border-indigo-600 font-black'
+                    : 'text-slate-500 border-transparent hover:text-slate-700'
+                }`}
+              >
+                <DollarSign size={14} />
+                <span>Kelola Gaji Karyawan</span>
+              </button>
+            </div>
+
+            {performanceSubTab === 'STATISTICS' && (
+              <>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600" /> Laporan Kinerja Staff</h3>
+                    <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
+                  </div>
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="date"
@@ -2742,6 +2765,12 @@ return (
                 </div>
               )}
             </div>
+              </>
+            )}
+
+            {performanceSubTab === 'PAYROLL' && (
+              <GajiDashboard activeUser={activeUser!} embedded={true} />
+            )}
           </div>
         )}
 

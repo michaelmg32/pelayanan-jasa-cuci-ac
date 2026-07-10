@@ -126,9 +126,10 @@ function MarkPaidModal({ record, onClose, onSave }: { record: SalaryRecord; onCl
 // ===== MAIN COMPONENT =====
 interface GajiDashboardProps {
   activeUser: User;
+  embedded?: boolean;
 }
 
-export default function GajiDashboard({ activeUser }: GajiDashboardProps) {
+export default function GajiDashboard({ activeUser, embedded = false }: GajiDashboardProps) {
   const userRole = activeUser.role as string;
   const userRegionId = activeUser.region_id || '';
 
@@ -234,10 +235,13 @@ export default function GajiDashboard({ activeUser }: GajiDashboardProps) {
   ] as const;
 
   return (
-    <div className="gaji-page">
+    <div className={`gaji-page ${embedded ? 'gaji-embedded' : ''}`}>
       <style>{`
         * { box-sizing: border-box; }
         .gaji-page { min-height: 100vh; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); font-family: 'Inter', 'Segoe UI', sans-serif; color: #e2e8f0; }
+        .gaji-page.gaji-embedded { min-height: auto; background: transparent; padding: 0; }
+        .gaji-page.gaji-embedded .gaji-content { padding: 1.5rem 0; max-width: 100%; }
+        .gaji-page.gaji-embedded .gaji-tabs-wrapper { padding: 0; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .gaji-header { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
         .gaji-header-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; text-decoration: none; }
         .gaji-header-back:hover { background: rgba(255,255,255,0.2); transform: translateX(-2px); }
@@ -344,17 +348,19 @@ export default function GajiDashboard({ activeUser }: GajiDashboardProps) {
       `}</style>
 
       {/* HEADER */}
-      <header className="gaji-header">
-        <a href="/dashboard/admin" className="gaji-header-back">← Dashboard</a>
-        <div className="gaji-header-title">
-          <h1>💼 Sistem Penggajian</h1>
-          <p>Kelola grade, hitung & catat gaji karyawan per wilayah</p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-          <span className="gaji-role-badge">{userRole}</span>
-          <span className="gaji-user-info">{activeUser.name}</span>
-        </div>
-      </header>
+      {!embedded && (
+        <header className="gaji-header">
+          <a href="/dashboard/admin" className="gaji-header-back">← Dashboard</a>
+          <div className="gaji-header-title">
+            <h1>💼 Sistem Penggajian</h1>
+            <p>Kelola grade, hitung & catat gaji karyawan per wilayah</p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+            <span className="gaji-role-badge">{userRole}</span>
+            <span className="gaji-user-info">{activeUser.name}</span>
+          </div>
+        </header>
+      )}
 
       {/* TABS */}
       <div className="gaji-tabs-wrapper">
