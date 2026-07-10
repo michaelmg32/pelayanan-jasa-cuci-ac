@@ -1322,8 +1322,12 @@ export default function OwnerDashboard() {
                             {filteredRegionUsers.map(u => (
                               <div key={u.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left transition">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-inner uppercase">
-                                    {u.name.charAt(0)}
+                                  <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-inner uppercase overflow-hidden">
+                                    {u.photo ? (
+                                      <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      u.name.charAt(0)
+                                    )}
                                   </div>
                                   <div>
                                     <div className="flex items-center gap-2">

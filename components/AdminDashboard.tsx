@@ -1463,8 +1463,8 @@ export default function AdminDashboard() {
         const updated = models.map(m => m.id === id ? { ...m, name: editMasterField1 } : m);
         setModels(updated);
       } else if (editingMasterType === 'CATEGORIES') {
-        await api.updateCategory(id, { name: editMasterField1, icon: editMasterField3 || null, hasServices: editMasterField2 });
-        const updated = categories.map(c => c.id === id ? { ...c, name: editMasterField1, icon: editMasterField3 || null, hasServices: editMasterField2 as boolean } : c);
+        await api.updateCategory(id, { name: editMasterField1, icon: editMasterField3 || undefined, hasServices: editMasterField2 });
+        const updated = categories.map(c => c.id === id ? { ...c, name: editMasterField1, icon: editMasterField3 || undefined, hasServices: editMasterField2 as boolean } : c);
         setCategories(updated);
       } else if (editingMasterType === 'SERVICES') {
         await api.updateService(id, { name: editMasterField1, categoryId: editMasterField3 });
@@ -2496,8 +2496,12 @@ return (
                 <div key={u.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs uppercase">
-                        {u.name.charAt(0)}
+                      <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs uppercase overflow-hidden">
+                        {u.photo ? (
+                          <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
+                        ) : (
+                          u.name.charAt(0)
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
