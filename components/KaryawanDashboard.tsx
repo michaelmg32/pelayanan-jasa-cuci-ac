@@ -73,6 +73,52 @@ export default function KaryawanDashboard() {
   const [activeScanUnitKey, setActiveScanUnitKey] = useState<string | null>(null);
   const [activeScanTask, setActiveScanTask] = useState<any | null>(null);
 
+  const linkBarcodeToOrderUnit = async (task: any, unitKey: string, barcode: string, acName: string) => {
+    const updatedDetails = Array.isArray(task.acDetail) ? JSON.parse(JSON.stringify(task.acDetail)) : [task.acDetail];
+    const [detailIdxStr, unitIdxStr] = unitKey.split('-');
+    const dIdx = parseInt(detailIdxStr);
+
+    if (updatedDetails[dIdx]) {
+      const targetItem = updatedDetails[dIdx];
+      const qty = targetItem.quantity || 1;
+
+      if (qty > 1) {
+        // Split this service item into two:
+        // 1. One registered unit (quantity = 1, linked to the barcode)
+        const registeredUnit = {
+          ...targetItem,
+          quantity: 1,
+          acId: barcode,
+          acName: acName
+        };
+
+        // 2. The remaining units (quantity = qty - 1, keeping other details but having no acId yet)
+        const remainingUnit = {
+          ...targetItem,
+          quantity: qty - 1
+        };
+
+        // Replace the single multi-qty item at dIdx with the two split items
+        updatedDetails.splice(dIdx, 1, registeredUnit, remainingUnit);
+      } else {
+        // Quantity is 1, link directly
+        updatedDetails[dIdx] = {
+          ...targetItem,
+          acId: barcode,
+          acName: acName
+        };
+      }
+
+      // Save to database
+      await api.updateOrder(task.id, {
+        acDetail: updatedDetails
+      });
+      
+      // Update local state
+      setOrders(prev => prev.map(o => o.id === task.id ? { ...o, acDetail: updatedDetails } : o));
+    }
+  };
+
   const handleLookupBarcode = async (unitKey: string, barcodeId: string | undefined, task: any) => {
     if (!barcodeId?.trim() || !task) return;
     try {
@@ -98,6 +144,9 @@ export default function KaryawanDashboard() {
             isRegistered: true
           }
         }));
+
+        // Link barcode and update database with quantity splitting
+        await linkBarcodeToOrderUnit(task, unitKey, ac.id, ac.name || 'AC');
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -240,23 +289,8 @@ export default function KaryawanDashboard() {
         }
       }));
 
-      // Automatically update the order's acDetail so the barcode is linked to the order
-      const updatedDetails = Array.isArray(task.acDetail) ? [...task.acDetail] : [task.acDetail];
-      const [detailIdxStr] = unitKey.split('-');
-      const dIdx = parseInt(detailIdxStr);
-      if (updatedDetails[dIdx]) {
-        updatedDetails[dIdx] = {
-          ...updatedDetails[dIdx],
-          acId: barcode,
-          acName: acName
-        };
-        await api.updateOrder(task.id, {
-          acDetail: updatedDetails
-        });
-        
-        // Refresh local orders list
-        setOrders(prev => prev.map(o => o.id === task.id ? { ...o, acDetail: updatedDetails } : o));
-      }
+      // Link barcode and update database with quantity splitting
+      await linkBarcodeToOrderUnit(task, unitKey, barcode, acName);
 
       alert('✅ AC baru berhasil didaftarkan dan stiker telah ditempel!');
     } catch (err: any) {
