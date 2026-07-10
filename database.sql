@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS ac_categories (
   id VARCHAR(50) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
+  icon LONGTEXT NULL,
   hasServices BOOLEAN DEFAULT true,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

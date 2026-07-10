@@ -31,6 +31,13 @@ import {
   Loader,
   ArrowUp,
   MoreVertical,
+  Wrench,
+  Wind,
+  Droplets,
+  ThermometerSnowflake,
+  Settings,
+  ShieldAlert,
+  Zap,
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
@@ -856,31 +863,95 @@ export default function PelangganDashboard() {
           {/* ==================== TAB 1: DASHBOARD ==================== */}
           {activeTab === 'dashboard' && (
             <div>
-              {/* Wave Header */}
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-6 rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0 text-left text-white">
+              {/* Wave Header & Region Selector */}
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 px-5 md:px-8 lg:px-12 pt-5 pb-8 rounded-b-[24px] md:rounded-b-[40px] shadow-xl shrink-0 text-left text-white">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <span className="text-[8px] text-blue-100 bg-white/20 px-2.5 py-0.5 rounded-full font-black uppercase tracking-widest">
-                      Layanan Pelanggan
-                    </span>
                     <h2 className="text-base font-extrabold text-white mt-1.5 truncate">Halo Kak, {activeUser.name}!</h2>
                     <p className="text-[10px] text-blue-105/85 truncate max-w-[200px] mt-0.5">{activeUser.email}</p>
                   </div>
+                  
+                  {/* Pilihan Wilayah (Region Selector) */}
+                  {regions && regions.length > 0 && (
+                    <div className="bg-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2 border border-white/20">
+                      <MapPin size={12} className="text-blue-200" />
+                      <select
+                        value={selectedRegionId}
+                        onChange={(e) => setSelectedRegionId(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-white outline-none appearance-none cursor-pointer pr-4"
+                        style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                      >
+                        {regions.map((r: any) => (
+                          <option key={r.id} value={r.id} className="text-slate-800 font-medium">
+                            {r.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
-                {/* Action booking widget */}
-                <div className="bg-white/10 border border-white/10 rounded-xl p-4 flex justify-between items-center mt-2.5 text-white">
-                  <div className="text-left">
-                    <p className="text-[9px] text-blue-100 font-bold uppercase tracking-wider">Servis & Cuci AC Rutin</p>
-                    <p className="text-lg font-black">{activeOrders.length} Pesanan Berjalan</p>
+                {/* Gojek-style Category Grid */}
+                <div className="mt-6">
+                  <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                    {categories.map((cat: any, idx: number) => {
+                      // Tentukan icon fallback (lucide) jika tidak ada icon di DB
+                      const fallbackIcons = [
+                        <Wind size={24} className="text-blue-500" />,
+                        <Wrench size={24} className="text-emerald-500" />,
+                        <Droplets size={24} className="text-cyan-500" />,
+                        <Settings size={24} className="text-amber-500" />,
+                        <Zap size={24} className="text-rose-500" />
+                      ];
+                      
+                      const renderIcon = () => {
+                        if (cat.icon && cat.icon.startsWith('data:image')) {
+                          return <img src={cat.icon} alt={cat.name} className="w-8 h-8 object-contain" />;
+                        }
+                        if (cat.icon) {
+                          // Jika icon adalah URL biasa atau nama (bisa disesuaikan jika menyimpan nama icon lucide)
+                          return <img src={cat.icon} alt={cat.name} className="w-8 h-8 object-contain" />;
+                        }
+                        // Fallback icon
+                        return fallbackIcons[idx % fallbackIcons.length];
+                      };
+
+                      return (
+                        <div 
+                          key={cat.id} 
+                          onClick={() => {
+                            handleCategoryChange(cat.id);
+                            setShowNewOrderModal(true);
+                          }}
+                          className="flex flex-col items-center justify-start cursor-pointer group"
+                        >
+                          <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-2 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+                            {/* Decorative background shape */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="relative z-10">
+                              {renderIcon()}
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold text-center leading-tight line-clamp-2 px-1 text-white/90">
+                            {cat.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Extra button for New Order (Custom) if needed, but since all categories are listed, we might not need it. */}
+                    {categories.length === 0 && (
+                      <div 
+                        onClick={() => setShowNewOrderModal(true)}
+                        className="flex flex-col items-center justify-start cursor-pointer group"
+                      >
+                         <div className="w-14 h-14 bg-white/20 rounded-2xl shadow-sm flex items-center justify-center mb-2 group-hover:bg-white/30 transition-colors">
+                           <Plus size={24} className="text-white" />
+                         </div>
+                         <span className="text-[10px] font-bold text-center text-white/90">Lainnya</span>
+                      </div>
+                    )}
                   </div>
-                  <button
-                    onClick={() => setShowNewOrderModal(true)}
-                    className="flex items-center gap-1 bg-white hover:bg-slate-100 text-indigo-700 font-extrabold px-3 py-1.8 rounded-xl shadow-md text-[10.5px] cursor-pointer transition"
-                  >
-                    <Plus size={12} />
-                    Buat Pesanan Baru
-                  </button>
                 </div>
               </div>
 

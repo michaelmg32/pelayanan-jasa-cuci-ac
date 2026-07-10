@@ -48,6 +48,7 @@ export interface ACCategory {
   region_id?: string;
   name: string;
   description?: string;
+  icon?: string;
   hasServices: boolean; // Jika false, kategori ini tidak memiliki layanan khusus
 }
 
