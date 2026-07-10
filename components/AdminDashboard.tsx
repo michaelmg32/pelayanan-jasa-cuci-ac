@@ -4777,11 +4777,11 @@ return (
                         <button 
                           onClick={() => {
                             if (!adminSelectedModel || !adminSelectedCategory || !adminSelectedService) return;
-                            const svc = services.find(s => s.id === adminSelectedService);
-                            const cat = categories.find(c => c.name === adminSelectedCategory);
-                            const model = models.find(m => m.name === adminSelectedModel);
+                            const svc = services.find(s => String(s.id) === String(adminSelectedService));
+                            const cat = categories.find(c => String(c.name) === String(adminSelectedCategory));
+                            const model = models.find(m => String(m.name) === String(adminSelectedModel));
                             if (svc && cat) {
-                              const priceEntry = servicePrices.find(sp => sp.serviceId === svc.id && sp.modelId === model?.id);
+                              const priceEntry = servicePrices.find(sp => String(sp.serviceId) === String(svc.id) && String(sp.modelId) === String(model?.id));
                               const resolvedPrice = priceEntry ? priceEntry.price : svc.price;
                               setAdminCartServices(prev => [...prev, {
                                 acType: adminSelectedModel,

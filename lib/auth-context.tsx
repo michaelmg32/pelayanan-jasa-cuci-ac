@@ -341,10 +341,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     let serviceCost = 0;
     if (orderData.serviceType && orderData.serviceType !== 'none') {
-      const matchService = services.find(s => s.name === orderData.serviceType || s.id === orderData.serviceType);
-      const matchModel = models.find(m => m.name === orderData.acType || m.id === orderData.acType);
+      const matchService = services.find(s => s.name === orderData.serviceType || String(s.id) === String(orderData.serviceType));
+      const matchModel = models.find(m => m.name === orderData.acType || String(m.id) === String(orderData.acType));
       if (matchService && matchModel) {
-        const priceEntry = servicePrices.find(sp => sp.serviceId === matchService.id && sp.modelId === matchModel.id);
+        const priceEntry = servicePrices.find(sp => String(sp.serviceId) === String(matchService.id) && String(sp.modelId) === String(matchModel.id));
         if (priceEntry) {
           serviceCost = priceEntry.price;
         }

@@ -371,7 +371,7 @@ export default function PelangganDashboard() {
     const matchService = services.find(s => s.name === selectedService);
     const matchModel = models.find(m => m.name === selectedModel);
     if (matchService && matchModel) {
-      const priceEntry = servicePrices.find(sp => sp.serviceId === matchService.id && sp.modelId === matchModel.id);
+      const priceEntry = servicePrices.find(sp => String(sp.serviceId) === String(matchService.id) && String(sp.modelId) === String(matchModel.id));
       if (priceEntry) {
         return priceEntry.price;
       }
