@@ -527,6 +527,24 @@ export default function AdminDashboard() {
   const [adminCartServices, setAdminCartServices] = useState<any[]>([]);
   const [showAdminMapPicker, setShowAdminMapPicker] = useState(false);
 
+  // AC selection states for Admin order wizard
+  const [adminSelectedAcSource, setAdminSelectedAcSource] = useState('new');
+  const [adminCustomerACs, setAdminCustomerACs] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (adminOrderSelectedUser?.id) {
+      api.fetchCustomerACs(adminOrderSelectedUser.id).then(data => {
+        setAdminCustomerACs(data);
+      }).catch(err => {
+        console.error('Error fetching customer ACs in admin booking:', err);
+        setAdminCustomerACs([]);
+      });
+    } else {
+      setAdminCustomerACs([]);
+    }
+    setAdminSelectedAcSource('new');
+  }, [adminOrderSelectedUser]);
+
   // Add User State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [regName, setRegName] = useState('');
@@ -4837,13 +4855,49 @@ return (
 
                     {/* Quick Add Service Form */}
                     <div className="bg-white p-3 rounded-lg border border-slate-200 mt-4 space-y-3">
+                      {adminOrderType === 'existing' && adminCustomerACs.length > 0 && (
+                        <div>
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
+                            Pilih AC Terdaftar Customer
+                          </label>
+                          <select
+                            value={adminSelectedAcSource}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setAdminSelectedAcSource(val);
+                              if (val !== 'new') {
+                                const matchAc = adminCustomerACs.find(ac => ac.id === val);
+                                if (matchAc && matchAc.modelName) {
+                                  setAdminSelectedModel(matchAc.modelName);
+                                }
+                                setAdminQuantity(1); // Kunci ke 1 unit untuk AC terdaftar
+                              }
+                            }}
+                            className="w-full border-slate-200 rounded-md text-xs py-2"
+                          >
+                            <option value="new">AC Baru (Belum tempel Barcode)</option>
+                            {adminCustomerACs.map(ac => (
+                              <option key={ac.id} value={ac.id}>
+                                {ac.name || 'AC'} — {ac.brand || 'Umum'} [ID: {ac.id}]
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Merek AC</label>
-                          <select value={adminSelectedModel} onChange={e => setAdminSelectedModel(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
-                            <option value="">- Merek -</option>
-                            {models.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                          </select>
+                          {adminSelectedAcSource !== 'new' ? (
+                            <div className="w-full bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-2 rounded-md font-bold">
+                              {adminSelectedModel}
+                            </div>
+                          ) : (
+                            <select value={adminSelectedModel} onChange={e => setAdminSelectedModel(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
+                              <option value="">- Merek -</option>
+                              {models.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                            </select>
+                          )}
                         </div>
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Tipe</label>
@@ -4875,7 +4929,13 @@ return (
                       <div className="flex justify-between items-end gap-3 mt-2">
                         <div className="w-24">
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Jumlah</label>
-                          <input type="number" min="1" value={adminQuantity} onChange={e => setAdminQuantity(parseInt(e.target.value))} className="w-full border-slate-200 rounded-md text-xs py-2" />
+                          {adminSelectedAcSource !== 'new' ? (
+                            <div className="w-full bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-2.5 rounded-md font-bold text-center">
+                              1
+                            </div>
+                          ) : (
+                            <input type="number" min="1" value={adminQuantity} onChange={e => setAdminQuantity(parseInt(e.target.value))} className="w-full border-slate-200 rounded-md text-xs py-2" />
+                          )}
                         </div>
                         <button 
                           onClick={() => {
@@ -4890,18 +4950,37 @@ return (
                                 alert('❌ Maaf, harga untuk layanan dan tipe AC ini belum tersedia (Rp0). Pastikan harga sudah diatur di menu Edit Master Data.');
                                 return;
                               }
+
+                              let linkedAcId = undefined;
+                              let linkedAcName = undefined;
+                              if (adminSelectedAcSource !== 'new') {
+                                const matchAc = adminCustomerACs.find(ac => ac.id === adminSelectedAcSource);
+                                if (matchAc) {
+                                  linkedAcId = matchAc.id;
+                                  linkedAcName = matchAc.name;
+                                }
+                              }
+
+                              if (linkedAcId && adminCartServices.some(item => item.acId === linkedAcId)) {
+                                alert('❌ AC ini sudah ada di dalam daftar layanan pesanan.');
+                                return;
+                              }
+
                               setAdminCartServices(prev => [...prev, {
                                 acType: adminSelectedModel,
                                 category: adminSelectedCategory,
                                 categoryId: cat.id,
                                 serviceType: svc.name,
-                                quantity: adminQuantity,
-                                price: resolvedPrice
+                                quantity: adminSelectedAcSource !== 'new' ? 1 : adminQuantity,
+                                price: resolvedPrice,
+                                acId: linkedAcId || 'manual',
+                                acName: linkedAcName || 'AC Umum'
                               }]);
                               setAdminSelectedService('');
+                              setAdminSelectedAcSource('new');
                             }
                           }}
-                          className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold text-xs py-2 px-4 rounded-md transition flex-1"
+                          className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold text-xs py-2.5 px-4 rounded-xl transition flex-1 border border-indigo-200"
                         >
                           + Tambah
                         </button>

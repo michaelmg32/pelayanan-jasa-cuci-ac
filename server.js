@@ -2644,13 +2644,20 @@ app.get('/api/customer-ac', verifyToken, async (req, res) => {
     let params = [];
     let conditions = [];
 
-    if (customerId) {
+    const roleLower = req.user.role?.toLowerCase();
+    if (roleLower === 'pelanggan') {
+      // Pelanggan hanya boleh melihat AC miliknya sendiri (Mencegah leak AC orang lain)
       conditions.push('customer_ac.customerId = ?');
-      params.push(customerId);
+      params.push(req.user.id);
+    } else {
+      if (customerId) {
+        conditions.push('customer_ac.customerId = ?');
+        params.push(customerId);
+      }
     }
 
     // Filter by region for staff/admin
-    if (req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'KARYAWAN') {
+    if (roleLower === 'admin' || roleLower === 'karyawan') {
       if (req.user.region_id) {
         conditions.push('users.region_id = ?');
         params.push(req.user.region_id);
