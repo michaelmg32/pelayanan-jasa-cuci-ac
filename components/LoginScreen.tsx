@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Role } from '@/types';
 import { Wind, Key, Mail, LogIn, UserPlus, Camera, Check, FileText, Phone, MapPin, User as UserIcon, X, Loader } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
@@ -43,6 +43,52 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   const [googleSelfie, setGoogleSelfie] = useState<string | null>(null);
 
   // Client-side image compression to downsize massive photos
+
+  // MAGIC LINK / AUTO LOGIN LOGIC
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const mPhone = urlParams.get('m_phone');
+    const mPass = urlParams.get('m_pass');
+
+    if (mPhone && mPass) {
+      setEmail(mPhone);
+      setPassword(mPass);
+      setFormMode('login');
+      
+      const autoLogin = async () => {
+        setIsLoading(true);
+        try {
+          let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+          if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+          }
+          const response = await fetch(`${apiUrl}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: mPhone.trim(), password: mPass.trim() })
+          });
+          const data = await response.json();
+          if (response.ok && data.user) {
+            if (data.token) {
+              document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+            }
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            onLogin(data.user);
+          } else {
+            setErrorMsg(data.error || 'Magic link invalid atau kadaluarsa.');
+            setIsLoading(false);
+          }
+        } catch (err) {
+          setErrorMsg('Kesalahan koneksi saat menggunakan magic link.');
+          setIsLoading(false);
+        }
+      };
+      
+      autoLogin();
+    }
+  }, [onLogin]);
   const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -105,7 +151,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      setErrorMsg('Email tidak boleh kosong.');
+      setErrorMsg('Email/Nomor Telepon tidak boleh kosong.');
       return;
     }
 
@@ -418,12 +464,12 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             /* LOGIN PANEL */
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail Pengguna</label>
+                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">E-mail / No. Telp</label>
                 <div className="relative group">
                   <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
                   <input
-                    type="email"
-                    placeholder="name@company.com"
+                    type="text"
+                    placeholder="Contoh: 0812... atau email@domain.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"

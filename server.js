@@ -706,15 +706,15 @@ app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+      return res.status(400).json({ error: 'Email/Nomor Telepon dan password diperlukan' });
     }
 
     const connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [users] = await connection.query('SELECT * FROM users WHERE email = ? OR phone = ?', [email, email]);
     connection.release();
 
     if (users.length === 0) {
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(401).json({ error: 'Pengguna tidak ditemukan' });
     }
 
     const user = users[0];
@@ -983,10 +983,14 @@ app.get('/api/users', verifyToken, async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { id, name, email, phone, role, password, region_id, ktpPhoto, selfiePhoto } = req.body;
+  let { id, name, email, phone, role, password, region_id, ktpPhoto, selfiePhoto } = req.body;
   try {
+    if (!email && phone) {
+      email = `${phone}@sugarac.com`;
+    }
+
     if (!email || !password || !name) {
-      return res.status(400).json({ error: 'Email, password, and name required' });
+      return res.status(400).json({ error: 'Email (or phone), password, and name required' });
     }
 
     // Hash password

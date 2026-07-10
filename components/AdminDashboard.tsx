@@ -494,6 +494,31 @@ export default function AdminDashboard() {
   const [jobsEndDate, setJobsEndDate] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
 
+  // Admin New Order Modal State
+  const [showAdminOrderModal, setShowAdminOrderModal] = useState(false);
+  const [adminOrderStep, setAdminOrderStep] = useState(1);
+  const [adminOrderType, setAdminOrderType] = useState<'existing' | 'new'>('existing');
+  const [adminOrderSelectedUser, setAdminOrderSelectedUser] = useState<any | null>(null);
+  const [adminOrderNewUserName, setAdminOrderNewUserName] = useState('');
+  const [adminOrderNewUserPhone, setAdminOrderNewUserPhone] = useState('');
+  const [adminOrderSuccessId, setAdminOrderSuccessId] = useState<string | null>(null);
+  const [adminOrderMagicLink, setAdminOrderMagicLink] = useState('');
+  const [adminOrderConfirmError, setAdminOrderConfirmError] = useState('');
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  // Booking Form State for Admin
+  const [adminSelectedModel, setAdminSelectedModel] = useState('');
+  const [adminSelectedCategory, setAdminSelectedCategory] = useState('');
+  const [adminSelectedService, setAdminSelectedService] = useState('');
+  const [adminQuantity, setAdminQuantity] = useState(1);
+  const [adminAddress, setAdminAddress] = useState('');
+  const [adminLat, setAdminLat] = useState<number | undefined>(undefined);
+  const [adminLng, setAdminLng] = useState<number | undefined>(undefined);
+  const [adminDate, setAdminDate] = useState('');
+  const [adminTime, setAdminTime] = useState('09:00');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [adminCartServices, setAdminCartServices] = useState<any[]>([]);
+
   // Add User State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [regName, setRegName] = useState('');
@@ -882,6 +907,91 @@ export default function AdminDashboard() {
       alert('❌ Gagal membatalkan pesanan');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateAdminOrder = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (adminCartServices.length === 0) {
+      setAdminOrderConfirmError('Silakan pilih setidaknya 1 layanan.');
+      return;
+    }
+    
+    setIsCreatingOrder(true);
+    setAdminOrderConfirmError('');
+
+    try {
+      let finalUserId = adminOrderSelectedUser?.id;
+
+      if (adminOrderType === 'new') {
+        if (!adminOrderNewUserName || !adminOrderNewUserPhone) {
+          setAdminOrderConfirmError('Nama dan Nomor Telepon wajib diisi.');
+          setIsCreatingOrder(false);
+          return;
+        }
+        
+        const newUser = await api.createUser({
+          name: adminOrderNewUserName,
+          phone: adminOrderNewUserPhone,
+          password: 'sugar123',
+          role: Role.PELANGGAN,
+          region_id: activeUser?.region_id
+        });
+        finalUserId = newUser.id;
+        
+        const magicLink = `${window.location.origin}/?m_phone=${encodeURIComponent(adminOrderNewUserPhone)}&m_pass=sugar123`;
+        setAdminOrderMagicLink(magicLink);
+      }
+
+      if (!finalUserId) {
+         setAdminOrderConfirmError('Pelanggan harus dipilih atau dibuat.');
+         setIsCreatingOrder(false);
+         return;
+      }
+
+      const totalCost = adminCartServices.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+      const newOrder = {
+        id: `ord_${Date.now()}`,
+        customerId: finalUserId,
+        status: OrderStatus.MENUNGGU,
+        totalCost,
+        address: adminAddress,
+        lat: adminLat,
+        lng: adminLng,
+        serviceDate: adminDate,
+        serviceTime: adminTime,
+        notes: adminNotes,
+        acDetail: adminCartServices.map(item => ({
+          acId: item.acId || 'manual',
+          acName: item.acName || 'AC Umum',
+          brand: item.acType,
+          model: item.category,
+          serviceType: item.serviceType,
+          categoryId: item.categoryId,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        createdAt: new Date().toISOString(),
+        region_id: activeUser?.region_id
+      };
+
+      const res = await api.createOrder(newOrder);
+      
+      setAdminCartServices([]);
+      setAdminDate('');
+      setAdminTime('09:00');
+      setAdminNotes('');
+      setAdminAddress('');
+      
+      const updatedOrders = await api.fetchOrders();
+      setOrders(updatedOrders);
+      
+      setAdminOrderSuccessId(res.id || newOrder.id);
+      setAdminOrderStep(3);
+    } catch (err: any) {
+      setAdminOrderConfirmError(err.message || 'Gagal membuat pesanan.');
+    } finally {
+      setIsCreatingOrder(false);
     }
   };
 
@@ -1537,6 +1647,13 @@ return (
                 />
               </div>
               <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                <button
+                  type="button"
+                  onClick={() => setShowAdminOrderModal(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                  <Plus size={13} /> Buat Pesanan Baru
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowExportModal(true)}
@@ -4443,6 +4560,313 @@ return (
       )}
 
       {/* Export CSV Date Range Modal */}
+      {showAdminOrderModal && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] overflow-hidden relative">
+            
+            {/* Header Modal */}
+            <div className="flex items-center justify-between p-5 md:px-8 border-b border-slate-100 bg-slate-50 shrink-0">
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-2">
+                <Plus size={20} className="text-indigo-600" />
+                Buat Pesanan Baru
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowAdminOrderModal(false);
+                  setAdminOrderStep(1);
+                  setAdminOrderSuccessId(null);
+                  setAdminCartServices([]);
+                  setAdminOrderConfirmError('');
+                }} 
+                className="p-2 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div className="flex-1 overflow-y-auto p-5 md:px-8 bg-white">
+              {adminOrderConfirmError && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-xs font-medium flex items-start gap-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>{adminOrderConfirmError}</span>
+                </div>
+              )}
+
+              {/* STEP 1: PILIH PELANGGAN */}
+              {adminOrderStep === 1 && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="grid grid-cols-2 gap-3 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdminOrderType('existing')}
+                      className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all flex flex-col items-center justify-center gap-2 ${adminOrderType === 'existing' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:border-indigo-300'}`}
+                    >
+                      <UserIcon size={24} className={adminOrderType === 'existing' ? 'text-indigo-600' : 'text-slate-400'} />
+                      Pelanggan Ada
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdminOrderType('new')}
+                      className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all flex flex-col items-center justify-center gap-2 ${adminOrderType === 'new' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-500 hover:border-indigo-300'}`}
+                    >
+                      <UserPlus size={24} className={adminOrderType === 'new' ? 'text-indigo-600' : 'text-slate-400'} />
+                      Pelanggan Baru
+                    </button>
+                  </div>
+
+                  {adminOrderType === 'existing' ? (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Pilih Pelanggan dari Data</label>
+                      <select
+                        value={adminOrderSelectedUser?.id || ''}
+                        onChange={(e) => {
+                          const user = users.find(u => u.id === e.target.value);
+                          setAdminOrderSelectedUser(user || null);
+                          setAdminAddress(user?.address || '');
+                          setAdminLat(user?.lat);
+                          setAdminLng(user?.lng);
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
+                      >
+                        <option value="">-- Cari Pelanggan --</option>
+                        {users.filter(u => u.role === Role.PELANGGAN).map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.phone || u.email})</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-blue-800 text-xs flex gap-3 items-start">
+                        <Sparkles size={16} className="shrink-0 mt-0.5 text-blue-600" />
+                        <p>Akun pelanggan akan dibuatkan secara otomatis. Magic Link akan diberikan di langkah akhir untuk dikirimkan ke WhatsApp pelanggan.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nama Lengkap</label>
+                        <input
+                          type="text"
+                          value={adminOrderNewUserName}
+                          onChange={e => setAdminOrderNewUserName(e.target.value)}
+                          placeholder="Nama pelanggan"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nomor Telepon (WhatsApp)</label>
+                        <input
+                          type="text"
+                          value={adminOrderNewUserPhone}
+                          onChange={e => setAdminOrderNewUserPhone(e.target.value)}
+                          placeholder="0812xxxxxx"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Alamat Pelanggan</label>
+                    <textarea
+                      value={adminAddress}
+                      onChange={e => setAdminAddress(e.target.value)}
+                      rows={2}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none"
+                      placeholder="Detail alamat..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: DETAIL PESANAN */}
+              {adminOrderStep === 2 && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100">
+                    <h4 className="font-bold text-indigo-900 mb-3 text-sm">Keranjang Layanan</h4>
+                    {adminCartServices.length === 0 ? (
+                      <div className="text-center py-4 border-2 border-dashed border-indigo-200 rounded-lg text-indigo-400 text-xs">Belum ada layanan dipilih</div>
+                    ) : (
+                      <div className="space-y-2 mb-3">
+                        {adminCartServices.map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-indigo-50 shadow-sm">
+                            <div>
+                              <p className="text-xs font-bold text-slate-800">{item.serviceType} <span className="text-indigo-600">({item.quantity}x)</span></p>
+                              <p className="text-[10px] text-slate-500">{item.acType} - {item.category}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-mono font-semibold text-slate-700">{formatRupiah(item.price * item.quantity)}</span>
+                              <button onClick={() => setAdminCartServices(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 p-1">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Quick Add Service Form */}
+                    <div className="bg-white p-3 rounded-lg border border-slate-200 mt-4 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Merek AC</label>
+                          <select value={adminSelectedModel} onChange={e => setAdminSelectedModel(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
+                            <option value="">- Merek -</option>
+                            {acModels.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Tipe</label>
+                          <select value={adminSelectedCategory} onChange={e => setAdminSelectedCategory(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
+                            <option value="">- Tipe -</option>
+                            {acCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Layanan</label>
+                          <select value={adminSelectedService} onChange={e => setAdminSelectedService(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
+                            <option value="">- Pilih Layanan -</option>
+                            {services.map(s => <option key={s.id} value={s.id}>{s.name} - {formatRupiah(s.base_price)}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end gap-3 mt-2">
+                        <div className="w-24">
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Jumlah</label>
+                          <input type="number" min="1" value={adminQuantity} onChange={e => setAdminQuantity(parseInt(e.target.value))} className="w-full border-slate-200 rounded-md text-xs py-2" />
+                        </div>
+                        <button 
+                          onClick={() => {
+                            if (!adminSelectedModel || !adminSelectedCategory || !adminSelectedService) return;
+                            const svc = services.find(s => s.id === adminSelectedService);
+                            const cat = acCategories.find(c => c.name === adminSelectedCategory);
+                            if (svc && cat) {
+                              setAdminCartServices(prev => [...prev, {
+                                acType: adminSelectedModel,
+                                category: adminSelectedCategory,
+                                categoryId: cat.id,
+                                serviceType: svc.name,
+                                quantity: adminQuantity,
+                                price: svc.base_price
+                              }]);
+                              setAdminSelectedService('');
+                            }
+                          }}
+                          className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold text-xs py-2 px-4 rounded-md transition flex-1"
+                        >
+                          + Tambah
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Tanggal</label>
+                      <input type="date" value={adminDate} onChange={e => setAdminDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none" min={new Date().toISOString().split('T')[0]} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Waktu</label>
+                      <input type="time" value={adminTime} onChange={e => setAdminTime(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Catatan Tambahan</label>
+                    <textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)} rows={2} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none resize-none" placeholder="Catatan untuk teknisi (opsional)..." />
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: SUCCESS & MAGIC LINK */}
+              {adminOrderStep === 3 && (
+                <div className="py-8 px-4 text-center animate-scale-in">
+                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                    <Check size={40} className="text-emerald-500 relative z-10 animate-bounce-in" style={{ animationDelay: '200ms' }} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-2">Pesanan Berhasil!</h3>
+                  <p className="text-slate-500 mb-6">ID Pesanan: <strong className="text-slate-800">{adminOrderSuccessId}</strong></p>
+
+                  {adminOrderMagicLink && (
+                    <div className="bg-blue-50 border border-blue-200 p-5 rounded-2xl text-left max-w-sm mx-auto shadow-sm">
+                      <p className="text-sm font-bold text-blue-900 mb-1">🔗 Magic Link Pelanggan</p>
+                      <p className="text-xs text-blue-700 mb-3 leading-relaxed">Akun baru berhasil dibuat. Salin dan kirimkan link ini agar pelanggan dapat login otomatis ke akunnya.</p>
+                      
+                      <div className="flex bg-white border border-blue-200 rounded-lg overflow-hidden">
+                        <input type="text" readOnly value={adminOrderMagicLink} className="flex-1 text-[10px] px-3 py-2 bg-slate-50 text-slate-600 outline-none" />
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(adminOrderMagicLink);
+                            alert('Magic Link disalin!');
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-xs font-bold transition"
+                        >
+                          Salin
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-8 flex justify-center">
+                    <button 
+                      onClick={() => {
+                        setShowAdminOrderModal(false);
+                        setAdminOrderStep(1);
+                        setAdminOrderSuccessId(null);
+                        setAdminOrderMagicLink('');
+                      }} 
+                      className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-700 transition"
+                    >
+                      Selesai
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer (Only for Step 1 and 2) */}
+            {adminOrderStep !== 3 && (
+              <div className="p-5 md:px-8 bg-slate-50 border-t border-slate-100 shrink-0 flex justify-end gap-3">
+                {adminOrderStep === 1 && (
+                  <>
+                    <button onClick={() => setShowAdminOrderModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition text-sm">Batal</button>
+                    <button 
+                      onClick={() => {
+                        if (adminOrderType === 'existing' && (!adminOrderSelectedUser || !adminAddress)) {
+                          setAdminOrderConfirmError('Pelanggan dan alamat wajib dipilih/diisi.');
+                          return;
+                        }
+                        if (adminOrderType === 'new' && (!adminOrderNewUserName || !adminOrderNewUserPhone || !adminAddress)) {
+                          setAdminOrderConfirmError('Nama, Telepon, dan Alamat wajib diisi.');
+                          return;
+                        }
+                        setAdminOrderConfirmError('');
+                        setAdminOrderStep(2);
+                      }} 
+                      className="px-6 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition text-sm"
+                    >
+                      Lanjut ke Layanan
+                    </button>
+                  </>
+                )}
+                {adminOrderStep === 2 && (
+                  <>
+                    <button onClick={() => setAdminOrderStep(1)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition text-sm">Kembali</button>
+                    <button 
+                      onClick={handleCreateAdminOrder}
+                      disabled={isCreatingOrder || adminCartServices.length === 0}
+                      className="px-6 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition flex items-center gap-2 text-sm disabled:opacity-50"
+                    >
+                      {isCreatingOrder ? <><Loader size={16} className="animate-spin" /> Memproses...</> : 'Buat Pesanan'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showExportModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
