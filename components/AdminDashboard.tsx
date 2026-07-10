@@ -970,6 +970,7 @@ export default function AdminDashboard() {
         customerPhone: customerPhone || '-',
         status: OrderStatus.MENUNGGU,
         totalCost,
+        serviceCost: totalCost,
         address: adminAddress,
         lat: adminLat,
         lng: adminLng,
