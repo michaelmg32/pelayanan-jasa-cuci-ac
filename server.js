@@ -964,7 +964,8 @@ app.get('/api/users', verifyToken, async (req, res) => {
     const connection = await pool.getConnection();
         let query = 'SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt, region_id FROM users';
     let params = [];
-    if (req.user.role === 'admin' || req.user.role === 'karyawan') {
+    const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+    if (userRole === 'ADMIN' || userRole === 'KARYAWAN') {
        if (req.user.region_id) {
          query += ' WHERE region_id = ?';
          params.push(req.user.region_id);
@@ -1194,7 +1195,8 @@ app.get('/api/orders', verifyToken, async (req, res) => {
     const connection = await pool.getConnection();
         let query = 'SELECT * FROM orders';
     let params = [];
-    if (req.user.role === 'admin' || req.user.role === 'karyawan' || (req.user.role === 'owner' && req.user.region_id)) {
+    const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+    if (userRole === 'ADMIN' || userRole === 'KARYAWAN' || (userRole === 'OWNER' && req.user.region_id)) {
        if (req.user.region_id) {
          query += ' WHERE region_id = ?';
          params.push(req.user.region_id);
@@ -2608,7 +2610,7 @@ app.get('/api/customer-ac', verifyToken, async (req, res) => {
     }
 
     // Filter by region for staff/admin
-    if (req.user.role === 'admin' || req.user.role === 'karyawan') {
+    if (req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'KARYAWAN') {
       if (req.user.region_id) {
         conditions.push('users.region_id = ?');
         params.push(req.user.region_id);
@@ -2653,7 +2655,7 @@ app.get('/api/customer-ac/scan/:id', verifyToken, async (req, res) => {
     const ac = rows[0];
 
     // Filter by region for staff/admin
-    if ((req.user.role === 'admin' || req.user.role === 'karyawan') && req.user.region_id) {
+    if ((req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'KARYAWAN') && req.user.region_id) {
       if (ac.region_id !== req.user.region_id) {
         return res.status(403).json({ error: 'AC ini terdaftar di wilayah lain.' });
       }
@@ -2700,7 +2702,7 @@ app.get('/api/vouchers', verifyToken, async (req, res) => {
     let params = [];
     
     // Filter based on role and region_id
-    if (req.user.role === 'admin' && req.user.region_id) {
+    if (req.user.role?.toUpperCase() === 'ADMIN' && req.user.region_id) {
       query += ' WHERE vouchers.region_id = ?';
       params.push(req.user.region_id);
     } else if (req.query.region_id) {
@@ -2732,7 +2734,7 @@ app.post('/api/vouchers', verifyToken, async (req, res) => {
   }
   
   // Enforce region_id for branch admin
-  const finalRegionId = req.user.role === 'admin' ? req.user.region_id : region_id;
+  const finalRegionId = req.user.role?.toUpperCase() === 'ADMIN' ? req.user.region_id : region_id;
   if (!finalRegionId) {
     return res.status(400).json({ error: 'Wilayah / cabang wajib ditentukan.' });
   }
@@ -2794,7 +2796,7 @@ app.put('/api/vouchers/:id', verifyToken, async (req, res) => {
     }
     
     // Branch admin cannot modify other regions' vouchers
-    if (req.user.role === 'admin' && existing[0].region_id !== req.user.region_id) {
+    if (req.user.role?.toUpperCase() === 'ADMIN' && existing[0].region_id !== req.user.region_id) {
       connection.release();
       return res.status(403).json({ error: 'Akses ditolak untuk wilayah lain.' });
     }
@@ -2854,7 +2856,7 @@ app.delete('/api/vouchers/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'Voucher tidak ditemukan.' });
     }
     
-    if (req.user.role === 'admin' && existing[0].region_id !== req.user.region_id) {
+    if (req.user.role?.toUpperCase() === 'ADMIN' && existing[0].region_id !== req.user.region_id) {
       connection.release();
       return res.status(403).json({ error: 'Akses ditolak untuk wilayah lain.' });
     }

@@ -38,6 +38,7 @@ import {
   Settings,
   ShieldAlert,
   Zap,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
@@ -47,6 +48,7 @@ export default function PelangganDashboard() {
   // Navigation tabs
   
   const [selectedRegionId, setSelectedRegionId] = useState('');
+  const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
   
   useEffect(() => {
     if (regions && regions.length > 0 && !selectedRegionId) {
@@ -876,22 +878,43 @@ export default function PelangganDashboard() {
                     <p className="text-[10px] text-blue-105/85 truncate max-w-[200px] mt-0.5">{activeUser.email}</p>
                   </div>
                   
-                  {/* Pilihan Wilayah (Region Selector) */}
+                  {/* Pilihan Wilayah (Region Selector Custom Dropdown) */}
                   {regions && regions.length > 0 && (
-                    <div className="bg-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2 border border-white/20">
-                      <MapPin size={12} className="text-blue-200" />
-                      <select
-                        value={selectedRegionId}
-                        onChange={(e) => setSelectedRegionId(e.target.value)}
-                        className="bg-transparent text-xs font-bold text-white outline-none appearance-none cursor-pointer pr-4"
-                        style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                    <div className="relative">
+                      <div 
+                        onClick={() => setIsRegionDropdownOpen(!isRegionDropdownOpen)}
+                        className="bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-3 py-1.5 flex items-center gap-2 border border-white/20 cursor-pointer"
                       >
-                        {regions.map((r: any) => (
-                          <option key={r.id} value={r.id} className="text-slate-800 font-medium">
-                            {r.name}
-                          </option>
-                        ))}
-                      </select>
+                        <MapPin size={12} className="text-blue-200" />
+                        <span className="text-xs font-bold text-white select-none">
+                          {regions.find((r: any) => r.id === selectedRegionId)?.name || 'Pilih Wilayah'}
+                        </span>
+                        <ChevronDown size={14} className={`text-white/70 transition-transform ${isRegionDropdownOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                      
+                      {isRegionDropdownOpen && (
+                        <>
+                          {/* Invisible overlay to close dropdown when clicking outside */}
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setIsRegionDropdownOpen(false)}
+                          />
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in origin-top-right">
+                            {regions.map((r: any) => (
+                              <div 
+                                key={r.id} 
+                                onClick={() => {
+                                  setSelectedRegionId(r.id);
+                                  setIsRegionDropdownOpen(false);
+                                }}
+                                className={`px-4 py-3 text-sm font-semibold cursor-pointer transition-colors ${selectedRegionId === r.id ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                              >
+                                {r.name}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
