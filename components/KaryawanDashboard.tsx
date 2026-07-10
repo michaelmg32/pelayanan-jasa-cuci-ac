@@ -90,6 +90,26 @@ export default function KaryawanDashboard() {
     return units;
   };
 
+  // Auto-save & load draft inputs from localStorage to prevent loss during refresh
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedDraft = localStorage.getItem('sugarac_ac_history_draft');
+      if (savedDraft) {
+        try {
+          setAcHistoryInputs(JSON.parse(savedDraft));
+        } catch (e) {
+          console.error('Error loading AC draft:', e);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && Object.keys(acHistoryInputs).length > 0) {
+      localStorage.setItem('sugarac_ac_history_draft', JSON.stringify(acHistoryInputs));
+    }
+  }, [acHistoryInputs]);
+
   const handleAcImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, unitKey: string, type: 'before' | 'after') => {
     const file = e.target.files?.[0];
     if (file) {
@@ -796,6 +816,10 @@ export default function KaryawanDashboard() {
       setAddonsUsed([]);
       setCompletionNotes('');
       setActiveWorkingTask(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sugarac_ac_history_draft');
+      }
+      setAcHistoryInputs({});
       alert('✓ Tagihan berhasil dikirim ke pelanggan!');
     } catch (error) {
       alert('❌ Gagal mengirim tagihan');
