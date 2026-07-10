@@ -3208,12 +3208,12 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
        FROM users u
        LEFT JOIN staff_grades sg ON u.grade_id = sg.id
        LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id
-       WHERE u.role = 'STAFF' AND u.region_id = ?`,
+        WHERE u.role = 'karyawan' AND u.region_id = ?`,
       [targetRegion]
     );
 
     if (staffList.length === 0) {
-      return res.status(404).json({ error: 'Tidak ada karyawan (STAFF) di wilayah ini.' });
+      return res.status(404).json({ error: 'Tidak ada karyawan (karyawan) di wilayah ini.' });
     }
 
     // Calculate completed orders for each staff this month
@@ -3421,7 +3421,7 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
       LEFT JOIN staff_grades sg ON u.grade_id = sg.id
       LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id
       LEFT JOIN regions r ON u.region_id = r.id
-      WHERE u.role = 'STAFF'
+      WHERE u.role = 'karyawan'
     `;
     const params = [];
     if (user.role?.toLowerCase() === 'admin') {
