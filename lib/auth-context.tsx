@@ -193,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [dbConnected]);
+  }, [dbConnected, activeUser]);
 
   // Prevent zoom (pinch-to-zoom and double-tap) on mobile devices
   useEffect(() => {
