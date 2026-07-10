@@ -2594,6 +2594,13 @@ return (
                 <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
               </div>
               <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
+                <a
+                  href="/dashboard/admin/gaji"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/15"
+                >
+                  <DollarSign size={13} />
+                  <span>Kelola & Proses Gaji</span>
+                </a>
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
                 <div className="flex items-center gap-2">
                   <input

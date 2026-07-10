@@ -589,22 +589,31 @@ export default function OwnerDashboard() {
 
       {/* Statistik Karyawan */}
       <div className="bg-white border rounded-2xl p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-slate-100 pb-3 flex-wrap">
           <div>
             <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Statistik Kinerja Karyawan</h3>
             <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Analisis kontribusi dan rating teknisi</p>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-[9.5px] font-bold text-slate-400 uppercase whitespace-nowrap">Urutkan:</span>
-            <select
-              value={staffSortKey}
-              onChange={(e) => setStaffSortKey(e.target.value as any)}
-              className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-bold cursor-pointer w-full sm:w-auto"
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+            <a
+              href="/dashboard/admin/gaji"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/15"
             >
-              <option value="rating">⭐️ Rata-Rata Bintang</option>
-              <option value="jobs">💼 Total Pekerjaan Selesai</option>
-              <option value="margin">💰 Kontribusi Margin Keuntungan</option>
-            </select>
+              <DollarSign size={12} />
+              <span>Kelola & Catatan Gaji</span>
+            </a>
+            <div className="flex items-center gap-2">
+              <span className="text-[9.5px] font-bold text-slate-400 uppercase whitespace-nowrap">Urutkan:</span>
+              <select
+                value={staffSortKey}
+                onChange={(e) => setStaffSortKey(e.target.value as any)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-bold cursor-pointer w-full sm:w-auto"
+              >
+                <option value="rating">⭐️ Rata-Rata Bintang</option>
+                <option value="jobs">💼 Total Pekerjaan Selesai</option>
+                <option value="margin">💰 Kontribusi Margin Keuntungan</option>
+              </select>
+            </div>
           </div>
         </div>
 
