@@ -1244,6 +1244,30 @@ export default function AdminDashboard() {
   };
 
   // Master Data handlers - CREATE/UPDATE CATEGORIES
+  const handleCategoryIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 200, 200, 0.8);
+        setNewCategoryIcon(compressedBase64);
+      } catch (err) {
+        console.error('Error compressing category icon:', err);
+      }
+    }
+  };
+
+  const handleEditCategoryIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 200, 200, 0.8);
+        setEditMasterField3(compressedBase64);
+      } catch (err) {
+        console.error('Error compressing category icon:', err);
+      }
+    }
+  };
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
@@ -2115,13 +2139,19 @@ return (
                       className="w-full bg-white border border-slate-200 text-slate-850 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
                       required
                     />
-                    <input
-                      type="text"
-                      placeholder="Icon (Opsional, emoji atau teks)"
-                      value={newCategoryIcon}
-                      onChange={(e) => setNewCategoryIcon(e.target.value)}
-                      className="w-full bg-white border border-slate-200 text-slate-850 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-bold"
-                    />
+                    <div className="flex items-center gap-2">
+                      {newCategoryIcon && (
+                        <div className="w-8 h-8 rounded shrink-0 overflow-hidden bg-slate-100 border border-slate-200">
+                          <img src={newCategoryIcon} alt="Icon Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCategoryIconChange}
+                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-750 hover:file:bg-indigo-100 cursor-pointer bg-white border border-slate-200 rounded-xl px-2 py-1.5"
+                      />
+                    </div>
                   </div>
                   <button
                     type="submit"
@@ -2149,7 +2179,7 @@ return (
                             }}
                           >
                             <td className="p-3 font-extrabold text-slate-800 flex items-center gap-2">
-                              {c.icon && <span className="text-sm mr-1">{c.icon}</span>}
+                              {c.icon && <img src={c.icon} alt={c.name} className="w-6 h-6 object-cover rounded mr-1" />}
                               {c.name}
                               <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">
                                 {services.filter(s => s.categoryId === c.id).length} Layanan
@@ -3731,14 +3761,20 @@ return (
                   </div>
                   <div className="mt-2">
                     <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Icon (Opsional)</label>
-                    <input
-                      type="text"
-                      value={editMasterField3 as string}
-                      onChange={(e) => setEditMasterField3(e.target.value)}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
-                      placeholder="Contoh: 🔧 atau mdi:wrench"
-                      disabled={isLoading}
-                    />
+                    <div className="flex items-center gap-2">
+                      {editMasterField3 && (
+                        <div className="w-8 h-8 rounded shrink-0 overflow-hidden bg-slate-100 border border-slate-200">
+                          <img src={editMasterField3 as string} alt="Icon Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditCategoryIconChange}
+                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-750 hover:file:bg-indigo-100 cursor-pointer bg-white border border-slate-200 rounded-xl px-2 py-1.5"
+                        disabled={isLoading}
+                      />
+                    </div>
                   </div>
                 </>
               )}
