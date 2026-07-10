@@ -943,15 +943,15 @@ export default function PelangganDashboard() {
                       ];
                       
                       const renderIcon = () => {
-                        if (cat.icon && cat.icon.startsWith('data:image')) {
-                          return <img src={cat.icon} alt={cat.name} className="w-9 h-9 object-contain drop-shadow-sm" />;
-                        }
                         if (cat.icon) {
-                          // Jika icon adalah URL biasa atau nama (bisa disesuaikan jika menyimpan nama icon lucide)
-                          return <img src={cat.icon} alt={cat.name} className="w-9 h-9 object-contain drop-shadow-sm" />;
+                          return <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover" />;
                         }
                         // Fallback icon
-                        return fallbackIcons[idx % fallbackIcons.length];
+                        return (
+                          <div className="relative z-10 flex items-center justify-center w-full h-full">
+                            {fallbackIcons[idx % fallbackIcons.length]}
+                          </div>
+                        );
                       };
 
                       const bgColorClass = backgroundColors[idx % backgroundColors.length];
@@ -966,9 +966,7 @@ export default function PelangganDashboard() {
                           className="flex flex-col items-center justify-start cursor-pointer group"
                         >
                           <div className={`w-14 h-14 ${bgColorClass} rounded-2xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform duration-200 relative overflow-hidden`}>
-                            <div className="relative z-10">
-                              {renderIcon()}
-                            </div>
+                            {renderIcon()}
                           </div>
                           <span className="text-[10px] font-bold text-center leading-tight line-clamp-2 px-1 text-slate-700 group-hover:text-slate-900 transition-colors">
                             {cat.name}
