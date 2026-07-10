@@ -973,14 +973,14 @@ export default function AdminDashboard() {
         address: adminAddress,
         lat: adminLat,
         lng: adminLng,
-        serviceDate: adminDate,
-        serviceTime: adminTime,
+        scheduledDate: adminDate,
+        scheduledTime: adminTime,
         notes: adminNotes,
         acDetail: adminCartServices.map(item => ({
           acId: item.acId || 'manual',
           acName: item.acName || 'AC Umum',
-          brand: item.acType,
-          model: item.category,
+          acType: item.acType,
+          category: item.category,
           serviceType: item.serviceType,
           categoryId: item.categoryId,
           quantity: item.quantity,
@@ -1610,7 +1610,7 @@ return (
           >
             <span className="flex items-center gap-2">
               <UserCog size={15} />
-              <span>Edit Pengguna ({allUsers.length})</span>
+              <span>Edit Pengguna ({allUsers.filter(u => u.role !== Role.USER).length})</span>
             </span>
           </button>
 
@@ -2478,7 +2478,7 @@ return (
             </div>
 
             <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
-              {allUsers.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
+              {allUsers.filter(u => u.role !== Role.USER && u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
                 <div key={u.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -4753,9 +4753,19 @@ return (
                       <div className="grid grid-cols-1 gap-3">
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Layanan</label>
-                          <select value={adminSelectedService} onChange={e => setAdminSelectedService(e.target.value)} className="w-full border-slate-200 rounded-md text-xs py-2">
+                          <select 
+                            value={adminSelectedService} 
+                            onChange={e => setAdminSelectedService(e.target.value)} 
+                            className="w-full border-slate-200 rounded-md text-xs py-2 disabled:bg-slate-100 disabled:text-slate-400"
+                            disabled={!adminSelectedCategory}
+                          >
                             <option value="">- Pilih Layanan -</option>
-                            {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            {services
+                              .filter(s => {
+                                const cat = categories.find(c => c.name === adminSelectedCategory);
+                                return cat ? s.categoryId === cat.id : false;
+                              })
+                              .map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         </div>
                       </div>
