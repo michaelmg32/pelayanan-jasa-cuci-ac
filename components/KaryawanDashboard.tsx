@@ -894,11 +894,13 @@ export default function KaryawanDashboard() {
         {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
         <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
           <div className="flex items-center gap-2">
-            {appSettings?.['GLOBAL']?.business_logo ? (
-              <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-6 h-6 rounded-lg object-cover" />
-            ) : (
-              <span className="text-sm font-black tracking-wider text-emerald-400">🟢 {appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</span>
-            )}
+            <a href="/" className="flex items-center gap-2 cursor-pointer block hover:opacity-80 transition">
+              {appSettings?.['GLOBAL']?.business_logo ? (
+                <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-6 h-6 rounded-lg object-cover" />
+              ) : (
+                <span className="text-sm font-black tracking-wider text-emerald-400">🟢 {appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</span>
+              )}
+            </a>
             <span className="text-xs font-black uppercase tracking-wider text-slate-350">| Portal Karyawan</span>
           </div>
 

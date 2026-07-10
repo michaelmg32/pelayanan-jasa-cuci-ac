@@ -1505,7 +1505,7 @@ return (
       <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 bg-gradient-to-tr from-rose-500 to-orange-400 rounded-2xl shadow-xl shadow-rose-900/20 flex items-center justify-center text-white mb-3 transform -rotate-6 hover:rotate-0 transition duration-300 relative z-10 overflow-hidden border-2 border-white/50">
+          <a href="/" className="w-14 h-14 bg-gradient-to-tr from-rose-500 to-orange-400 rounded-2xl shadow-xl shadow-rose-900/20 flex items-center justify-center text-white mb-3 transform -rotate-6 hover:rotate-0 transition duration-300 relative z-10 overflow-hidden border-2 border-white/50 cursor-pointer block">
             {appSettings?.['GLOBAL']?.business_logo ? (
               <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
             ) : (
@@ -1513,7 +1513,7 @@ return (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             )}
-          </div>
+          </a>
           <div className="text-left">
             <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h1>
             <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>

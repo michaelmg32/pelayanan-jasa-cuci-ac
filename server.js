@@ -866,6 +866,15 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'Email sudah terdaftar.' });
     }
 
+    // Check if phone already exists
+    if (phone) {
+      const [existingPhones] = await connection.query('SELECT id FROM users WHERE phone = ?', [phone]);
+      if (existingPhones.length > 0) {
+        connection.release();
+        return res.status(400).json({ error: 'Nomor telepon sudah terdaftar.' });
+      }
+    }
+
     // Insert new user
     const newId = id || `usr_${Date.now()}`;
     const ktpPhotoUrl = saveBase64Image(ktpPhoto, `user_${newId}_ktp`);

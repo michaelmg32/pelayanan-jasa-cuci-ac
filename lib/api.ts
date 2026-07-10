@@ -127,7 +127,10 @@ export const createUser = async (userData: any) => {
       headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(userData),
     });
-    if (!response.ok) throw new Error('Failed to create user');
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to create user');
+    }
     return await response.json();
   } catch (error) {
     console.error('Error creating user:', error);
@@ -142,16 +145,11 @@ export const updateUser = async (userId: string, userData: any) => {
       payload.role = denormalizeRole(payload.role);
     }
     
-    console.log('🔄 Updating user:', userId);
-    console.log('📤 Payload:', payload);
-    
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'PUT',
       headers: getAuthHeaders(), cache: 'no-store',
       body: JSON.stringify(payload),
     });
-    
-    console.log('📡 Response status:', response.status);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

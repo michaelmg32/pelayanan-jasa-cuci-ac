@@ -780,7 +780,7 @@ export default function PelangganDashboard() {
         <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
           {/* Logo, Business Name & Slogan */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20">
+            <a href="/" className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20 cursor-pointer block">
               {(appSettings?.[selectedRegionId || 'GLOBAL']?.business_logo || appSettings?.['GLOBAL']?.business_logo) ? (
                 <img src={appSettings?.[selectedRegionId || 'GLOBAL']?.business_logo || appSettings?.['GLOBAL']?.business_logo} alt="Logo" className="w-full h-full object-cover" />
               ) : (
@@ -788,7 +788,7 @@ export default function PelangganDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               )}
-            </div>
+            </a>
             <div className="text-left">
               <h1 className="text-sm font-black leading-none">{(appSettings?.[selectedRegionId || 'GLOBAL']?.business_name || appSettings?.['GLOBAL']?.business_name) || 'Sugar AC'}</h1>
               <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional</p>
