@@ -2729,6 +2729,8 @@ app.get('/api/customer-ac/:id/history', verifyToken, async (req, res) => {
     if (connection) connection.release();
     res.status(500).json({ error: error.message });
   }
+});
+
 // GET public AC details & service history (NO TOKEN REQUIRED, safe from customer PII leak)
 app.get('/api/public/customer-ac/:id', async (req, res) => {
   const { id } = req.params;
