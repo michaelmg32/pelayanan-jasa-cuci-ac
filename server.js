@@ -2729,6 +2729,51 @@ app.get('/api/customer-ac/:id/history', verifyToken, async (req, res) => {
     if (connection) connection.release();
     res.status(500).json({ error: error.message });
   }
+// GET public AC details & service history (NO TOKEN REQUIRED, safe from customer PII leak)
+app.get('/api/public/customer-ac/:id', async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    
+    // Fetch AC basic info safely (no address, no phone of customer)
+    const [acRows] = await connection.query(
+      `SELECT customer_ac.id, customer_ac.brand, customer_ac.name, ac_models.name as modelName
+       FROM customer_ac
+       LEFT JOIN ac_models ON customer_ac.acModelId = ac_models.id
+       WHERE customer_ac.id = ?`,
+      [id]
+    );
+
+    if (acRows.length === 0) {
+      if (connection) connection.release();
+      return res.status(404).json({ error: 'Data AC tidak ditemukan.' });
+    }
+
+    const ac = acRows[0];
+
+    // Fetch service history
+    const [historyRows] = await connection.query(
+      `SELECT order_ac_history.id, order_ac_history.serviceName, order_ac_history.photoBefore,
+              order_ac_history.photoAfter, order_ac_history.notes, order_ac_history.createdAt,
+              orders.scheduledDate, users.name as workerName
+       FROM order_ac_history
+       JOIN orders ON order_ac_history.orderId = orders.id
+       LEFT JOIN users ON orders.workerId = users.id
+       WHERE order_ac_history.customerAcId = ?
+       ORDER BY order_ac_history.createdAt DESC`,
+      [id]
+    );
+
+    connection.release();
+    res.json({
+      ac,
+      history: historyRows
+    });
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ===== VOUCHERS API =====
@@ -3227,7 +3272,7 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
         `SELECT COUNT(*) as total FROM orders
          WHERE workerId = ? AND status = 'SELESAI'
          AND DATE(completedAt) BETWEEN ? AND ?`,
-        [staff.id, startDate, endDate]
+         [staff.id, startDate, endDate]
       );
       const totalOrders = Number(ordersResult[0]?.total || 0);
       const baseSalary = Number(staff.base_salary || 0);
@@ -3235,6 +3280,13 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
       const bonusPerOrder = Number(staff.bonus_per_order || 0);
       const orderBonus = totalOrders * bonusPerOrder;
       const totalSalary = baseSalary + fixedBonus + orderBonus;
+
+      // Check if there is an existing record in DB for this staff and period
+      const [existingRec] = await connection.query(
+        'SELECT status FROM salary_records WHERE staff_id = ? AND period_month = ?',
+        [staff.id, period_month]
+      );
+      const dbStatus = existingRec.length > 0 ? existingRec[0].status : null;
 
       results.push({
         staff_id: staff.id,
@@ -3247,6 +3299,7 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
         order_bonus: orderBonus,
         fixed_bonus: fixedBonus,
         total_salary: totalSalary,
+        status: dbStatus // 'PENDING', 'PAID', or null
       });
     }
 

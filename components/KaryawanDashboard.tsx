@@ -70,6 +70,57 @@ export default function KaryawanDashboard() {
     isRegistered?: boolean;
   }}>({});
 
+  const [activeScanUnitKey, setActiveScanUnitKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    let scannerInstance: any = null;
+
+    if (activeScanUnitKey) {
+      // Dynamic import to prevent SSR Next.js build errors
+      import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
+        scannerInstance = new Html5QrcodeScanner(
+          'qr-reader',
+          {
+            fps: 10,
+            qrbox: (width, height) => {
+              const minDimension = Math.min(width, height);
+              return {
+                width: Math.floor(minDimension * 0.7),
+                height: Math.floor(minDimension * 0.7)
+              };
+            },
+            aspectRatio: 1.0
+          },
+          /* verbose= */ false
+        );
+
+        scannerInstance.render(
+          (decodedText: string) => {
+            setAcHistoryInputs(prev => ({
+              ...prev,
+              [activeScanUnitKey]: { ...prev[activeScanUnitKey], customerAcId: decodedText }
+            }));
+            if (scannerInstance) {
+              scannerInstance.clear().catch((err: any) => console.error("Scanner clear err", err));
+            }
+            setActiveScanUnitKey(null);
+          },
+          () => {
+            // Quiet mode error handling
+          }
+        );
+      }).catch(err => {
+        console.error('Gagal mengimpor html5-qrcode', err);
+      });
+    }
+
+    return () => {
+      if (scannerInstance) {
+        scannerInstance.clear().catch((err: any) => console.error("Scanner cleanup err", err));
+      }
+    };
+  }, [activeScanUnitKey]);
+
   const getIndividualAcUnits = (task: any) => {
     const units: any[] = [];
     if (!task || !task.acDetail) return units;
@@ -89,26 +140,6 @@ export default function KaryawanDashboard() {
     });
     return units;
   };
-
-  // Auto-save & load draft inputs from localStorage to prevent loss during refresh
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedDraft = localStorage.getItem('sugarac_ac_history_draft');
-      if (savedDraft) {
-        try {
-          setAcHistoryInputs(JSON.parse(savedDraft));
-        } catch (e) {
-          console.error('Error loading AC draft:', e);
-        }
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && Object.keys(acHistoryInputs).length > 0) {
-      localStorage.setItem('sugarac_ac_history_draft', JSON.stringify(acHistoryInputs));
-    }
-  }, [acHistoryInputs]);
 
   const handleAcImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, unitKey: string, type: 'before' | 'after') => {
     const file = e.target.files?.[0];
@@ -816,10 +847,6 @@ export default function KaryawanDashboard() {
       setAddonsUsed([]);
       setCompletionNotes('');
       setActiveWorkingTask(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('sugarac_ac_history_draft');
-      }
-      setAcHistoryInputs({});
       alert('✓ Tagihan berhasil dikirim ke pelanggan!');
     } catch (error) {
       alert('❌ Gagal mengirim tagihan');
@@ -1263,16 +1290,25 @@ export default function KaryawanDashboard() {
                                         <div className="bg-amber-50/50 border border-amber-250 p-2.5 rounded-lg space-y-2 text-[10.5px]">
                                           <div className="text-[8px] font-black uppercase text-amber-700 tracking-wider">Registrasi & Tempel Barcode Baru</div>
                                           <div className="grid grid-cols-2 gap-2">
-                                            <input
-                                              type="text"
-                                              placeholder="Scan/Isi Barcode AC"
-                                              value={input.customerAcId || ''}
-                                              onChange={e => setAcHistoryInputs(prev => ({
-                                                ...prev,
-                                                [unit.key]: { ...prev[unit.key], customerAcId: e.target.value }
-                                              }))}
-                                              className="w-full bg-white border border-slate-200 text-xs px-2 py-1 rounded outline-none"
-                                            />
+                                            <div className="relative flex items-center w-full">
+                                              <input
+                                                type="text"
+                                                placeholder="Scan/Isi Barcode AC"
+                                                value={input.customerAcId || ''}
+                                                onChange={e => setAcHistoryInputs(prev => ({
+                                                  ...prev,
+                                                  [unit.key]: { ...prev[unit.key], customerAcId: e.target.value }
+                                                }))}
+                                                className="w-full bg-white border border-slate-200 text-xs pl-2 pr-12 py-1.5 rounded-lg outline-none focus:border-indigo-500 transition-all"
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => setActiveScanUnitKey(unit.key)}
+                                                className="absolute right-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[9px] font-black uppercase transition-all border border-indigo-200/50"
+                                              >
+                                                📷 Scan
+                                              </button>
+                                            </div>
                                             <input
                                               type="text"
                                               placeholder="Nama AC (Kamar Utama, dll)"
@@ -2217,6 +2253,34 @@ export default function KaryawanDashboard() {
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SCANNER QR */}
+      {activeScanUnitKey && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-5 border-b border-slate-850 flex justify-between items-center bg-slate-900">
+              <div className="text-left">
+                <h3 className="font-black text-xs text-white uppercase tracking-wider">Pindai QR Code AC</h3>
+                <p className="text-[10px] text-slate-500 font-medium mt-0.5">Arahkan kamera ke stiker QR di bodi AC</p>
+              </div>
+              <button 
+                onClick={() => setActiveScanUnitKey(null)}
+                className="text-slate-400 hover:text-white text-[10px] font-bold bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+              >
+                Batal
+              </button>
+            </div>
+            <div className="p-5 flex flex-col items-center justify-center bg-slate-950/50">
+              <div className="w-full aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-black relative">
+                <div id="qr-reader" className="w-full h-full" />
+              </div>
+              <div className="text-[10px] font-bold text-indigo-400 mt-4 text-center animate-pulse">
+                Pastikan cahaya cukup & barcode di dalam area fokus
+              </div>
             </div>
           </div>
         </div>
