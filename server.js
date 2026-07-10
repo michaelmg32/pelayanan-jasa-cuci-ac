@@ -3032,7 +3032,7 @@ app.get('/api/staff-grades', verifyToken, async (req, res) => {
       LEFT JOIN regions r ON sg.region_id = r.id
     `;
     let params = [];
-    if (user.role === 'ADMIN') {
+    if (user.role?.toLowerCase() === 'admin') {
       query += ' WHERE sg.region_id = ?';
       params.push(user.region_id);
     }
@@ -3052,11 +3052,12 @@ app.post('/api/staff-grades', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const user = req.user;
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'admin' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { name, description, region_id, base_salary = 0, fixed_bonus = 0, bonus_per_order = 0 } = req.body;
-    const targetRegion = user.role === 'ADMIN' ? user.region_id : region_id;
+    const targetRegion = roleLower === 'admin' ? user.region_id : region_id;
     if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
 
     const gradeId = `grade-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
@@ -3090,14 +3091,15 @@ app.put('/api/staff-grades/:id', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const user = req.user;
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'admin' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;
     const { name, description, base_salary, fixed_bonus, bonus_per_order } = req.body;
 
     // Verify ownership for admin
-    if (user.role === 'ADMIN') {
+    if (roleLower === 'admin') {
       const [check] = await connection.query('SELECT id FROM staff_grades WHERE id = ? AND region_id = ?', [id, user.region_id]);
       if (check.length === 0) return res.status(403).json({ error: 'Grade tidak ditemukan di wilayah Anda.' });
     }
@@ -3138,12 +3140,13 @@ app.delete('/api/staff-grades/:id', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const user = req.user;
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'admin' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;
 
-    if (user.role === 'ADMIN') {
+    if (roleLower === 'admin') {
       const [check] = await connection.query('SELECT id FROM staff_grades WHERE id = ? AND region_id = ?', [id, user.region_id]);
       if (check.length === 0) return res.status(403).json({ error: 'Grade tidak ditemukan di wilayah Anda.' });
     }
@@ -3166,7 +3169,8 @@ app.put('/api/users/:id/grade', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const user = req.user;
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'admin' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { grade_id } = req.body;
@@ -3187,13 +3191,14 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const user = req.user;
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'admin' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { period_month, region_id, commit = false } = req.body;
     if (!period_month) return res.status(400).json({ error: 'period_month diperlukan (format: YYYY-MM).' });
 
-    const targetRegion = user.role === 'ADMIN' ? user.region_id : region_id;
+    const targetRegion = roleLower === 'admin' ? user.region_id : region_id;
     if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
 
     // Get all STAFF in this region
@@ -3310,7 +3315,7 @@ app.get('/api/salary/records', verifyToken, async (req, res) => {
     `;
     const params = [];
 
-    if (user.role === 'ADMIN') {
+    if (user.role?.toLowerCase() === 'admin') {
       query += ' AND sr.region_id = ?';
       params.push(user.region_id);
     }
@@ -3333,7 +3338,8 @@ app.put('/api/salary/records/:id', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const user = req.user;
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'admin' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;
@@ -3386,7 +3392,7 @@ app.get('/api/salary/summary', verifyToken, async (req, res) => {
     `;
     const params = [`${targetYear}-%`];
 
-    if (user.role === 'ADMIN') {
+    if (user.role?.toLowerCase() === 'admin') {
       query += ' AND sr.region_id = ?';
       params.push(user.region_id);
     }
@@ -3418,7 +3424,7 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
       WHERE u.role = 'STAFF'
     `;
     const params = [];
-    if (user.role === 'ADMIN') {
+    if (user.role?.toLowerCase() === 'admin') {
       query += ' AND u.region_id = ?';
       params.push(user.region_id);
     }
