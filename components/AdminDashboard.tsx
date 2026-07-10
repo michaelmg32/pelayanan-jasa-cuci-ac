@@ -4783,6 +4783,10 @@ return (
                             if (svc && cat) {
                               const priceEntry = servicePrices.find(sp => String(sp.serviceId) === String(svc.id) && String(sp.modelId) === String(model?.id));
                               const resolvedPrice = priceEntry ? priceEntry.price : svc.price;
+                              if (resolvedPrice === 0) {
+                                alert('❌ Maaf, harga untuk layanan dan tipe AC ini belum tersedia (Rp0). Pastikan harga sudah diatur di menu Edit Master Data.');
+                                return;
+                              }
                               setAdminCartServices(prev => [...prev, {
                                 acType: adminSelectedModel,
                                 category: adminSelectedCategory,
