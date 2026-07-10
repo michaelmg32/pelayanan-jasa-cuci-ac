@@ -9,8 +9,8 @@ import {
 import type { StaffGrade, SalaryRecord, StaffWithGrade, SalarySummary, User } from '@/types';
 
 // ===== HELPERS =====
-const formatRupiah = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
+const formatRupiah = (n: any) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(n) || 0);
 
 const formatMonth = (ym: string) => {
   const [y, m] = ym.split('-');
@@ -449,7 +449,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                           <div className="gaji-salary-row"><span>💰 Gaji Pokok</span><span>{formatRupiah(g.base_salary || 0)}</span></div>
                           <div className="gaji-salary-row"><span>🎁 Bonus Tetap</span><span>{formatRupiah(g.fixed_bonus || 0)}</span></div>
                           <div className="gaji-salary-row"><span>⚡ Bonus/Order</span><span>{formatRupiah(g.bonus_per_order || 0)}</span></div>
-                          <div className="gaji-salary-row total"><span>Total (tanpa order bonus)</span><span>{formatRupiah((g.base_salary || 0) + (g.fixed_bonus || 0))}</span></div>
+                          <div className="gaji-salary-row total"><span>Total (tanpa order bonus)</span><span>{formatRupiah(Number(g.base_salary || 0) + Number(g.fixed_bonus || 0))}</span></div>
                         </div>
                         <div className="gaji-grade-actions">
                           <button className="gaji-btn gaji-btn-ghost gaji-btn-sm" onClick={() => { setEditingGrade(g); setShowGradeModal(true); }}>✏️ Edit</button>
