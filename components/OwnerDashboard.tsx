@@ -1344,7 +1344,8 @@ export default function OwnerDashboard() {
                                       <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded border ${u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
                                           u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
                                             u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                                              'bg-slate-100 text-slate-600 border-slate-200'
+                                              u.role === Role.KEUANGAN ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                'bg-slate-100 text-slate-600 border-slate-200'
                                         }`}>
                                         {u.role}
                                       </span>
@@ -1420,6 +1421,7 @@ export default function OwnerDashboard() {
                   <option value={Role.USER}>Pelanggan</option>
                   <option value={Role.STAFF}>Staff/Teknisi</option>
                   <option value={Role.ADMIN}>Admin</option>
+                  <option value={Role.KEUANGAN}>Keuangan</option>
                   <option value={Role.OWNER}>Owner</option>
                 </select>
               </div>
@@ -1759,6 +1761,7 @@ export default function OwnerDashboard() {
                   >
                     <option value={Role.STAFF}>STAFF (Karyawan/Teknisi)</option>
                     <option value={Role.ADMIN}>ADMIN (Pengurus Cabang)</option>
+                    <option value={Role.KEUANGAN}>KEUANGAN (Divisi Keuangan)</option>
                     <option value={Role.OWNER}>OWNER (Pemilik)</option>
                   </select>
                 </div>

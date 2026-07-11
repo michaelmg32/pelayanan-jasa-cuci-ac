@@ -8,6 +8,7 @@ export enum Role {
   ADMIN = 'ADMIN',
   STAFF = 'STAFF',
   OWNER = 'OWNER',
+  KEUANGAN = 'KEUANGAN',
 }
 
 export enum OrderStatus {

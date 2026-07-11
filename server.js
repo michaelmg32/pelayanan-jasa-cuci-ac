@@ -95,6 +95,16 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+const getOptionalUser = (req) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (token) {
+    try {
+      return jwt.verify(token, JWT_SECRET);
+    } catch (e) {}
+  }
+  return null;
+};
+
 // MySQL Connection Pool
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
@@ -124,6 +134,38 @@ const initializeDatabaseSettings = async () => {
   let connection;
   try {
     connection = await pool.getConnection();
+
+    // Auto-migration: Create regions table first
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS regions (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("✅ Auto-migrated 'regions' table");
+
+    // Auto-migration: Add region_id to users
+    const [userRegionCols] = await connection.query("SHOW COLUMNS FROM users LIKE 'region_id'");
+    if (userRegionCols.length === 0) {
+      await connection.query("ALTER TABLE users ADD COLUMN region_id VARCHAR(50) NULL, ADD FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL");
+      console.log("✅ Added region_id column to 'users' table");
+    }
+
+    // Auto-migration: Add region_id to ac_addons
+    const [addonRegionCols] = await connection.query("SHOW COLUMNS FROM ac_addons LIKE 'region_id'");
+    if (addonRegionCols.length === 0) {
+      await connection.query("ALTER TABLE ac_addons ADD COLUMN region_id VARCHAR(50) NULL, ADD FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL");
+      console.log("✅ Added region_id column to 'ac_addons' table");
+    }
+
+    // Auto-migration: Add region_id to orders
+    const [orderRegionCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'region_id'");
+    if (orderRegionCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN region_id VARCHAR(50) NULL, ADD FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL");
+      console.log("✅ Added region_id column to 'orders' table");
+    }
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS settings (
         key_name VARCHAR(50) PRIMARY KEY,
@@ -260,6 +302,14 @@ const initializeDatabaseSettings = async () => {
     if (finalPriceCols.length === 0) {
       await connection.query("ALTER TABLE orders ADD COLUMN finalPrice DECIMAL(10, 2) DEFAULT 0");
       console.log("✅ Added finalPrice column to 'orders' table in database");
+    }
+
+    // Auto-migration: Add voucher columns to orders table (Moved up to prevent backfill query failure)
+    const [ordersCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'voucher_code'");
+    if (ordersCols.length === 0) {
+      await connection.query("ALTER TABLE orders ADD COLUMN voucher_code VARCHAR(50) NULL");
+      await connection.query("ALTER TABLE orders ADD COLUMN voucher_discount DECIMAL(10, 2) DEFAULT 0");
+      console.log("✅ Added voucher columns to 'orders' table in database");
     }
 
     // Backfill calculations for existing orders (quantity, hpp_orders, finalPrice, margin)
@@ -495,14 +545,6 @@ const initializeDatabaseSettings = async () => {
       )
     `);
     console.log("✅ Auto-migrated 'voucher_usages' table in database");
-
-    // Auto-migration: Add voucher columns to orders table
-    const [ordersCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'voucher_code'");
-    if (ordersCols.length === 0) {
-      await connection.query("ALTER TABLE orders ADD COLUMN voucher_code VARCHAR(50) NULL");
-      await connection.query("ALTER TABLE orders ADD COLUMN voucher_discount DECIMAL(10, 2) DEFAULT 0");
-      console.log("✅ Added voucher columns to 'orders' table in database");
-    }
     // =====================================================================
     // PAYROLL SYSTEM MIGRATIONS
     // =====================================================================
@@ -574,6 +616,22 @@ const initializeDatabaseSettings = async () => {
       await connection.query("ALTER TABLE users ADD COLUMN grade_id VARCHAR(50) NULL");
       console.log("✅ Added 'grade_id' column to 'users' table");
     }
+
+    // Auto-migration: Create fixed_assets table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS fixed_assets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        region_id VARCHAR(50) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        purchase_date DATE NOT NULL,
+        purchase_price DECIMAL(12, 2) NOT NULL DEFAULT 0,
+        description TEXT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE
+      )
+    `);
+    console.log("✅ Auto-migrated 'fixed_assets' table");
 
 
 
@@ -2387,15 +2445,32 @@ app.post('/api/service-prices/bulk', async (req, res) => {
 
 // ===== AC ADDONS API =====
 app.get('/api/addons', async (req, res) => {
+  const user = getOptionalUser(req);
+  const userRole = user?.role ? user.role.toUpperCase() : '';
+  const { region_id } = req.query;
+
   try {
     const connection = await pool.getConnection();
-    const [addons] = await connection.query(`
+    let query = `
       SELECT a.*, 
              CAST(COALESCE(SUM(CASE WHEN t.type = 'masuk' THEN t.qty ELSE -t.qty END), 0) AS SIGNED) AS stock
       FROM ac_addons a
       LEFT JOIN ac_addon_transactions t ON a.id = t.addonId
-      GROUP BY a.id
-    `);
+      WHERE 1=1
+    `;
+    const params = [];
+    if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+      if (user.region_id) {
+        query += ' AND a.region_id = ?';
+        params.push(user.region_id);
+      }
+    } else if (region_id) {
+      query += ' AND a.region_id = ?';
+      params.push(region_id);
+    }
+
+    query += ' GROUP BY a.id';
+    const [addons] = await connection.query(query, params);
     connection.release();
     res.json(addons);
   } catch (error) {
@@ -2403,28 +2478,57 @@ app.get('/api/addons', async (req, res) => {
   }
 });
 
-app.post('/api/addons', async (req, res) => {
+app.post('/api/addons', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
   const { id, name, description, price, hpp } = req.body;
+  let { region_id } = req.body;
+
+  if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+    region_id = req.user.region_id;
+  }
+
+  if (!region_id) {
+    return res.status(400).json({ error: 'Wilayah (region_id) wajib ditentukan.' });
+  }
+
   try {
     const connection = await pool.getConnection();
     const newId = id || `addon_${Date.now()}`;
     await connection.query(
       'INSERT INTO ac_addons (id, name, description, price, hpp, region_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [newId, name, description || null, price || 0, hpp || 0]
+      [newId, name, description || null, price || 0, hpp || 0, region_id]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Addon/Sparepart', `Menambahkan addon baru: ${name}`);
-    res.status(201).json({ id: newId, name, description: description || null, price: price || 0, hpp: hpp || 0 });
+    res.status(201).json({ id: newId, name, description: description || null, price: price || 0, hpp: hpp || 0, region_id });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.put('/api/addons/:id', async (req, res) => {
+app.put('/api/addons/:id', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
   const { id } = req.params;
-  const { name, description, price, hpp, region_id } = req.body;
+  const { name, description, price, hpp } = req.body;
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
+    const [existing] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Addon tidak ditemukan.' });
+    }
+    if ((userRole === 'ADMIN' || userRole === 'KEUANGAN') && req.user.region_id && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Anda tidak memiliki hak akses untuk wilayah ini.' });
+    }
+
     await connection.query(
       'UPDATE ac_addons SET name = ?, description = ?, price = ?, hpp = ? WHERE id = ?',
       [name, description || null, price || 0, hpp || 0, id]
@@ -2434,13 +2538,15 @@ app.put('/api/addons/:id', async (req, res) => {
     await logActivity(req, 'Memperbarui Addon/Sparepart', `Memperbarui addon: ${addon[0]?.name || name}`);
     res.json(addon[0] || { id, name, description: description || null, price: price || 0, hpp: hpp || 0 });
   } catch (error) {
+    if (connection) connection.release();
     res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/api/addons/purchase', verifyToken, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Access denied. Admins or owners only.' });
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
   }
 
   const { addonId, qty, price, notes } = req.body;
@@ -2451,6 +2557,16 @@ app.post('/api/addons/purchase', verifyToken, async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
+    const [existing] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [addonId]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Addon tidak ditemukan.' });
+    }
+    if ((userRole === 'ADMIN' || userRole === 'KEUANGAN') && req.user.region_id && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Anda tidak memiliki hak akses untuk wilayah ini.' });
+    }
+
     await connection.beginTransaction();
 
     const { stock: currentStock, hpp: currentHpp } = await getAddonStockAndHpp(connection, addonId);
@@ -2495,8 +2611,9 @@ app.post('/api/addons/purchase', verifyToken, async (req, res) => {
 });
 
 app.get('/api/addons/transactions', verifyToken, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Access denied. Admins or owners only.' });
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
   }
 
   const { addonId } = req.query;
@@ -2515,8 +2632,8 @@ app.get('/api/addons/transactions', verifyToken, async (req, res) => {
       params.push(addonId);
     }
     
-    // Filter by region for admins
-    if (req.user.role === 'admin' && req.user.region_id) {
+    // Filter by region for admins or finance
+    if ((userRole === 'ADMIN' || userRole === 'KEUANGAN') && req.user.region_id) {
       query += " AND a.region_id = ?";
       params.push(req.user.region_id);
     }
@@ -2582,18 +2699,155 @@ app.delete('/api/services/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/addons/:id', async (req, res) => {
+app.delete('/api/addons/:id', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
   const { id } = req.params;
+  let connection;
   try {
-    const connection = await pool.getConnection();
-    const [addon] = await connection.query('SELECT name FROM ac_addons WHERE id = ?', [id]);
-    const itemName = addon.length > 0 ? addon[0].name : id;
+    connection = await pool.getConnection();
+    const [existing] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Addon tidak ditemukan.' });
+    }
+    if ((userRole === 'ADMIN' || userRole === 'KEUANGAN') && req.user.region_id && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Anda tidak memiliki hak akses untuk wilayah ini.' });
+    }
 
     await connection.query('DELETE FROM ac_addons WHERE id = ?', [id]);
     connection.release();
-    await logActivity(req, 'Menghapus Addon/Sparepart', `Menghapus addon: ${itemName}`);
+    await logActivity(req, 'Menghapus Addon/Sparepart', `Menghapus addon: ${existing[0].name}`);
     res.json({ message: 'Addon deleted successfully', id });
   } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== FIXED ASSETS API =====
+app.get('/api/fixed-assets', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  const { region_id } = req.query;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    let query = 'SELECT f.*, r.name as regionName FROM fixed_assets f JOIN regions r ON f.region_id = r.id WHERE 1=1';
+    const params = [];
+    if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+      if (req.user.region_id) {
+        query += ' AND f.region_id = ?';
+        params.push(req.user.region_id);
+      }
+    } else if (region_id) {
+      query += ' AND f.region_id = ?';
+      params.push(region_id);
+    }
+    query += ' ORDER BY f.purchase_date DESC';
+    const [rows] = await connection.query(query, params);
+    connection.release();
+    res.json(rows);
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/fixed-assets', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
+  const { name, purchase_date, purchase_price, description } = req.body;
+  let { region_id } = req.body;
+  
+  if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+    region_id = req.user.region_id;
+  }
+  if (!region_id) {
+    return res.status(400).json({ error: 'Wilayah (region_id) wajib ditentukan.' });
+  }
+  if (!name || !purchase_date || purchase_price === undefined) {
+    return res.status(400).json({ error: 'Nama, tanggal pembelian, dan harga wajib diisi.' });
+  }
+  
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [result] = await connection.query(
+      'INSERT INTO fixed_assets (region_id, name, purchase_date, purchase_price, description) VALUES (?, ?, ?, ?, ?)',
+      [region_id, name, purchase_date, purchase_price, description || null]
+    );
+    const insertId = result.insertId;
+    connection.release();
+    await logActivity(req, 'Menambahkan Aset Tetap', `Menambahkan aset tetap baru: ${name} di wilayah ${region_id}`);
+    res.status(201).json({ id: insertId, region_id, name, purchase_date, purchase_price, description });
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/fixed-assets/:id', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
+  const { id } = req.params;
+  const { name, purchase_date, purchase_price, description } = req.body;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [existing] = await connection.query('SELECT * FROM fixed_assets WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Aset tetap tidak ditemukan.' });
+    }
+    if ((userRole === 'ADMIN' || userRole === 'KEUANGAN') && req.user.region_id && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Anda tidak memiliki hak akses untuk wilayah ini.' });
+    }
+    
+    await connection.query(
+      'UPDATE fixed_assets SET name = ?, purchase_date = ?, purchase_price = ?, description = ? WHERE id = ?',
+      [name, purchase_date, purchase_price, description || null, id]
+    );
+    connection.release();
+    await logActivity(req, 'Memperbarui Aset Tetap', `Memperbarui aset tetap: ${name}`);
+    res.json({ id, name, purchase_date, purchase_price, description });
+  } catch (error) {
+    if (connection) connection.release();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/fixed-assets/:id', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [existing] = await connection.query('SELECT * FROM fixed_assets WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Aset tetap tidak ditemukan.' });
+    }
+    if ((userRole === 'ADMIN' || userRole === 'KEUANGAN') && req.user.region_id && existing[0].region_id !== req.user.region_id) {
+      connection.release();
+      return res.status(403).json({ error: 'Anda tidak memiliki hak akses untuk wilayah ini.' });
+    }
+    await connection.query('DELETE FROM fixed_assets WHERE id = ?', [id]);
+    connection.release();
+    await logActivity(req, 'Menghapus Aset Tetap', `Menghapus aset tetap: ${existing[0].name}`);
+    res.json({ message: 'Fixed asset deleted successfully', id });
+  } catch (error) {
+    if (connection) connection.release();
     res.status(500).json({ error: error.message });
   }
 });

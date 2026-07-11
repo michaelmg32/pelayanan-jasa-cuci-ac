@@ -49,6 +49,8 @@ const normalizeRole = (dbRole: string): string => {
     'staff': Role.STAFF,
     'admin': Role.ADMIN,
     'owner': Role.OWNER,
+    'keuangan': Role.KEUANGAN,
+    'finance': Role.KEUANGAN,
   };
   return roleMap[dbRole.toLowerCase()] || Role.USER;
 };
@@ -66,6 +68,7 @@ export const denormalizeRole = (frontendRole: string): string => {
     [Role.STAFF]: 'karyawan',
     [Role.ADMIN]: 'admin',
     [Role.OWNER]: 'owner',
+    [Role.KEUANGAN]: 'keuangan',
   };
   return roleMap[frontendRole] || 'pelanggan';
 };
@@ -458,7 +461,10 @@ export const updateServicePricesBulk = async (serviceId: string, prices: any[]) 
 export const fetchAddons = async (region_id?: string) => {
   try {
     const url = region_id ? `${API_BASE_URL}/addons?region_id=${region_id}` : `${API_BASE_URL}/addons`;
-    const response = await fetch(url, { cache: 'no-store' });
+    const response = await fetch(url, { 
+      headers: getAuthHeaders(),
+      cache: 'no-store' 
+    });
     if (!response.ok) throw new Error('Failed to fetch addons');
     return await response.json();
   } catch (error) {
@@ -525,6 +531,78 @@ export const purchaseAddon = async (addonId: string, purchaseData: { qty: number
     return await response.json();
   } catch (error) {
     console.error('Error purchasing addon:', error);
+    throw error;
+  }
+};
+
+// ===== FIXED ASSETS =====
+export const fetchFixedAssets = async (region_id?: string) => {
+  try {
+    const url = region_id ? `${API_BASE_URL}/fixed-assets?region_id=${region_id}` : `${API_BASE_URL}/fixed-assets`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!response.ok) throw new Error('Failed to fetch fixed assets');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching fixed assets:', error);
+    return [];
+  }
+};
+
+export const createFixedAsset = async (assetData: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/fixed-assets`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+      body: JSON.stringify(assetData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to create fixed asset');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating fixed asset:', error);
+    throw error;
+  }
+};
+
+export const updateFixedAsset = async (assetId: number, assetData: any) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/fixed-assets/${assetId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+      body: JSON.stringify(assetData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to update fixed asset');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating fixed asset:', error);
+    throw error;
+  }
+};
+
+export const deleteFixedAsset = async (assetId: number) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/fixed-assets/${assetId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to delete fixed asset');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting fixed asset:', error);
     throw error;
   }
 };
