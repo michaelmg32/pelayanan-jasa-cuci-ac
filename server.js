@@ -227,6 +227,14 @@ const initializeDatabaseSettings = async () => {
       console.log("✅ Added 'status' column to 'users' table in database");
     }
 
+    // Auto-migration: Ensure 'role' enum includes 'keuangan'
+    try {
+      await connection.query("ALTER TABLE users MODIFY COLUMN role ENUM('pelanggan', 'karyawan', 'admin', 'owner', 'keuangan') NOT NULL");
+      console.log("✅ Auto-migrated 'users.role' ENUM column to support 'keuangan'");
+    } catch (err) {
+      console.error("⚠️ Failed to modify users.role enum:", err.message);
+    }
+
     // Auto-migration: Check if 'addonsUsed' column exists in 'orders' table, if not add it
     const [orderCols] = await connection.query("SHOW COLUMNS FROM orders LIKE 'addonsUsed'");
     if (orderCols.length === 0) {
