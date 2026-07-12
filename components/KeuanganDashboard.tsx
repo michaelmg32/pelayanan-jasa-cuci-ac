@@ -254,7 +254,7 @@ export default function KeuanganDashboard() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[#f8fafc] text-slate-800 text-left min-h-0 h-full overflow-hidden">
       {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
       <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
         {/* Logo, Business Name & Slogan */}
@@ -404,31 +404,31 @@ export default function KeuanganDashboard() {
                 <div className="space-y-6 animate-fade-in">
                   {/* Financial Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition duration-300">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
-                      <h2 className="text-2xl font-black text-slate-800 mt-1">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
+                    <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300"><div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition duration-300">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
-                      <h2 className="text-2xl font-black text-slate-800 mt-1">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
+                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl border border-emerald-400/30 shadow-lg shadow-emerald-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300"><div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition duration-300">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Jumlah Jenis Inventaris / Aset Tetap</p>
-                      <h2 className="text-2xl font-black text-slate-800 mt-1">
-                        {addons.length} <span className="text-xs font-bold text-slate-500 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-slate-500 uppercase">Unit</span>
+                    <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300"><div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Jumlah Jenis Inventaris / Aset Tetap</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">
+                        {addons.length} <span className="text-xs font-bold text-white/70 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-white/70 uppercase">Unit</span>
                       </h2>
-                      <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}.</p>
                     </div>
                   </div>
 
                   {/* Overview Lists / Activity info */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Fixed Assets Summary List */}
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 relative">
                       <div className="flex justify-between items-center mb-4">
                         <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Aset Tetap Terakhir</h4>
                         <button onClick={() => setActiveTab('TETAP')} className="text-[10px] font-bold text-cyan-400 hover:underline">Lihat Semua →</button>
@@ -438,7 +438,7 @@ export default function KeuanganDashboard() {
                       ) : (
                         <div className="space-y-3">
                           {fixedAssets.slice(0, 4).map(asset => (
-                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition hover:-translate-y-0.5">
                               <div>
                                 <span className="text-xs font-bold text-slate-800 block">{asset.name}</span>
                                 <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Beli: {new Date(asset.purchase_date).toLocaleDateString('id-ID')}</span>
@@ -451,7 +451,7 @@ export default function KeuanganDashboard() {
                     </div>
 
                     {/* Inventory Low Stock warnings */}
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 relative">
                       <div className="flex justify-between items-center mb-4">
                         <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Inventaris Kritis (Stok &lt; 20)</h4>
                         <button onClick={() => setActiveTab('BERGERAK')} className="text-[10px] font-bold text-cyan-400 hover:underline">Kelola Stok →</button>
@@ -461,12 +461,12 @@ export default function KeuanganDashboard() {
                       ) : (
                         <div className="space-y-3">
                           {addons.filter(a => (a.stock || 0) < 20).slice(0, 4).map(addon => (
-                            <div key={addon.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div key={addon.id} className="flex justify-between items-center p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition hover:-translate-y-0.5">
                               <div>
                                 <span className="text-xs font-bold text-slate-800 block">{addon.name}</span>
                                 <span className="text-[10px] text-slate-500 block font-medium mt-0.5">HPP: Rp {Number(addon.hpp || 0).toLocaleString('id-ID')}</span>
                               </div>
-                              <span className="text-xs font-black text-rose-400 bg-rose-950/40 px-3 py-1 rounded-full border border-rose-900/30">
+                              <span className="text-xs font-black text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
                                 Sisa {addon.stock || 0} unit
                               </span>
                             </div>
@@ -495,11 +495,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Addon Inventory Table */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50/80 backdrop-blur-md">
                             <th className="py-4 px-6">Nama & Keterangan</th>
                             <th className="py-4 px-4 text-center">Stok Fisik</th>
                             <th className="py-4 px-4">HPP (Harga Beli)</th>
@@ -514,7 +514,7 @@ export default function KeuanganDashboard() {
                             </tr>
                           ) : (
                             addons.map(addon => (
-                              <tr key={addon.id} className="hover:bg-slate-50/30 transition">
+                              <tr key={addon.id} className="hover:bg-slate-50 transition duration-200">
                                 <td className="py-4 px-6">
                                   <span className="text-sm font-bold text-slate-800 block">{addon.name}</span>
                                   <span className="text-[10px] text-slate-500 block font-medium mt-1">{addon.description || 'Tidak ada catatan.'}</span>
@@ -579,11 +579,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Fixed Assets List Table */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50/80 backdrop-blur-md">
                             <th className="py-4 px-6">Nama Aset & Deskripsi</th>
                             <th className="py-4 px-4">Tanggal Pembelian</th>
                             <th className="py-4 px-4">Harga Pembelian</th>
@@ -597,7 +597,7 @@ export default function KeuanganDashboard() {
                             </tr>
                           ) : (
                             fixedAssets.map(asset => (
-                              <tr key={asset.id} className="hover:bg-slate-50/30 transition">
+                              <tr key={asset.id} className="hover:bg-slate-50 transition duration-200">
                                 <td className="py-4 px-6">
                                   <span className="text-sm font-bold text-slate-800 block">{asset.name}</span>
                                   <span className="text-[10px] text-slate-500 block font-medium mt-1">{asset.description || 'Tidak ada catatan.'}</span>
@@ -646,11 +646,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Transaction Log Table */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50/80 backdrop-blur-md">
                             <th className="py-4 px-6">Tanggal & Waktu</th>
                             <th className="py-4 px-4">Nama Barang</th>
                             <th className="py-4 px-4 text-center">Jenis Mutasi</th>
@@ -666,7 +666,7 @@ export default function KeuanganDashboard() {
                             </tr>
                           ) : (
                             transactions.map(tx => (
-                              <tr key={tx.id} className="hover:bg-slate-50/30 transition">
+                              <tr key={tx.id} className="hover:bg-slate-50 transition duration-200">
                                 <td className="py-4 px-6">
                                   <div className="flex items-center gap-1.5 text-slate-500">
                                     <Clock size={12} />
