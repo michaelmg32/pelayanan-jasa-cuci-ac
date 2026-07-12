@@ -395,7 +395,7 @@ export default function KeuanganDashboard() {
           {isLoadingData ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-3">
               <Loader className="w-10 h-10 animate-spin text-cyan-400" />
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Memuat data keuangan wilayah...</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Memuat data keuangan wilayah...</span>
             </div>
           ) : (
             <>
@@ -404,33 +404,33 @@ export default function KeuanganDashboard() {
                 <div className="space-y-6 animate-fade-in">
                   {/* Financial Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md">
+                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-200 shadow-md">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
-                      <h2 className="text-2xl font-black text-white mt-1">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-slate-400 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
+                      <h2 className="text-2xl font-black text-slate-800 mt-1">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
                     </div>
 
-                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md">
+                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-200 shadow-md">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
-                      <h2 className="text-2xl font-black text-white mt-1">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-slate-400 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
+                      <h2 className="text-2xl font-black text-slate-800 mt-1">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
                     </div>
 
-                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md">
+                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-200 shadow-md">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Jumlah Jenis Inventaris / Aset Tetap</p>
-                      <h2 className="text-2xl font-black text-white mt-1">
-                        {addons.length} <span className="text-xs font-bold text-slate-400 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-slate-400 uppercase">Unit</span>
+                      <h2 className="text-2xl font-black text-slate-800 mt-1">
+                        {addons.length} <span className="text-xs font-bold text-slate-500 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-slate-500 uppercase">Unit</span>
                       </h2>
-                      <p className="text-[9.5px] text-slate-400 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}.</p>
+                      <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}.</p>
                     </div>
                   </div>
 
                   {/* Overview Lists / Activity info */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Fixed Assets Summary List */}
-                    <div className="bg-slate-950/40 p-6 rounded-3xl border border-slate-800/80">
+                    <div className="bg-white/40 p-6 rounded-3xl border border-slate-200/80">
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-xs font-black text-white uppercase tracking-wider">Aset Tetap Terakhir</h4>
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Aset Tetap Terakhir</h4>
                         <button onClick={() => setActiveTab('TETAP')} className="text-[10px] font-bold text-cyan-400 hover:underline">Lihat Semua →</button>
                       </div>
                       {fixedAssets.length === 0 ? (
@@ -438,9 +438,9 @@ export default function KeuanganDashboard() {
                       ) : (
                         <div className="space-y-3">
                           {fixedAssets.slice(0, 4).map(asset => (
-                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-slate-900 border border-slate-800/60 rounded-2xl">
+                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-200/60 rounded-2xl">
                               <div>
-                                <span className="text-xs font-bold text-white block">{asset.name}</span>
+                                <span className="text-xs font-bold text-slate-800 block">{asset.name}</span>
                                 <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Beli: {new Date(asset.purchase_date).toLocaleDateString('id-ID')}</span>
                               </div>
                               <span className="text-xs font-black text-emerald-400">Rp {Number(asset.purchase_price).toLocaleString('id-ID')}</span>
@@ -451,9 +451,9 @@ export default function KeuanganDashboard() {
                     </div>
 
                     {/* Inventory Low Stock warnings */}
-                    <div className="bg-slate-950/40 p-6 rounded-3xl border border-slate-800/80">
+                    <div className="bg-white/40 p-6 rounded-3xl border border-slate-200/80">
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-xs font-black text-white uppercase tracking-wider">Inventaris Kritis (Stok &lt; 20)</h4>
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Inventaris Kritis (Stok &lt; 20)</h4>
                         <button onClick={() => setActiveTab('BERGERAK')} className="text-[10px] font-bold text-cyan-400 hover:underline">Kelola Stok →</button>
                       </div>
                       {addons.filter(a => (a.stock || 0) < 20).length === 0 ? (
@@ -461,9 +461,9 @@ export default function KeuanganDashboard() {
                       ) : (
                         <div className="space-y-3">
                           {addons.filter(a => (a.stock || 0) < 20).slice(0, 4).map(addon => (
-                            <div key={addon.id} className="flex justify-between items-center p-3.5 bg-slate-900 border border-slate-800/60 rounded-2xl">
+                            <div key={addon.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-200/60 rounded-2xl">
                               <div>
-                                <span className="text-xs font-bold text-white block">{addon.name}</span>
+                                <span className="text-xs font-bold text-slate-800 block">{addon.name}</span>
                                 <span className="text-[10px] text-slate-500 block font-medium mt-0.5">HPP: Rp {Number(addon.hpp || 0).toLocaleString('id-ID')}</span>
                               </div>
                               <span className="text-xs font-black text-rose-400 bg-rose-950/40 px-3 py-1 rounded-full border border-rose-900/30">
@@ -483,7 +483,7 @@ export default function KeuanganDashboard() {
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-lg font-black text-white">Inventaris Aset Bergerak (Add-ons)</h2>
+                      <h2 className="text-lg font-black text-slate-800">Inventaris Aset Bergerak (Add-ons)</h2>
                       <p className="text-xs text-slate-500 mt-1 font-medium">Kelola stok sparepart, freon, dan material pelengkap jasa AC wilayah Anda.</p>
                     </div>
                     <button
@@ -495,11 +495,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Addon Inventory Table */}
-                  <div className="bg-slate-950/40 rounded-3xl border border-slate-800 overflow-hidden">
+                  <div className="bg-white/40 rounded-3xl border border-slate-200 overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-800 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-950/70">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/70">
                             <th className="py-4 px-6">Nama & Keterangan</th>
                             <th className="py-4 px-4 text-center">Stok Fisik</th>
                             <th className="py-4 px-4">HPP (Harga Beli)</th>
@@ -507,25 +507,25 @@ export default function KeuanganDashboard() {
                             <th className="py-4 px-6 text-center">Aksi / Tindakan</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-300">
+                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-600">
                           {addons.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="py-8 px-6 text-center text-slate-500">Belum ada barang add-on terdaftar di wilayah ini.</td>
                             </tr>
                           ) : (
                             addons.map(addon => (
-                              <tr key={addon.id} className="hover:bg-slate-900/30 transition">
+                              <tr key={addon.id} className="hover:bg-slate-50/30 transition">
                                 <td className="py-4 px-6">
-                                  <span className="text-sm font-bold text-white block">{addon.name}</span>
+                                  <span className="text-sm font-bold text-slate-800 block">{addon.name}</span>
                                   <span className="text-[10px] text-slate-500 block font-medium mt-1">{addon.description || 'Tidak ada catatan.'}</span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
-                                  <span className={`px-3 py-1 rounded-full font-bold border ${addon.stock < 20 ? 'bg-rose-950/40 text-rose-400 border-rose-900/30' : 'bg-slate-900 text-slate-300 border-slate-800'}`}>
+                                  <span className={`px-3 py-1 rounded-full font-bold border ${addon.stock < 20 ? 'bg-rose-950/40 text-rose-400 border-rose-900/30' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                     {addon.stock || 0} unit
                                   </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="font-mono text-slate-400">Rp {Number(addon.hpp || 0).toLocaleString('id-ID')}</span>
+                                  <span className="font-mono text-slate-500">Rp {Number(addon.hpp || 0).toLocaleString('id-ID')}</span>
                                 </td>
                                 <td className="py-4 px-4">
                                   <span className="font-mono text-emerald-400">Rp {Number(addon.price).toLocaleString('id-ID')}</span>
@@ -534,19 +534,19 @@ export default function KeuanganDashboard() {
                                   <div className="flex justify-center items-center gap-2">
                                     <button
                                       onClick={() => { setPurchaseModalAddon(addon); setPurchasePrice(Number(addon.hpp || 0)); setShowAddAddonModal(false); }}
-                                      className="bg-slate-900 hover:bg-cyan-950 hover:text-cyan-400 text-cyan-400/90 font-extrabold text-[10px] px-3 py-1.5 rounded-lg border border-slate-800 transition uppercase"
+                                      className="bg-slate-50 hover:bg-cyan-950 hover:text-cyan-400 text-cyan-400/90 font-extrabold text-[10px] px-3 py-1.5 rounded-lg border border-slate-200 transition uppercase"
                                     >
                                       📥 Stok Masuk
                                     </button>
                                     <button
                                       onClick={() => handleEditAddon(addon)}
-                                      className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition"
+                                      className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg border border-slate-200 transition"
                                     >
                                       <Edit size={12} />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteAddon(addon.id)}
-                                      className="p-1.5 bg-slate-900 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 rounded-lg border border-slate-800 transition"
+                                      className="p-1.5 bg-slate-50 hover:bg-rose-950/40 text-slate-500 hover:text-rose-400 rounded-lg border border-slate-200 transition"
                                     >
                                       <Trash2 size={12} />
                                     </button>
@@ -567,7 +567,7 @@ export default function KeuanganDashboard() {
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-lg font-black text-white">Kelola Aset Tetap</h2>
+                      <h2 className="text-lg font-black text-slate-800">Kelola Aset Tetap</h2>
                       <p className="text-xs text-slate-500 mt-1 font-medium">Catat dan audit aset tetap seperti bangunan kantor, kendaraan operasional, tangki air steam, dll.</p>
                     </div>
                     <button
@@ -579,31 +579,31 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Fixed Assets List Table */}
-                  <div className="bg-slate-950/40 rounded-3xl border border-slate-800 overflow-hidden">
+                  <div className="bg-white/40 rounded-3xl border border-slate-200 overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-800 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-950/70">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/70">
                             <th className="py-4 px-6">Nama Aset & Deskripsi</th>
                             <th className="py-4 px-4">Tanggal Pembelian</th>
                             <th className="py-4 px-4">Harga Pembelian</th>
                             <th className="py-4 px-6 text-center">Tindakan</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-300">
+                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-600">
                           {fixedAssets.length === 0 ? (
                             <tr>
                               <td colSpan={4} className="py-8 px-6 text-center text-slate-500">Belum ada aset tetap tercatat di wilayah ini.</td>
                             </tr>
                           ) : (
                             fixedAssets.map(asset => (
-                              <tr key={asset.id} className="hover:bg-slate-900/30 transition">
+                              <tr key={asset.id} className="hover:bg-slate-50/30 transition">
                                 <td className="py-4 px-6">
-                                  <span className="text-sm font-bold text-white block">{asset.name}</span>
+                                  <span className="text-sm font-bold text-slate-800 block">{asset.name}</span>
                                   <span className="text-[10px] text-slate-500 block font-medium mt-1">{asset.description || 'Tidak ada catatan.'}</span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <div className="flex items-center gap-1.5 text-slate-400">
+                                  <div className="flex items-center gap-1.5 text-slate-500">
                                     <Calendar size={13} />
                                     <span>{new Date(asset.purchase_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                                   </div>
@@ -615,13 +615,13 @@ export default function KeuanganDashboard() {
                                   <div className="flex justify-center items-center gap-1.5">
                                     <button
                                       onClick={() => handleEditFixedAssetClick(asset)}
-                                      className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition"
+                                      className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg border border-slate-200 transition"
                                     >
                                       <Edit size={12} />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteFixedAsset(asset.id)}
-                                      className="p-1.5 bg-slate-900 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 rounded-lg border border-slate-800 transition"
+                                      className="p-1.5 bg-slate-50 hover:bg-rose-950/40 text-slate-500 hover:text-rose-400 rounded-lg border border-slate-200 transition"
                                     >
                                       <Trash2 size={12} />
                                     </button>
@@ -641,16 +641,16 @@ export default function KeuanganDashboard() {
               {activeTab === 'RIWAYAT' && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
-                    <h2 className="text-lg font-black text-white">Riwayat Mutasi Stok (Aset Bergerak)</h2>
+                    <h2 className="text-lg font-black text-slate-800">Riwayat Mutasi Stok (Aset Bergerak)</h2>
                     <p className="text-xs text-slate-500 mt-1 font-medium">Log aktivitas masuk dan keluarnya material pelengkap / sparepart cabang.</p>
                   </div>
 
                   {/* Transaction Log Table */}
-                  <div className="bg-slate-950/40 rounded-3xl border border-slate-800 overflow-hidden">
+                  <div className="bg-white/40 rounded-3xl border border-slate-200 overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-800 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-950/70">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/70">
                             <th className="py-4 px-6">Tanggal & Waktu</th>
                             <th className="py-4 px-4">Nama Barang</th>
                             <th className="py-4 px-4 text-center">Jenis Mutasi</th>
@@ -659,22 +659,22 @@ export default function KeuanganDashboard() {
                             <th className="py-4 px-6">Keterangan</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-300">
+                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-600">
                           {transactions.length === 0 ? (
                             <tr>
                               <td colSpan={6} className="py-8 px-6 text-center text-slate-500">Belum ada catatan transaksi masuk/keluar.</td>
                             </tr>
                           ) : (
                             transactions.map(tx => (
-                              <tr key={tx.id} className="hover:bg-slate-900/30 transition">
+                              <tr key={tx.id} className="hover:bg-slate-50/30 transition">
                                 <td className="py-4 px-6">
-                                  <div className="flex items-center gap-1.5 text-slate-400">
+                                  <div className="flex items-center gap-1.5 text-slate-500">
                                     <Clock size={12} />
                                     <span>{new Date(tx.createdAt).toLocaleString('id-ID')}</span>
                                   </div>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="font-bold text-white block">{tx.addonName || `ID: ${tx.addonId}`}</span>
+                                  <span className="font-bold text-slate-800 block">{tx.addonName || `ID: ${tx.addonId}`}</span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
                                   <span className={`px-2.5 py-0.5 rounded-full border text-[9.5px] font-black uppercase ${tx.type === 'masuk' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/20' : 'bg-rose-950/40 text-rose-400 border-rose-900/20'}`}>
@@ -684,7 +684,7 @@ export default function KeuanganDashboard() {
                                 <td className="py-4 px-4 text-center font-mono">
                                   {tx.qty} unit
                                 </td>
-                                <td className="py-4 px-4 font-mono text-slate-400">
+                                <td className="py-4 px-4 font-mono text-slate-500">
                                   Rp {Number(tx.price).toLocaleString('id-ID')}
                                 </td>
                                 <td className="py-4 px-6 text-slate-500 max-w-xs truncate">
@@ -706,48 +706,48 @@ export default function KeuanganDashboard() {
 
       {/* ================= MODAL: FIXED ASSET ADD/EDIT ================= */}
       {showAddAssetModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 {editingAsset ? 'Edit Aset Tetap' : 'Tambah Aset Tetap Baru'}
               </h3>
-              <button onClick={() => setShowAddAssetModal(false)} className="p-1 rounded-full hover:bg-slate-800 transition text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddAssetModal(false)} className="p-1 rounded-full hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleSaveFixedAsset} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nama Aset / Barang</label>
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Nama Aset / Barang</label>
                 <input
                   type="text"
                   placeholder="Misal: Mesin Steam Jet, Gedung Ruko"
                   value={assetName}
                   onChange={(e) => setAssetName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tanggal Beli</label>
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Tanggal Beli</label>
                   <input
                     type="date"
                     value={assetPurchaseDate}
                     onChange={(e) => setAssetPurchaseDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Harga Beli (Rp)</label>
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Harga Beli (Rp)</label>
                   <input
                     type="number"
                     value={assetPurchasePrice || ''}
                     onChange={(e) => setAssetPurchasePrice(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                     placeholder="2500000"
                     required
                   />
@@ -755,12 +755,12 @@ export default function KeuanganDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Deskripsi / Keterangan</label>
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Deskripsi / Keterangan</label>
                 <textarea
                   placeholder="Masukkan spesifikasi, masa garansi, atau catatan penting lainnya."
                   value={assetDescription}
                   onChange={(e) => setAssetDescription(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition h-20 resize-none"
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition h-20 resize-none"
                 />
               </div>
 
@@ -768,7 +768,7 @@ export default function KeuanganDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowAddAssetModal(false)}
-                  className="flex-1 bg-slate-950 hover:bg-slate-800 text-slate-400 text-xs font-bold py-2.5 rounded-xl border border-slate-800 transition"
+                  className="flex-1 bg-white hover:bg-slate-100 text-slate-500 text-xs font-bold py-2.5 rounded-xl border border-slate-200 transition"
                 >
                   Batal
                 </button>
@@ -787,49 +787,49 @@ export default function KeuanganDashboard() {
 
       {/* ================= MODAL: ADDON ADD/EDIT ================= */}
       {showAddAddonModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 {editingAddon ? 'Edit Barang Add-on' : 'Daftarkan Barang Add-on Baru'}
               </h3>
-              <button onClick={() => setShowAddAddonModal(false)} className="p-1 rounded-full hover:bg-slate-800 transition text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddAddonModal(false)} className="p-1 rounded-full hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleSaveAddon} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nama Barang</label>
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Nama Barang</label>
                 <input
                   type="text"
                   placeholder="Misal: Pipa Tembaga PK, Freon R32"
                   value={addonName}
                   onChange={(e) => setAddonName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Harga Jual (Rp)</label>
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Harga Jual (Rp)</label>
                   <input
                     type="number"
                     value={addonPrice || ''}
                     onChange={(e) => setAddonPrice(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                     placeholder="95000"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Harga Beli / HPP (Rp)</label>
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Harga Beli / HPP (Rp)</label>
                   <input
                     type="number"
                     value={addonHpp || ''}
                     onChange={(e) => setAddonHpp(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                     placeholder="60000"
                     required
                   />
@@ -837,12 +837,12 @@ export default function KeuanganDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Deskripsi / Keterangan</label>
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Deskripsi / Keterangan</label>
                 <textarea
                   placeholder="Isi deskripsi produk jika diperlukan."
                   value={addonDescription}
                   onChange={(e) => setAddonDescription(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition h-20 resize-none"
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition h-20 resize-none"
                 />
               </div>
 
@@ -850,7 +850,7 @@ export default function KeuanganDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowAddAddonModal(false)}
-                  className="flex-1 bg-slate-950 hover:bg-slate-800 text-slate-400 text-xs font-bold py-2.5 rounded-xl border border-slate-800 transition"
+                  className="flex-1 bg-white hover:bg-slate-100 text-slate-500 text-xs font-bold py-2.5 rounded-xl border border-slate-200 transition"
                 >
                   Batal
                 </button>
@@ -869,14 +869,14 @@ export default function KeuanganDashboard() {
 
       {/* ================= MODAL: RECORD STOCK-IN (PURCHASE ADDON) ================= */}
       {purchaseModalAddon && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">📥 Catat Stok Masuk</h3>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">📥 Catat Stok Masuk</h3>
                 <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">{purchaseModalAddon.name}</p>
               </div>
-              <button onClick={() => setPurchaseModalAddon(null)} className="p-1 rounded-full hover:bg-slate-800 transition text-slate-400 hover:text-white">
+              <button onClick={() => setPurchaseModalAddon(null)} className="p-1 rounded-full hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
                 <X size={16} />
               </button>
             </div>
@@ -884,23 +884,23 @@ export default function KeuanganDashboard() {
             <form onSubmit={handleRecordPurchase} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Kuantitas Baru (Qty)</label>
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Kuantitas Baru (Qty)</label>
                   <input
                     type="number"
                     min={1}
                     value={purchaseQty}
                     onChange={(e) => setPurchaseQty(Math.max(1, Number(e.target.value)))}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Harga Beli per Unit (Rp)</label>
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Harga Beli per Unit (Rp)</label>
                   <input
                     type="number"
                     value={purchasePrice || ''}
                     onChange={(e) => setPurchasePrice(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
+                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition"
                     placeholder="HPP Baru"
                     required
                   />
@@ -908,27 +908,27 @@ export default function KeuanganDashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Catatan / Keterangan Pembelian</label>
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Catatan / Keterangan Pembelian</label>
                 <textarea
                   placeholder="Misal: Restock dari Supplier AC Jaya, Invoice #12345"
                   value={purchaseNotes}
                   onChange={(e) => setPurchaseNotes(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition h-20 resize-none"
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:border-indigo-500 outline-none transition h-20 resize-none"
                 />
               </div>
 
               {/* HPP calculation visual guidance */}
-              <div className="bg-slate-950 border border-indigo-950/60 p-3.5 rounded-2xl text-[10.5px] text-slate-400 space-y-1.5">
+              <div className="bg-white border border-indigo-950/60 p-3.5 rounded-2xl text-[10.5px] text-slate-500 space-y-1.5">
                 <span className="text-[9.5px] text-indigo-400 font-black uppercase block tracking-wider">💡 Simulasi Kalkulasi HPP Baru</span>
                 <div className="flex justify-between">
                   <span>Stok Saat Ini:</span>
-                  <span className="font-bold text-white">{purchaseModalAddon.stock || 0} unit</span>
+                  <span className="font-bold text-slate-800">{purchaseModalAddon.stock || 0} unit</span>
                 </div>
                 <div className="flex justify-between">
                   <span>HPP Saat Ini:</span>
-                  <span className="font-bold text-white">Rp {Number(purchaseModalAddon.hpp || 0).toLocaleString('id-ID')}</span>
+                  <span className="font-bold text-slate-800">Rp {Number(purchaseModalAddon.hpp || 0).toLocaleString('id-ID')}</span>
                 </div>
-                <div className="border-t border-slate-900 my-1"></div>
+                <div className="border-t border-slate-300 my-1"></div>
                 <div className="flex justify-between font-bold text-cyan-400">
                   <span>Estimasi HPP Gabungan:</span>
                   <span>
@@ -948,7 +948,7 @@ export default function KeuanganDashboard() {
                 <button
                   type="button"
                   onClick={() => setPurchaseModalAddon(null)}
-                  className="flex-1 bg-slate-950 hover:bg-slate-800 text-slate-400 text-xs font-bold py-2.5 rounded-xl border border-slate-800 transition"
+                  className="flex-1 bg-white hover:bg-slate-100 text-slate-500 text-xs font-bold py-2.5 rounded-xl border border-slate-200 transition"
                 >
                   Batal
                 </button>
