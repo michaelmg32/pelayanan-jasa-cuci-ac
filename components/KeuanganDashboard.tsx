@@ -404,19 +404,19 @@ export default function KeuanganDashboard() {
                 <div className="space-y-6 animate-fade-in">
                   {/* Financial Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-200 shadow-md">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition duration-300">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
                       <h2 className="text-2xl font-black text-slate-800 mt-1">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
                       <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
                     </div>
 
-                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-200 shadow-md">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition duration-300">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
                       <h2 className="text-2xl font-black text-slate-800 mt-1">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
                       <p className="text-[9.5px] text-slate-500 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
                     </div>
 
-                    <div className="bg-gradient-to-tr from-slate-950 to-slate-900 p-6 rounded-3xl border border-slate-200 shadow-md">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition duration-300">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Jumlah Jenis Inventaris / Aset Tetap</p>
                       <h2 className="text-2xl font-black text-slate-800 mt-1">
                         {addons.length} <span className="text-xs font-bold text-slate-500 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-slate-500 uppercase">Unit</span>
@@ -428,7 +428,7 @@ export default function KeuanganDashboard() {
                   {/* Overview Lists / Activity info */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Fixed Assets Summary List */}
-                    <div className="bg-white/40 p-6 rounded-3xl border border-slate-200/80">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                       <div className="flex justify-between items-center mb-4">
                         <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Aset Tetap Terakhir</h4>
                         <button onClick={() => setActiveTab('TETAP')} className="text-[10px] font-bold text-cyan-400 hover:underline">Lihat Semua →</button>
@@ -438,7 +438,7 @@ export default function KeuanganDashboard() {
                       ) : (
                         <div className="space-y-3">
                           {fixedAssets.slice(0, 4).map(asset => (
-                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-200/60 rounded-2xl">
+                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
                               <div>
                                 <span className="text-xs font-bold text-slate-800 block">{asset.name}</span>
                                 <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Beli: {new Date(asset.purchase_date).toLocaleDateString('id-ID')}</span>
@@ -451,7 +451,7 @@ export default function KeuanganDashboard() {
                     </div>
 
                     {/* Inventory Low Stock warnings */}
-                    <div className="bg-white/40 p-6 rounded-3xl border border-slate-200/80">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                       <div className="flex justify-between items-center mb-4">
                         <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Inventaris Kritis (Stok &lt; 20)</h4>
                         <button onClick={() => setActiveTab('BERGERAK')} className="text-[10px] font-bold text-cyan-400 hover:underline">Kelola Stok →</button>
@@ -461,7 +461,7 @@ export default function KeuanganDashboard() {
                       ) : (
                         <div className="space-y-3">
                           {addons.filter(a => (a.stock || 0) < 20).slice(0, 4).map(addon => (
-                            <div key={addon.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-200/60 rounded-2xl">
+                            <div key={addon.id} className="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
                               <div>
                                 <span className="text-xs font-bold text-slate-800 block">{addon.name}</span>
                                 <span className="text-[10px] text-slate-500 block font-medium mt-0.5">HPP: Rp {Number(addon.hpp || 0).toLocaleString('id-ID')}</span>
@@ -495,11 +495,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Addon Inventory Table */}
-                  <div className="bg-white/40 rounded-3xl border border-slate-200 overflow-hidden">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/70">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
                             <th className="py-4 px-6">Nama & Keterangan</th>
                             <th className="py-4 px-4 text-center">Stok Fisik</th>
                             <th className="py-4 px-4">HPP (Harga Beli)</th>
@@ -520,7 +520,7 @@ export default function KeuanganDashboard() {
                                   <span className="text-[10px] text-slate-500 block font-medium mt-1">{addon.description || 'Tidak ada catatan.'}</span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
-                                  <span className={`px-3 py-1 rounded-full font-bold border ${addon.stock < 20 ? 'bg-rose-950/40 text-rose-400 border-rose-900/30' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                  <span className={`px-3 py-1 rounded-full font-bold border ${addon.stock < 20 ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                     {addon.stock || 0} unit
                                   </span>
                                 </td>
@@ -579,11 +579,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Fixed Assets List Table */}
-                  <div className="bg-white/40 rounded-3xl border border-slate-200 overflow-hidden">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/70">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
                             <th className="py-4 px-6">Nama Aset & Deskripsi</th>
                             <th className="py-4 px-4">Tanggal Pembelian</th>
                             <th className="py-4 px-4">Harga Pembelian</th>
@@ -646,11 +646,11 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Transaction Log Table */}
-                  <div className="bg-white/40 rounded-3xl border border-slate-200 overflow-hidden">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/70">
+                          <tr className="border-b border-slate-200 text-[10.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
                             <th className="py-4 px-6">Tanggal & Waktu</th>
                             <th className="py-4 px-4">Nama Barang</th>
                             <th className="py-4 px-4 text-center">Jenis Mutasi</th>
@@ -677,7 +677,7 @@ export default function KeuanganDashboard() {
                                   <span className="font-bold text-slate-800 block">{tx.addonName || `ID: ${tx.addonId}`}</span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
-                                  <span className={`px-2.5 py-0.5 rounded-full border text-[9.5px] font-black uppercase ${tx.type === 'masuk' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/20' : 'bg-rose-950/40 text-rose-400 border-rose-900/20'}`}>
+                                  <span className={`px-2.5 py-0.5 rounded-full border text-[9.5px] font-black uppercase ${tx.type === 'masuk' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-950/40 text-rose-400 border-rose-900/20'}`}>
                                     {tx.type}
                                   </span>
                                 </td>
@@ -707,7 +707,7 @@ export default function KeuanganDashboard() {
       {/* ================= MODAL: FIXED ASSET ADD/EDIT ================= */}
       {showAddAssetModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 {editingAsset ? 'Edit Aset Tetap' : 'Tambah Aset Tetap Baru'}
@@ -788,7 +788,7 @@ export default function KeuanganDashboard() {
       {/* ================= MODAL: ADDON ADD/EDIT ================= */}
       {showAddAddonModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 {editingAddon ? 'Edit Barang Add-on' : 'Daftarkan Barang Add-on Baru'}
@@ -870,7 +870,7 @@ export default function KeuanganDashboard() {
       {/* ================= MODAL: RECORD STOCK-IN (PURCHASE ADDON) ================= */}
       {purchaseModalAddon && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">📥 Catat Stok Masuk</h3>
