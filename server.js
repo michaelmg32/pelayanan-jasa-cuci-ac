@@ -3369,7 +3369,7 @@ app.post('/api/staff-grades', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     const roleLower = user.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'owner') {
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { name, description, region_id, base_salary = 0, fixed_bonus = 0, bonus_per_order = 0 } = req.body;
@@ -3408,7 +3408,7 @@ app.put('/api/staff-grades/:id', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     const roleLower = user.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'owner') {
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;
@@ -3457,7 +3457,7 @@ app.delete('/api/staff-grades/:id', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     const roleLower = user.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'owner') {
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;
@@ -3486,7 +3486,7 @@ app.put('/api/users/:id/grade', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     const roleLower = user.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'owner') {
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { grade_id } = req.body;
@@ -3508,7 +3508,7 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     const roleLower = user.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'owner') {
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { period_month, region_id, commit = false } = req.body;
@@ -3663,7 +3663,7 @@ app.put('/api/salary/records/:id', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     const roleLower = user.role?.toLowerCase();
-    if (roleLower !== 'admin' && roleLower !== 'owner') {
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;

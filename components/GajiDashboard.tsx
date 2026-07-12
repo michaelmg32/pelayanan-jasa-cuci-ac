@@ -248,44 +248,47 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
         .gaji-page.gaji-embedded .gaji-tab:hover { color: #1e293b; }
         .gaji-page.gaji-embedded .gaji-tab.active { color: #4f46e5; border-bottom-color: #4f46e5; background: rgba(79,70,229,0.06); border-radius: 8px; }
         .gaji-page.gaji-embedded .gaji-tab-sub { color: #94a3b8; }
-        .gaji-page.gaji-embedded .gaji-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); color: #334155; }
-        .gaji-page.gaji-embedded .gaji-card-title { color: #0f172a; }
-        .gaji-page.gaji-embedded .gaji-grade-card { background: #f8fafc; border: 1px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-grade-card:hover { border-color: #cbd5e1; background: #f1f5f9; }
-        .gaji-page.gaji-embedded .gaji-grade-desc { color: #64748b; }
-        .gaji-page.gaji-embedded .gaji-salary-breakdown { background: #ffffff; border: 1px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-salary-row { color: #475569; }
-        .gaji-page.gaji-embedded .gaji-salary-row.total { border-top: 1px solid #e2e8f0; color: #4f46e5; }
-        .gaji-page.gaji-embedded .gaji-btn-ghost { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
-        .gaji-page.gaji-embedded .gaji-btn-ghost:hover { background: #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-table th { background: #f1f5f9; color: #475569; border-bottom: 2px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-table td { border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .gaji-page.gaji-embedded .gaji-card { background: #ffffff; border: 1px solid rgba(226,232,240,0.6); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.05); border-radius: 24px; color: #334155; }
+        .gaji-page.gaji-embedded .gaji-card-title { color: #0f172a; font-weight: 900; }
+        .gaji-page.gaji-embedded .gaji-grade-card { background: #ffffff; border: 1px solid rgba(226,232,240,0.8); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05); border-radius: 20px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .gaji-page.gaji-embedded .gaji-grade-card:hover { border-color: #818cf8; transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(99,102,241,0.15); }
+        .gaji-page.gaji-embedded .gaji-grade-desc { color: #64748b; font-weight: 500; }
+        .gaji-page.gaji-embedded .gaji-salary-breakdown { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; }
+        .gaji-page.gaji-embedded .gaji-salary-row { color: #475569; font-weight: 600; }
+        .gaji-page.gaji-embedded .gaji-salary-row.total { border-top: 1px dashed #cbd5e1; color: #4f46e5; font-weight: 900; }
+        .gaji-page.gaji-embedded .gaji-btn-ghost { background: #ffffff; color: #475569; border: 1px solid #e2e8f0; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .gaji-page.gaji-embedded .gaji-btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+        .gaji-page.gaji-embedded .gaji-btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; border-radius: 12px; font-weight: 800; }
+        .gaji-page.gaji-embedded .gaji-btn-danger:hover { background: #fee2e2; border-color: #fca5a5; }
+        .gaji-page.gaji-embedded .gaji-table th { background: rgba(248,250,252,0.8); backdrop-filter: blur(8px); color: #64748b; border-bottom: 2px solid #e2e8f0; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+        .gaji-page.gaji-embedded .gaji-table td { border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 600; }
         .gaji-page.gaji-embedded .gaji-table tr:hover td { background: #f8fafc; }
-        .gaji-page.gaji-embedded .gaji-input { background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; }
-        .gaji-page.gaji-embedded .gaji-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-        .gaji-page.gaji-embedded .gaji-input::placeholder { color: #94a3b8; }
+        .gaji-page.gaji-embedded .gaji-input { background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 12px; font-weight: 600; transition: all 0.2s; }
+        .gaji-page.gaji-embedded .gaji-input:focus { border-color: #6366f1; background: #ffffff; box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+        .gaji-page.gaji-embedded .gaji-input::placeholder { color: #94a3b8; font-weight: 500; }
         .gaji-page.gaji-embedded select.gaji-input option { background: #ffffff; color: #0f172a; }
-        .gaji-page.gaji-embedded .gaji-hint { color: #64748b; }
-        .gaji-page.gaji-embedded .gaji-empty { color: #64748b; }
-        .gaji-page.gaji-embedded .gaji-confirm-info { background: #f8fafc; border: 1px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-confirm-row { color: #475569; }
-        .gaji-page.gaji-embedded .gaji-preview-total { background: #f8fafc; border: 1px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-preview-total div div { color: #64748b !important; }
-        .gaji-page.gaji-embedded .gaji-preview-total div .gaji-highlight { color: #4f46e5 !important; }
-        .gaji-page.gaji-embedded .gaji-month-display { background: #f1f5f9; border: 1px solid #cbd5e1; color: #4f46e5; }
-        .gaji-page.gaji-embedded .gaji-stat-card { background: #f8fafc; border: 1px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-stat-card .stat-label { color: #64748b; }
-        .gaji-page.gaji-embedded .gaji-stat-card .stat-value { color: #0f172a; }
+        .gaji-page.gaji-embedded .gaji-hint { color: #64748b; font-weight: 500; }
+        .gaji-page.gaji-embedded .gaji-empty { color: #64748b; font-weight: 600; }
+        .gaji-page.gaji-embedded .gaji-confirm-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; }
+        .gaji-page.gaji-embedded .gaji-confirm-row { color: #475569; font-weight: 600; }
+        .gaji-page.gaji-embedded .gaji-preview-total { background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .gaji-page.gaji-embedded .gaji-preview-total div div { color: #64748b !important; font-weight: 700; }
+        .gaji-page.gaji-embedded .gaji-preview-total div .gaji-highlight { color: #4f46e5 !important; font-weight: 900; }
+        .gaji-page.gaji-embedded .gaji-month-display { background: #eef2ff; border: 1px solid #e0e7ff; color: #4f46e5; border-radius: 12px; font-weight: 800; }
+        .gaji-page.gaji-embedded .gaji-stat-card { background: #ffffff; border: 1px solid rgba(226,232,240,0.6); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-radius: 20px; transition: transform 0.2s; }
+        .gaji-page.gaji-embedded .gaji-stat-card:hover { transform: translateY(-2px); }
+        .gaji-page.gaji-embedded .gaji-stat-card .stat-label { color: #64748b; font-weight: 800; }
+        .gaji-page.gaji-embedded .gaji-stat-card .stat-value { color: #0f172a; font-weight: 900; }
         .gaji-page.gaji-embedded .gaji-stat-card.purple .stat-value { color: #4f46e5; }
-        .gaji-page.gaji-embedded .gaji-stat-card.purple { border-color: rgba(79,70,229,0.3); }
+        .gaji-page.gaji-embedded .gaji-stat-card.purple { border-color: rgba(99,102,241,0.2); background: linear-gradient(to bottom right, #ffffff, #f5f3ff); }
         .gaji-page.gaji-embedded .gaji-confirm-info strong.gaji-highlight { color: #4f46e5 !important; }
-        .gaji-page.gaji-embedded .gaji-empty-icon { opacity: 0.6; }
+        .gaji-page.gaji-embedded .gaji-empty-icon { opacity: 0.6; color: #94a3b8; }
         .gaji-page.gaji-embedded div[style*="rgba(255,255,255"] { color: #64748b !important; }
         .gaji-page.gaji-embedded span[style*="rgba(255,255,255"] { color: #64748b !important; }
         .gaji-page.gaji-embedded td[style*="opacity: 0.5"] { color: #64748b !important; opacity: 1 !important; }
         .gaji-page.gaji-embedded td[style*="rgba(255,255,255"] { color: #64748b !important; }
-        .gaji-page.gaji-embedded div[style*="background: rgba(96,165,250,0.08)"] { background: #eff6ff !important; border-color: #bfdbfe !important; color: #1e3a8a !important; }
-        .gaji-page.gaji-embedded div[style*="background: rgba(251,146,60,0.08)"] { background: #fff7ed !important; border-color: #fed7aa !important; color: #7c2d12 !important; }
+        .gaji-page.gaji-embedded div[style*="background: rgba(96,165,250,0.08)"] { background: #eff6ff !important; border-color: #bfdbfe !important; color: #1e3a8a !important; font-weight: 800; }
+        .gaji-page.gaji-embedded div[style*="background: rgba(251,146,60,0.08)"] { background: #fff7ed !important; border-color: #fed7aa !important; color: #7c2d12 !important; font-weight: 800; }
         
         .gaji-header { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
         .gaji-header-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; text-decoration: none; }
