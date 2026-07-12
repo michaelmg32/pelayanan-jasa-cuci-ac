@@ -158,12 +158,13 @@ export default function KaryawanDashboard() {
     let scannerInstance: any = null;
 
     if (activeScanUnitKey) {
+      // @ts-ignore
       import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
         scannerInstance = new Html5QrcodeScanner(
           'qr-reader',
           {
             fps: 10,
-            qrbox: (width, height) => {
+            qrbox: (width: number, height: number) => {
               const minDimension = Math.min(width, height);
               return {
                 width: Math.floor(minDimension * 0.7),

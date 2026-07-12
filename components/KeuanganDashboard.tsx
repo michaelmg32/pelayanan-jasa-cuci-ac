@@ -23,14 +23,17 @@ import {
   AlertCircle,
   Clock,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  MoreVertical,
+  UserIcon
 } from 'lucide-react';
 
-type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT';
+type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'PROFIL';
 
 export default function KeuanganDashboard() {
-  const { activeUser, logout, regions, showAlert } = useApp();
+  const { activeUser, logout, regions, showAlert, appSettings } = useApp();
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Data States
   const [addons, setAddons] = useState<any[]>([]);
@@ -251,92 +254,144 @@ export default function KeuanganDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col md:flex-row antialiased">
-      {/* ================= SIDEBAR NAV ================= */}
-      <aside className="w-full md:w-64 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
-        {/* Brand Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-cyan-400 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-indigo-500/25">
-            💰
-          </div>
-          <div>
-            <h1 className="text-sm font-black tracking-wider text-white">SUGAR FINANCE</h1>
-            <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">Divisi Keuangan</p>
-          </div>
-        </div>
-
-        {/* User Info Card */}
-        <div className="p-4 mx-4 my-5 bg-slate-900/60 rounded-2xl border border-slate-800/80">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nama Akun</p>
-          <h3 className="text-xs font-bold text-white mt-0.5 truncate">{activeUser?.name}</h3>
-          <div className="mt-2 flex items-center gap-1.5 text-[9.5px] font-extrabold text-cyan-400 uppercase">
-            <MapPin size={10} /> Cabang: {userRegionName}
+    <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
+      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
+      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
+        {/* Logo, Business Name & Slogan */}
+        <div className="flex items-center gap-3">
+          <a href="/" className="w-14 h-14 bg-gradient-to-tr from-rose-500 to-orange-400 rounded-2xl shadow-xl shadow-rose-900/20 flex items-center justify-center text-white mb-3 transform -rotate-6 hover:rotate-0 transition duration-300 relative z-10 overflow-hidden border-2 border-white/50 cursor-pointer block">
+            {appSettings?.['GLOBAL']?.business_logo ? (
+              <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </a>
+          <div className="text-left">
+            <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h1>
+            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Keuangan</p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex-1 px-4 space-y-1.5">
+        {/* Three-dots menu button */}
+        <div className="relative">
           <button
-            onClick={() => setActiveTab('OVERVIEW')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition duration-200 ${activeTab === 'OVERVIEW' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMoreMenu(prev => !prev);
+            }}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
           >
-            <TrendingUp size={16} /> Ringkasan Keuangan
+            <MoreVertical size={18} />
           </button>
 
-          <button
-            onClick={() => setActiveTab('BERGERAK')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition duration-200 ${activeTab === 'BERGERAK' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'}`}
-          >
-            <Box size={16} /> Aset Bergerak (Add-ons)
-          </button>
-
-          <button
-            onClick={() => setActiveTab('TETAP')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition duration-200 ${activeTab === 'TETAP' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'}`}
-          >
-            <Building size={16} /> Aset Tetap
-          </button>
-
-          <button
-            onClick={() => setActiveTab('RIWAYAT')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition duration-200 ${activeTab === 'RIWAYAT' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'}`}
-          >
-            <History size={16} /> Riwayat Mutasi
-          </button>
-        </nav>
-
-        {/* Footer Logout */}
-        <div className="p-4 border-t border-slate-800">
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-rose-950/40 hover:text-rose-400 text-slate-400 font-bold py-2.5 rounded-xl text-xs border border-slate-800 hover:border-rose-900/40 transition duration-200"
-          >
-            <LogOut size={14} /> Keluar Aplikasi
-          </button>
+          {showMoreMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveTab('OVERVIEW');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab !== 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <ClipboardList size={14} className={activeTab !== 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Dashboard</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('PROFIL');
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
+              >
+                <UserIcon size={14} className={activeTab === 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>Profile</span>
+              </button>
+              <hr className="my-1 border-slate-100" />
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  logout();
+                }}
+                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
+              >
+                <LogOut size={14} />
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
         </div>
-      </aside>
+      </div>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-900">
-        {/* Top Navbar */}
-        <header className="h-16 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between px-6 md:px-8 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dashboard Keuangan</span>
-            <span className="text-slate-600">/</span>
-            <span className="text-xs font-black text-cyan-400 uppercase tracking-wider bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
-              {activeTab}
-            </span>
+      {/* ===================== CONTROL TABS SYSTEM ===================== */}
+      {activeTab !== 'PROFIL' && (
+        <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex items-center justify-between gap-1 overflow-x-auto flex-nowrap">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('OVERVIEW')}
+              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'OVERVIEW'
+                ? 'text-slate-900 border-slate-900'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <TrendingUp size={15} />
+                <span>Ringkasan Keuangan</span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('BERGERAK')}
+              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'BERGERAK'
+                ? 'text-slate-900 border-slate-900'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <Box size={15} />
+                <span>Aset Bergerak</span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('TETAP')}
+              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'TETAP'
+                ? 'text-slate-900 border-slate-900'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <Building size={15} />
+                <span>Aset Tetap</span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('RIWAYAT')}
+              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'RIWAYAT'
+                ? 'text-slate-900 border-slate-900'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <History size={15} />
+                <span>Riwayat Mutasi</span>
+              </span>
+            </button>
           </div>
+
           <button
             onClick={loadDashboardData}
-            className="bg-slate-900 hover:bg-slate-800 text-cyan-400 font-bold text-[10.5px] px-3.5 py-1.5 rounded-lg border border-slate-800 flex items-center gap-1.5 transition active:scale-[0.98]"
+            className="mr-2 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors whitespace-nowrap flex items-center gap-2"
           >
-            🔄 Refresh Data
+            🔄 Refresh
           </button>
-        </header>
+        </div>
+      )}
 
-        {/* Workspace Area */}
-        <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6">
+      {/* Workspace Area */}
+      <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6">
           {isLoadingData ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-3">
               <Loader className="w-10 h-10 animate-spin text-cyan-400" />
@@ -647,7 +702,7 @@ export default function KeuanganDashboard() {
             </>
           )}
         </div>
-      </main>
+
 
       {/* ================= MODAL: FIXED ASSET ADD/EDIT ================= */}
       {showAddAssetModal && (
