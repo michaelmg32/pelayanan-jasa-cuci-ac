@@ -507,7 +507,7 @@ export default function KeuanganDashboard() {
                             <th className="py-4 px-6 text-center">Aksi / Tindakan</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-600">
+                        <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-600">
                           {addons.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="py-8 px-6 text-center text-slate-500">Belum ada barang add-on terdaftar di wilayah ini.</td>
@@ -534,7 +534,7 @@ export default function KeuanganDashboard() {
                                   <div className="flex justify-center items-center gap-2">
                                     <button
                                       onClick={() => { setPurchaseModalAddon(addon); setPurchasePrice(Number(addon.hpp || 0)); setShowAddAddonModal(false); }}
-                                      className="bg-slate-50 hover:bg-cyan-950 hover:text-cyan-400 text-cyan-400/90 font-extrabold text-[10px] px-3 py-1.5 rounded-lg border border-slate-200 transition uppercase"
+                                      className="bg-cyan-50 hover:bg-cyan-500 hover:text-white text-cyan-700 font-extrabold text-[10px] px-3 py-1.5 rounded-lg border border-slate-200 transition uppercase"
                                     >
                                       📥 Stok Masuk
                                     </button>
@@ -546,7 +546,7 @@ export default function KeuanganDashboard() {
                                     </button>
                                     <button
                                       onClick={() => handleDeleteAddon(addon.id)}
-                                      className="p-1.5 bg-slate-50 hover:bg-rose-950/40 text-slate-500 hover:text-rose-400 rounded-lg border border-slate-200 transition"
+                                      className="p-1.5 bg-slate-50 text-slate-400 hover:bg-rose-100 hover:text-rose-600 rounded-lg border border-slate-200 transition"
                                     >
                                       <Trash2 size={12} />
                                     </button>
@@ -590,7 +590,7 @@ export default function KeuanganDashboard() {
                             <th className="py-4 px-6 text-center">Tindakan</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-600">
+                        <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-600">
                           {fixedAssets.length === 0 ? (
                             <tr>
                               <td colSpan={4} className="py-8 px-6 text-center text-slate-500">Belum ada aset tetap tercatat di wilayah ini.</td>
@@ -621,7 +621,7 @@ export default function KeuanganDashboard() {
                                     </button>
                                     <button
                                       onClick={() => handleDeleteFixedAsset(asset.id)}
-                                      className="p-1.5 bg-slate-50 hover:bg-rose-950/40 text-slate-500 hover:text-rose-400 rounded-lg border border-slate-200 transition"
+                                      className="p-1.5 bg-slate-50 text-slate-400 hover:bg-rose-100 hover:text-rose-600 rounded-lg border border-slate-200 transition"
                                     >
                                       <Trash2 size={12} />
                                     </button>
@@ -659,7 +659,7 @@ export default function KeuanganDashboard() {
                             <th className="py-4 px-6">Keterangan</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-600">
+                        <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-600">
                           {transactions.length === 0 ? (
                             <tr>
                               <td colSpan={6} className="py-8 px-6 text-center text-slate-500">Belum ada catatan transaksi masuk/keluar.</td>
@@ -677,7 +677,7 @@ export default function KeuanganDashboard() {
                                   <span className="font-bold text-slate-800 block">{tx.addonName || `ID: ${tx.addonId}`}</span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
-                                  <span className={`px-2.5 py-0.5 rounded-full border text-[9.5px] font-black uppercase ${tx.type === 'masuk' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-950/40 text-rose-400 border-rose-900/20'}`}>
+                                  <span className={`px-2.5 py-0.5 rounded-full border text-[9.5px] font-black uppercase ${tx.type === 'masuk' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                                     {tx.type}
                                   </span>
                                 </td>
