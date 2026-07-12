@@ -289,6 +289,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
         .gaji-page.gaji-embedded td[style*="rgba(255,255,255"] { color: #64748b !important; }
         .gaji-page.gaji-embedded div[style*="background: rgba(96,165,250,0.08)"] { background: #eff6ff !important; border-color: #bfdbfe !important; color: #1e3a8a !important; font-weight: 800; }
         .gaji-page.gaji-embedded div[style*="background: rgba(251,146,60,0.08)"] { background: #fff7ed !important; border-color: #fed7aa !important; color: #7c2d12 !important; font-weight: 800; }
+        .gaji-page.gaji-embedded .gaji-info-text { color: #475569 !important; font-weight: 600; }
         
         .gaji-header { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
         .gaji-header-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; text-decoration: none; }
@@ -463,9 +464,9 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                   </div>
                 )}
             </div>
-            <div style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem', color: 'rgba(255,255,255,0.6)' }}>
-              <strong style={{ color: '#60a5fa' }}>ℹ️ Cara Kerja Bonus:</strong><br />
-              Total Gaji = Gaji Pokok + Bonus Tetap + (Bonus per Order × Jumlah Order Selesai di Bulan Itu)
+            <div className="gaji-info-box-blue" style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem' }}>
+              <strong style={{ color: '#3b82f6' }}>ℹ️ Cara Kerja Bonus:</strong><br />
+              <span className="gaji-info-text">Total Gaji = Gaji Pokok + Bonus Tetap + (Bonus per Order × Jumlah Order Selesai di Bulan Itu)</span>
             </div>
           </>
         )}
@@ -609,8 +610,8 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                 );
               })()}
             </div>
-            <div style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem', color: 'rgba(255,255,255,0.6)' }}>
-              <strong style={{ color: '#fb923c' }}>⚠️ Perhatian:</strong> Slip yang sudah ditandai <strong>LUNAS</strong> tidak akan bisa ditimpa ulang.
+            <div className="gaji-info-box-orange" style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem' }}>
+              <strong style={{ color: '#ea580c' }}>⚠️ Perhatian:</strong> <span className="gaji-info-text">Slip yang sudah ditandai <strong>LUNAS</strong> tidak akan bisa ditimpa ulang.</span>
             </div>
           </>
         )}
