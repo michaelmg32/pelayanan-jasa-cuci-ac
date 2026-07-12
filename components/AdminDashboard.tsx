@@ -6,7 +6,6 @@ import { User, Order, OrderStatus, Role, ACModel, ACCategory, ACService, ACAddon
 import * as api from '@/lib/api';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
-import GajiDashboard from '@/components/GajiDashboard';
 import {
   LogOut,
   ClipboardList,
@@ -52,7 +51,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/lib/auth-context';
 
-type TabType = 'JOBS_TRACKER' | 'MASTER_DATA' | 'USER_MANAGEMENT' | 'PROFIL' | 'STAFF_PERFORMANCE' | 'VOUCHERS';
+type TabType = 'JOBS_TRACKER' | 'MASTER_DATA' | 'USER_MANAGEMENT' | 'PROFIL' | 'VOUCHERS';
 
 export default function AdminDashboard() {
   const {
@@ -71,8 +70,6 @@ export default function AdminDashboard() {
   const alert = showAlert;
   const [inspectedPhoto, setInspectedPhoto] = useState<string | null>(null);
   const [verifyingUser, setVerifyingUser] = useState<User | null>(null);
-  const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
-
   // Extract staff members from users and sort by rating & jobs done
   const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active');
   const sortedStaffList = useMemo(() => {
@@ -1662,18 +1659,6 @@ return (
             </span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('STAFF_PERFORMANCE')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'STAFF_PERFORMANCE'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
-              }`}
-          >
-            <span className="flex items-center gap-2">
-              <BarChart2 size={15} />
-              <span>Kinerja Staff</span>
-            </span>
-          </button>
 
           <button
             onClick={() => setActiveTab('VOUCHERS')}
@@ -2606,192 +2591,6 @@ return (
           </div>
         )}
 
-        {/* ===================== TAB KINERJA STAFF ===================== */}
-        {activeTab === 'STAFF_PERFORMANCE' && (
-          <div className="p-4 space-y-4 max-w-4xl mx-auto">
-            {/* Sub-Tabs Navigasi */}
-            <div className="flex border-b border-slate-200 mb-2 max-w-4xl mx-auto gap-2">
-              <button
-                onClick={() => setPerformanceSubTab('STATISTICS')}
-                className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                  performanceSubTab === 'STATISTICS'
-                    ? 'text-indigo-600 border-indigo-600 font-black'
-                    : 'text-slate-500 border-transparent hover:text-slate-700'
-                }`}
-              >
-                <BarChart2 size={14} />
-                <span>Statistik Kinerja (Daftar Karyawan)</span>
-              </button>
-              <button
-                onClick={() => setPerformanceSubTab('PAYROLL')}
-                className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                  performanceSubTab === 'PAYROLL'
-                    ? 'text-indigo-600 border-indigo-600 font-black'
-                    : 'text-slate-500 border-transparent hover:text-slate-700'
-                }`}
-              >
-                <DollarSign size={14} />
-                <span>Kelola Gaji Karyawan</span>
-              </button>
-            </div>
-
-            {performanceSubTab === 'STATISTICS' && (
-              <>
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600" /> Laporan Kinerja Staff</h3>
-                    <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
-                  </div>
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={performanceDate}
-                    onChange={(e) => setPerformanceDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
-                  />
-                  <span className="text-[10px] font-bold text-slate-400">S/D</span>
-                  <input
-                    type="date"
-                    value={performanceEndDate}
-                    onChange={(e) => setPerformanceEndDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5">
-              {users.filter(u => u.role === Role.STAFF && u.status === 'active').map(staff => {
-                // Filter orders for this staff
-                const staffOrders = orders.filter(o => {
-                  if (o.assignedTo !== staff.id || o.status !== OrderStatus.SELESAI) return false;
-                  const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
-                  const orderDate = getLocalDateOnly(orderDateStr);
-                  return orderDate >= performanceDate && orderDate <= performanceEndDate;
-                });
-
-                const completedCount = staffOrders.length;
-                const ratings = staffOrders.filter(o => typeof o.rating === 'number' && o.rating > 0).map(o => o.rating as number);
-                const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : '-';
-
-                // Aggregate addons used by this staff on this date
-                const addonsUsed = new Map<string, { name: string, qty: number, totalPrice: number }>();
-                staffOrders.forEach(order => {
-                  if (order.addonsUsed && Array.isArray(order.addonsUsed)) {
-                    order.addonsUsed.forEach(addon => {
-                      const existing = addonsUsed.get(addon.id || addon.name) || { name: addon.name, qty: 0, totalPrice: 0 };
-                      existing.qty += addon.quantity;
-                      existing.totalPrice += addon.price * addon.quantity;
-                      addonsUsed.set(addon.id || addon.name, existing);
-                    });
-                  }
-                });
-
-                const addonsList = Array.from(addonsUsed.values());
-                const isExpanded = expandedPerformanceStaffId === staff.id;
-
-                return (
-                  <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
-                    <div
-                      className="p-5 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100/70"
-                      onClick={() => setExpandedPerformanceStaffId(isExpanded ? null : staff.id)}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xl shadow-inner overflow-hidden border-2 border-indigo-50 shrink-0">
-                          {(staff.photoUrl || staff.photo) ? (
-                            <img src={staff.photoUrl || staff.photo} alt={staff.name} className="w-full h-full object-cover" />
-                          ) : (
-                            staff.name.charAt(0).toUpperCase()
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-black text-slate-800 text-sm">{staff.name}</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase border border-slate-200 bg-white px-2 py-0.5 rounded-full">{staff.phone || 'No HP Belum Diset'}</span>
-                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">STAFF TEKNISI</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm hidden md:block">
-                          <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pesanan Selesai</span>
-                          <span className="font-black text-2xl text-indigo-600">{completedCount}</span>
-                        </div>
-                        <div className="text-center bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-sm min-w-[120px] hidden md:block">
-                          <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rating Rata-rata</span>
-                          <span className="font-black text-2xl text-amber-500 flex items-center justify-center gap-1.5">
-                            {avgRating !== '-' && <Star size={18} className="fill-amber-500 text-amber-500" />}
-                            {avgRating}
-                          </span>
-                        </div>
-
-                        {/* Mobile view metrics */}
-                        <div className="md:hidden flex flex-col gap-1 items-end">
-                          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">Selesai: <span className="text-indigo-600 font-black">{completedCount}</span></div>
-                          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">Rating: <span className="text-amber-500 font-black">{avgRating}</span></div>
-                        </div>
-
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 md:ml-2">
-                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </div>
-                      </div>
-                    </div>
-                    {isExpanded && addonsList.length > 0 && (
-                      <div className="p-5 bg-white animate-in slide-in-from-top-2">
-                        <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500" /> Rincian Penggunaan Add-ons / Sparepart</h5>
-                        <div className="border border-slate-100 rounded-xl overflow-hidden">
-                          <table className="w-full text-xs text-left">
-                            <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-100">
-                              <tr>
-                                <th className="p-3">Nama Barang</th>
-                                <th className="p-3 text-center">Jumlah Dipakai</th>
-                                <th className="p-3 text-right">Total Penjualan Barang</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 font-medium">
-                              {addonsList.map((addon, idx) => (
-                                <tr key={idx} className="hover:bg-slate-50/50 transition">
-                                  <td className="p-3 font-bold text-slate-800">{addon.name}</td>
-                                  <td className="p-3 text-center font-black text-indigo-600">
-                                    <span className="bg-indigo-50 px-2 py-0.5 rounded-lg">{addon.qty}x</span>
-                                  </td>
-                                  <td className="p-3 text-right font-mono font-bold text-emerald-600">{formatRupiah(addon.totalPrice)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                    {isExpanded && addonsList.length === 0 && (
-                      <div className="p-5 bg-white text-center border-t border-slate-50 animate-in slide-in-from-top-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tidak ada add-ons atau sparepart yang dicatat.</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {users.filter(u => u.role === Role.STAFF && u.status === 'active').length === 0 && (
-                <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
-                    <UserIcon size={28} className="text-slate-300" />
-                  </div>
-                  <h4 className="font-black text-slate-700 uppercase mb-1">Belum ada staff/teknisi</h4>
-                  <p className="font-medium text-[11px] max-w-sm">Anda belum menambahkan akun dengan peran STAFF. Buka tab Edit Pengguna untuk mendaftarkan teknisi baru.</p>
-                </div>
-              )}
-            </div>
-              </>
-            )}
-
-            {performanceSubTab === 'PAYROLL' && (
-              <GajiDashboard activeUser={activeUser!} embedded={true} />
-            )}
-          </div>
-        )}
 
         {/* ===================== TAB: VOUCHERS ===================== */}
         {activeTab === 'VOUCHERS' && (

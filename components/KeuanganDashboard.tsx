@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import GajiDashboard from '@/components/GajiDashboard';
 import { useApp } from '@/lib/auth-context';
 import { Role } from '@/types';
 import * as api from '@/lib/api';
@@ -25,15 +26,46 @@ import {
   Sparkles,
   ClipboardList,
   MoreVertical,
-  UserIcon
+  UserIcon,
+  BarChart2,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  Star,
+  UserCheck
 } from 'lucide-react';
 
-type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'PROFIL';
+type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORMANCE' | 'PROFIL';
 
 export default function KeuanganDashboard() {
-  const { activeUser, logout, regions, showAlert, appSettings } = useApp();
+  const { activeUser, logout, regions, showAlert, appSettings, users, orders } = useApp();
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
+  const [performanceDate, setPerformanceDate] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+  });
+  const [performanceEndDate, setPerformanceEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [expandedPerformanceStaffId, setExpandedPerformanceStaffId] = useState<string | null>(null);
+
+  // Helper functions
+  const getLocalDateOnly = (dateString: string | Date | undefined) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '';
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+  };
+  const formatRupiah = (num: any) => {
+    if (!num || isNaN(num)) return 'Rp 0';
+    return 'Rp ' + Number(num).toLocaleString('id-ID');
+  };
+
+  const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active');
+
 
   // Data States
   const [addons, setAddons] = useState<any[]>([]);
@@ -379,6 +411,20 @@ export default function KeuanganDashboard() {
                 <span>Riwayat Mutasi</span>
               </span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('STAFF_PERFORMANCE')}
+              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'STAFF_PERFORMANCE'
+                ? 'text-slate-900 border-slate-900'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <UserCheck size={15} />
+                <span>Kinerja Staff</span>
+              </span>
+            </button>
+
           </div>
 
           <button
