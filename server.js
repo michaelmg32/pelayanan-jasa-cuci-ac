@@ -4080,18 +4080,20 @@ app.post('/api/claims', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     if (type === 'points') {
       const [users] = await connection.query('SELECT points_balance FROM users WHERE id = ?', [req.user.id]);
+      const [pendingClaims] = await connection.query('SELECT SUM(points_claimed) as pending FROM claims WHERE user_id = ? AND status = "pending" AND type = "points"', [req.user.id]);
+      const pending = Number(pendingClaims[0]?.pending) || 0;
       const bal = users[0]?.points_balance || 0;
-      if (bal < points_claimed) {
-        return res.status(400).json({ error: 'Points balance insufficient' });
+      if (bal - pending < points_claimed) {
+        return res.status(400).json({ error: 'Points balance insufficient (Check pending claims)' });
       }
-      await connection.query('UPDATE users SET points_balance = points_balance - ? WHERE id = ?', [points_claimed, req.user.id]);
     } else if (type === 'daily_salary') {
       const [users] = await connection.query('SELECT salary_balance FROM users WHERE id = ?', [req.user.id]);
+      const [pendingClaims] = await connection.query('SELECT SUM(amount) as pending FROM claims WHERE user_id = ? AND status = "pending" AND type = "daily_salary"', [req.user.id]);
+      const pending = Number(pendingClaims[0]?.pending) || 0;
       const bal = users[0]?.salary_balance || 0;
-      if (bal < amount) {
-        return res.status(400).json({ error: 'Salary balance insufficient' });
+      if (bal - pending < amount) {
+        return res.status(400).json({ error: 'Salary balance insufficient (Check pending claims)' });
       }
-      await connection.query('UPDATE users SET salary_balance = salary_balance - ? WHERE id = ?', [amount, req.user.id]);
     }
     await connection.query(
       'INSERT INTO claims (user_id, type, amount, points_claimed, status, notes) VALUES (?, ?, ?, ?, "pending", ?)',
@@ -4142,10 +4144,10 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
     
     if (claim.status !== 'pending') return res.status(400).json({ error: 'Claim already processed' });
     
-    if (status === 'rejected' && claim.type === 'points') {
-      await connection.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [claim.points_claimed, claim.user_id]);
-    } else if (status === 'rejected' && claim.type === 'daily_salary') {
-      await connection.query('UPDATE users SET salary_balance = salary_balance + ? WHERE id = ?', [claim.amount, claim.user_id]);
+    if (status === 'approved' && claim.type === 'points') {
+      await connection.query('UPDATE users SET points_balance = points_balance - ? WHERE id = ?', [claim.points_claimed, claim.user_id]);
+    } else if (status === 'approved' && claim.type === 'daily_salary') {
+      await connection.query('UPDATE users SET salary_balance = salary_balance - ? WHERE id = ?', [claim.amount, claim.user_id]);
     }
     
     await connection.query('UPDATE claims SET status = ? WHERE id = ?', [status, req.params.id]);
