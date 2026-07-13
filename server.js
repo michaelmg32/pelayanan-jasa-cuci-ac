@@ -3787,7 +3787,7 @@ app.get('/api/staff/team', verifyToken, async (req, res) => {
     }
 
     const [members] = await connection.query(`
-      SELECT u.id, u.name, u.phone, u.status, sg.member_point_reward
+      SELECT u.id, u.name, u.phone, u.status, sg.member_point_reward, u.points_balance
       FROM users u
       LEFT JOIN staff_grades sg ON u.grade_id = sg.id
       WHERE u.leader_id = ?
@@ -3795,7 +3795,7 @@ app.get('/api/staff/team', verifyToken, async (req, res) => {
 
     for (let member of members) {
       const [orders] = await connection.query(`
-        SELECT o.id, o.completedAt as completed_at, o.acDetail
+        SELECT o.id, o.completedAt as completed_at, o.acDetail, o.rating
         FROM orders o
         WHERE o.workerId = ?
           AND o.status = 'SELESAI'
@@ -3803,6 +3803,8 @@ app.get('/api/staff/team', verifyToken, async (req, res) => {
       `, [member.id, currentMonthStr]);
 
       let totalAc = 0;
+      let totalRating = 0;
+      let ratingCount = 0;
       orders.forEach(o => {
         try {
           if (o.acDetail) {
@@ -3815,13 +3817,18 @@ app.get('/api/staff/team', verifyToken, async (req, res) => {
             });
           }
         } catch (e) {}
+        if (o.rating && Number(o.rating) > 0) {
+          totalRating += Number(o.rating);
+          ratingCount++;
+        }
       });
 
       member.total_ac_serviced = totalAc;
-      member.projected_points = (Number(member.member_point_reward) || 0) * totalAc;
+      member.points_balance = member.points_balance || 0;
+      member.avg_rating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : '0.0';
     }
 
-    res.json({ success: true, team: members });
+    res.json(members);
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {

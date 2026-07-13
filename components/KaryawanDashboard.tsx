@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   Star,
+  Award,
   Loader,
   Phone,
   Mail,
@@ -1780,14 +1781,22 @@ export default function KaryawanDashboard() {
                           {member.status}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <div className="text-center border-r border-slate-200">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Bintang</span>
+                          <span className="font-bold text-sm text-amber-500 flex items-center justify-center gap-1">
+                            <Star size={12} fill="currentColor" /> {member.avg_rating || '0.0'}
+                          </span>
+                        </div>
                         <div className="text-center border-r border-slate-200">
                           <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">AC Selesai</span>
                           <span className="font-bold text-sm text-slate-800">{member.total_ac_serviced} Unit</span>
                         </div>
                         <div className="text-center">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Est. Bonus Member</span>
-                          <span className="font-bold text-sm text-blue-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(member.projected_points)}</span>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Poin</span>
+                          <span className="font-bold text-sm text-blue-600 flex items-center justify-center gap-1">
+                            <Award size={12} /> {member.points_balance || 0}
+                          </span>
                         </div>
                       </div>
                     </div>
