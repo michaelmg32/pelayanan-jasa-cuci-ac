@@ -3373,7 +3373,7 @@ app.post('/api/staff-grades', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { name, description, region_id, base_salary = 0, fixed_bonus = 0, bonus_per_order = 0 } = req.body;
-    const targetRegion = roleLower === 'admin' ? user.region_id : region_id;
+    const targetRegion = region_id || user.region_id;
     if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
 
     const gradeId = `grade-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
@@ -3514,7 +3514,7 @@ app.post('/api/salary/generate', verifyToken, async (req, res) => {
     const { period_month, region_id, commit = false } = req.body;
     if (!period_month) return res.status(400).json({ error: 'period_month diperlukan (format: YYYY-MM).' });
 
-    const targetRegion = roleLower === 'admin' ? user.region_id : region_id;
+    const targetRegion = region_id || user.region_id;
     if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
 
     // Get all STAFF in this region

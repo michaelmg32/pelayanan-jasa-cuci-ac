@@ -596,7 +596,7 @@ export default function OwnerDashboard() {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
             <a
-              href="/dashboard/admin/gaji"
+              href="/dashboard/keuangan"
               className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/15"
             >
               <DollarSign size={12} />
