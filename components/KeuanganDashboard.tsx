@@ -150,6 +150,22 @@ export default function KeuanganDashboard() {
   const totalMovingAssetValue = addons.reduce((sum, item) => sum + (Number(item.hpp) || 0) * (Number(item.stock) || 0), 0);
   const totalFixedAssetValue = fixedAssets.reduce((sum, item) => sum + (Number(item.purchase_price) || 0), 0);
 
+  // Regional Branch Performance
+  const regionalOrders = (orders || []).filter((o: any) => 
+    !activeUser?.region_id || o.region_id === activeUser.region_id
+  );
+  const completedRegionalOrders = regionalOrders.filter((o: any) => o.status === 'SELESAI');
+  const totalRevenue = completedRegionalOrders.reduce((sum, o: any) => sum + (Number(o.finalPrice) || Number(o.totalPrice) || 0), 0);
+  const totalMargin = completedRegionalOrders.reduce((sum, o: any) => sum + (Number(o.margin) || 0), 0);
+  const completionRate = regionalOrders.length > 0 
+    ? Math.round((completedRegionalOrders.length / regionalOrders.length) * 100) 
+    : 0;
+  
+  const ratedOrders = completedRegionalOrders.filter((o: any) => typeof o.rating === 'number' && o.rating > 0);
+  const avgRating = ratedOrders.length > 0 
+    ? (ratedOrders.reduce((sum, o: any) => sum + o.rating, 0) / ratedOrders.length).toFixed(1) 
+    : '0';
+
   // Fixed Asset CRUD handlers
   const handleSaveFixedAsset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -549,6 +565,32 @@ export default function KeuanganDashboard() {
                         {addons.length} <span className="text-xs font-bold text-white/70 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-white/70 uppercase">Unit</span>
                       </h2>
                       <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}.</p>
+                    </div>
+                  </div>
+
+                  {/* Branch Performance Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pendapatan Cabang</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalRevenue.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Akumulasi omset lunas dari order Cabang {userRegionName}.</p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-violet-500 to-indigo-650 p-6 rounded-3xl border border-violet-400/30 shadow-lg shadow-violet-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Laba Bersih Cabang (Estimasi)</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMargin.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Selisih pendapatan dikurangi modal & komisi wilayah.</p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-3xl border border-amber-400/30 shadow-lg shadow-amber-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Kinerja & Kepuasan Layanan</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">
+                        {completionRate}% <span className="text-xs font-bold text-white/70 uppercase">Selesai</span> / {avgRating} ★
+                      </h2>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan penyelesaian tugas & rating Cabang {userRegionName}.</p>
                     </div>
                   </div>
 
