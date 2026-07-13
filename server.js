@@ -2139,13 +2139,6 @@ app.put('/api/orders/:id', async (req, res) => {
         try {
           const workerIds = [];
           if (order.workerId) workerIds.push(order.workerId);
-          
-          const [assignments] = await connection.query('SELECT user_id FROM order_assignments WHERE order_id = ?', [id]);
-          assignments.forEach(a => {
-            if (a.user_id && !workerIds.includes(a.user_id)) {
-              workerIds.push(a.user_id);
-            }
-          });
 
           for (const wId of workerIds) {
             const [users] = await connection.query(`
@@ -2177,12 +2170,11 @@ app.put('/api/orders/:id', async (req, res) => {
               const [completedToday] = await connection.query(`
                 SELECT COUNT(*) as cnt 
                 FROM orders o
-                LEFT JOIN order_assignments oa ON o.id = oa.order_id
-                WHERE (o.workerId = ? OR oa.user_id = ?) 
+                WHERE o.workerId = ? 
                   AND o.status = 'SELESAI' 
                   AND DATE(o.completedAt) = CURDATE() 
                   AND o.id != ?
-              `, [wId, wId, order.id]);
+              `, [wId, order.id]);
 
               if (completedToday[0].cnt === 0) {
                 const dailyBase = user.is_leader ? (Number(user.leader_daily_base_salary) || 0) : (Number(user.member_daily_base_salary) || 0);
@@ -3952,10 +3944,10 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
     const [orders] = await connection.query(`
       SELECT o.id, o.completedAt as completed_at, o.acDetail
       FROM orders o
-      WHERE (o.workerId = ? OR o.id IN (SELECT order_id FROM order_assignments WHERE user_id = ?))
+      WHERE o.workerId = ?
         AND o.status = 'SELESAI'
         AND DATE_FORMAT(o.completedAt, '%Y-%m') = ?
-    `, [userId, userId, currentMonthStr]);
+    `, [userId, currentMonthStr]);
 
     let totalAc = 0;
     const workedDaysSet = new Set();
@@ -4045,10 +4037,10 @@ app.get('/api/staff/team', verifyToken, async (req, res) => {
       const [orders] = await connection.query(`
         SELECT o.id, o.completedAt as completed_at, o.acDetail
         FROM orders o
-        WHERE (o.workerId = ? OR o.id IN (SELECT order_id FROM order_assignments WHERE user_id = ?))
+        WHERE o.workerId = ?
           AND o.status = 'SELESAI'
           AND DATE_FORMAT(o.completedAt, '%Y-%m') = ?
-      `, [member.id, member.id, currentMonthStr]);
+      `, [member.id, currentMonthStr]);
 
       let totalAc = 0;
       orders.forEach(o => {
