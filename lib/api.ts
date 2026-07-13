@@ -865,15 +865,6 @@ export const fetchStaffGrades = async () => {
 };
 
 export const createStaffGrade = async (data: {
-  name: string; description?: string; region_id?: string;
-  base_salary?: number; fixed_bonus?: number; bonus_per_order?: number;
-}) => {
-  const response = await fetch(`${API_BASE_URL}/staff-grades`, {
-    method: 'POST', headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
   name: string;
   description: string;
   region_id?: string;
