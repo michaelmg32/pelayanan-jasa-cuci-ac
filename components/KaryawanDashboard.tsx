@@ -59,8 +59,8 @@ export default function KaryawanDashboard() {
     if (activeUser) fetchInfo();
   }, [activeUser]);
 
-  const handleClaim = async (type: 'salary' | 'points', amount: number) => {
-    if (!window.confirm(`Ajukan klaim ${type === 'salary' ? 'Gaji & Uang Jalan' : 'Poin'}?`)) return;
+  const handleClaim = async (type: 'daily_salary' | 'points', amount: number) => {
+    if (!window.confirm(`Ajukan klaim ${type === 'daily_salary' ? 'Gaji & Uang Jalan' : 'Poin'}?`)) return;
     try {
       const res = await fetch('/api/claims', {
         method: 'POST',
