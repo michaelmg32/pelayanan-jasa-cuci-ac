@@ -3490,6 +3490,19 @@ app.put('/api/users/:id/grade', verifyToken, async (req, res) => {
     const roleLower = user.role?.toLowerCase();
     if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+
+    const { grade_id } = req.body;
+    const { id } = req.params;
+
+    await connection.query('UPDATE users SET grade_id = ? WHERE id = ?', [grade_id || null, id]);
+    res.json({ success: true, message: 'Grade berhasil diupdate untuk user ini.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
 
 // PUT assign team
 app.put('/api/staff/assign-team', verifyToken, async (req, res) => {
@@ -3525,45 +3538,6 @@ app.put('/api/staff/assign-team', verifyToken, async (req, res) => {
     res.json({ success: true, message: 'Tim berhasil ditugaskan.' });
   } catch (error) {
     if (connection) await connection.rollback();
-    res.status(500).json({ error: error.message });
-  } finally {
-    if (connection) connection.release();
-  }
-});
-    }
-    
-    const { grade_id, leader_id, member_ids = [] } = req.body;
-    if (!grade_id || !leader_id) {
-      return res.status(400).json({ error: 'grade_id dan leader_id diperlukan.' });
-    }
-
-    await connection.beginTransaction();
-    
-    // Set leader
-    await connection.query('UPDATE users SET grade_id = ?, is_leader = 1, leader_id = NULL WHERE id = ?', [grade_id, leader_id]);
-    
-    // Unassign old members of this leader to avoid stale data if we want strict sync
-    await connection.query('UPDATE users SET leader_id = NULL WHERE leader_id = ?', [leader_id]);
-    
-    if (member_ids.length > 0) {
-      const placeholders = member_ids.map(() => '?').join(',');
-      await connection.query(`UPDATE users SET grade_id = ?, is_leader = 0, leader_id = ? WHERE id IN (${placeholders})`, [grade_id, leader_id, ...member_ids]);
-    }
-    
-    await connection.commit();
-    res.json({ success: true, message: 'Tim berhasil ditugaskan.' });
-  } catch (error) {
-    if (connection) await connection.rollback();
-    res.status(500).json({ error: error.message });
-  } finally {
-    if (connection) connection.release();
-  }
-});
-    }
-    const { grade_id } = req.body;
-    await connection.query('UPDATE users SET grade_id = ? WHERE id = ?', [grade_id || null, req.params.id]);
-    res.json({ success: true, message: 'Grade karyawan berhasil diperbarui.' });
-  } catch (error) {
     res.status(500).json({ error: error.message });
   } finally {
     if (connection) connection.release();
