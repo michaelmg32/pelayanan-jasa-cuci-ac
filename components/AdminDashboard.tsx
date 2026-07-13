@@ -1986,7 +1986,7 @@ return (
                 <p className="text-[11px] text-slate-400 mt-0.5">Tambah, ubah, dan hapus konfigurasi dasar AC di sini</p>
               </div>
               <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-                {['MODELS', 'CATEGORIES', 'ADDONS', 'CUSTOMER_ACS'].map((sub) => (
+                {['MODELS', 'CATEGORIES', 'ADDONS'].map((sub) => (
                   <button
                     key={sub}
                     onClick={() => {
@@ -1996,96 +1996,11 @@ return (
                     className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${activeMasterSubTab === sub ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-850'
                       }`}
                   >
-                    {sub === 'CUSTOMER_ACS' ? 'AC PELANGGAN' : sub}
+                    {sub}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* CUSTOMER_ACS */}
-            {activeMasterSubTab === 'CUSTOMER_ACS' && (
-              <div className="space-y-4 text-left">
-                <div className="bg-slate-50 border p-3.5 rounded-xl flex flex-col md:flex-row gap-3">
-                  <div className="flex-1 relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Cari barcode ID, nama pelanggan, merek, atau model AC..."
-                      value={acSearchQuery}
-                      onChange={(e) => setAcSearchQuery(e.target.value)}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs pl-8 pr-4 py-2 rounded-xl outline-none focus:border-indigo-500 font-semibold"
-                    />
-                  </div>
-                </div>
-
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[9px] border-b border-slate-200">
-                      <tr>
-                        <th className="p-3">Barcode ID</th>
-                        <th className="p-3">Pelanggan</th>
-                        <th className="p-3">Merek / Model</th>
-                        <th className="p-3">Nama AC / Lokasi</th>
-                        <th className="p-3 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-[11.5px]">
-                      {customerACs.filter(ac => {
-                        const query = acSearchQuery.toLowerCase();
-                        return (
-                          ac.id?.toLowerCase().includes(query) ||
-                          ac.customerName?.toLowerCase().includes(query) ||
-                          ac.brand?.toLowerCase().includes(query) ||
-                          ac.modelName?.toLowerCase().includes(query) ||
-                          ac.name?.toLowerCase().includes(query)
-                        );
-                      }).length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="p-4 text-center text-slate-400 font-bold italic">Tidak ada data AC terdaftar</td>
-                        </tr>
-                      ) : (
-                        customerACs.filter(ac => {
-                          const query = acSearchQuery.toLowerCase();
-                          return (
-                            ac.id?.toLowerCase().includes(query) ||
-                            ac.customerName?.toLowerCase().includes(query) ||
-                            ac.brand?.toLowerCase().includes(query) ||
-                            ac.modelName?.toLowerCase().includes(query) ||
-                            ac.name?.toLowerCase().includes(query)
-                          );
-                        }).map(ac => (
-                          <tr key={ac.id} className="hover:bg-slate-50/50 transition">
-                            <td className="p-3 font-mono font-bold text-slate-900">{ac.id}</td>
-                            <td className="p-3 text-slate-800">
-                              <div className="font-bold">{ac.customerName}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">{ac.customerPhone}</div>
-                            </td>
-                            <td className="p-3">
-                              <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[10px] uppercase">
-                                {ac.brand || 'Umum'}
-                              </span>
-                              <div className="text-[10.5px] text-slate-500 mt-1">{ac.modelName || 'Tipe N/A'}</div>
-                            </td>
-                            <td className="p-3 text-slate-700">
-                              <div className="font-bold">{ac.name || 'AC Tanpa Nama'}</div>
-                              {ac.locationNotes && <div className="text-[9.5px] text-slate-450 italic">📍 {ac.locationNotes}</div>}
-                            </td>
-                            <td className="p-3 text-right">
-                              <button
-                                onClick={() => handleViewACHistory(ac)}
-                                className="bg-slate-900 hover:bg-slate-850 text-white font-extrabold text-[9.5px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition cursor-pointer"
-                              >
-                                Riwayat
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
             {/* MODELS */}
             {activeMasterSubTab === 'MODELS' && (
@@ -4656,36 +4571,6 @@ return (
 
                     {/* Quick Add Service Form */}
                     <div className="bg-white p-3 rounded-lg border border-slate-200 mt-4 space-y-3">
-                      {adminOrderType === 'existing' && adminCustomerACs.length > 0 && (
-                        <div>
-                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
-                            Pilih AC Terdaftar Customer
-                          </label>
-                          <select
-                            value={adminSelectedAcSource}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setAdminSelectedAcSource(val);
-                              if (val !== 'new') {
-                                const matchAc = adminCustomerACs.find(ac => ac.id === val);
-                                if (matchAc && matchAc.modelName) {
-                                  setAdminSelectedModel(matchAc.modelName);
-                                }
-                                setAdminQuantity(1); // Kunci ke 1 unit untuk AC terdaftar
-                              }
-                            }}
-                            className="w-full border-slate-200 rounded-md text-xs py-2"
-                          >
-                            <option value="new">AC Baru (Belum tempel Barcode)</option>
-                            {adminCustomerACs.map(ac => (
-                              <option key={ac.id} value={ac.id}>
-                                {ac.name || 'AC'} — {ac.brand || 'Umum'} [ID: {ac.id}]
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Merek AC</label>
@@ -4724,13 +4609,7 @@ return (
                       <div className="flex justify-between items-end gap-3 mt-2">
                         <div className="w-24">
                           <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Jumlah</label>
-                          {adminSelectedAcSource !== 'new' ? (
-                            <div className="w-full bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-2.5 rounded-md font-bold text-center">
-                              1
-                            </div>
-                          ) : (
-                            <input type="number" min="1" value={adminQuantity} onChange={e => setAdminQuantity(parseInt(e.target.value))} className="w-full border-slate-200 rounded-md text-xs py-2" />
-                          )}
+                          <input type="number" min="1" value={adminQuantity} onChange={e => setAdminQuantity(parseInt(e.target.value))} className="w-full border-slate-200 rounded-md text-xs py-2" />
                         </div>
                         <button 
                           onClick={() => {

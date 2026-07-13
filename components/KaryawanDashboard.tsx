@@ -116,145 +116,9 @@ export default function KaryawanDashboard() {
     isRegistered?: boolean;
   }}>({});
 
-  const [activeScanUnitKey, setActiveScanUnitKey] = useState<string | null>(null);
-  const [activeScanTask, setActiveScanTask] = useState<any | null>(null);
 
-  const linkBarcodeToOrderUnit = async (task: any, unitKey: string, barcode: string, acName: string) => {
-    const updatedDetails = Array.isArray(task.acDetail) ? JSON.parse(JSON.stringify(task.acDetail)) : [task.acDetail];
-    const [detailIdxStr, unitIdxStr] = unitKey.split('-');
-    const dIdx = parseInt(detailIdxStr);
 
-    if (updatedDetails[dIdx]) {
-      const targetItem = updatedDetails[dIdx];
-      const qty = targetItem.quantity || 1;
 
-      if (qty > 1) {
-        // Split this service item into two:
-        // 1. One registered unit (quantity = 1, linked to the barcode)
-        const registeredUnit = {
-          ...targetItem,
-          quantity: 1,
-          acId: barcode,
-          acName: acName
-        };
-
-        // 2. The remaining units (quantity = qty - 1, keeping other details but having no acId yet)
-        const remainingUnit = {
-          ...targetItem,
-          quantity: qty - 1
-        };
-
-        // Replace the single multi-qty item at dIdx with the two split items
-        updatedDetails.splice(dIdx, 1, registeredUnit, remainingUnit);
-      } else {
-        // Quantity is 1, link directly
-        updatedDetails[dIdx] = {
-          ...targetItem,
-          acId: barcode,
-          acName: acName
-        };
-      }
-
-      // Save to database
-      await api.updateOrder(task.id, {
-        acDetail: updatedDetails
-      });
-      
-      // Update local state
-      setOrders(prev => prev.map(o => o.id === task.id ? { ...o, acDetail: updatedDetails } : o));
-    }
-  };
-
-  const handleLookupBarcode = async (unitKey: string, barcodeId: string | undefined, task: any) => {
-    if (!barcodeId?.trim() || !task) return;
-    try {
-      setIsLoading(true);
-      const ac = await api.scanCustomerAC(barcodeId.trim());
-      setIsLoading(false);
-
-      if (ac && ac.id) {
-        if (ac.customerId !== task.customerId) {
-          alert(`⚠️ Barcode "${ac.id}" terdaftar milik pelanggan lain (${ac.customerName || 'Pelanggan Lain'}). Hubungi admin jika ingin memindahkan kepemilikan.`);
-          return;
-        }
-
-        alert(`✓ AC Ditemukan!\nNama: ${ac.name || 'AC'}\nMerek: ${ac.brand || 'Umum'}\nTipe/PK: ${ac.modelName || 'Umum'}\n\nAC berhasil dihubungkan.`);
-
-        setAcHistoryInputs(prev => ({
-          ...prev,
-          [unitKey]: {
-            ...prev[unitKey],
-            customerAcId: ac.id,
-            name: ac.name,
-            brand: ac.brand,
-            isRegistered: true
-          }
-        }));
-
-        // Link barcode and update database with quantity splitting
-        await linkBarcodeToOrderUnit(task, unitKey, ac.id, ac.name || 'AC');
-      }
-    } catch (err: any) {
-      setIsLoading(false);
-      console.log('Barcode tidak terdaftar atau gagal memuat detail AC. Menyiapkan registrasi baru.');
-    }
-  };
-
-  useEffect(() => {
-    let scannerInstance: any = null;
-
-    if (activeScanUnitKey) {
-      // @ts-ignore
-      import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
-        scannerInstance = new Html5QrcodeScanner(
-          'qr-reader',
-          {
-            fps: 10,
-            qrbox: (width: number, height: number) => {
-              const minDimension = Math.min(width, height);
-              return {
-                width: Math.floor(minDimension * 0.7),
-                height: Math.floor(minDimension * 0.7)
-              };
-            },
-            aspectRatio: 1.0
-          },
-          /* verbose= */ false
-        );
-
-        scannerInstance.render(
-          (decodedText: string) => {
-            setAcHistoryInputs(prev => ({
-              ...prev,
-              [activeScanUnitKey]: { ...prev[activeScanUnitKey], customerAcId: decodedText }
-            }));
-            
-            // Auto lookup scanned barcode
-            if (activeScanTask) {
-              handleLookupBarcode(activeScanUnitKey, decodedText, activeScanTask);
-            }
-
-            if (scannerInstance) {
-              scannerInstance.clear().catch((err: any) => console.error("Scanner clear err", err));
-            }
-            setActiveScanUnitKey(null);
-            setActiveScanTask(null);
-          },
-          () => {
-            // Quiet mode error handling
-          }
-        );
-      }).catch(err => {
-        console.error('Gagal mengimpor html5-qrcode', err);
-      });
-    }
-
-    return () => {
-      if (scannerInstance) {
-        scannerInstance.clear().catch((err: any) => console.error("Scanner cleanup err", err));
-      }
-    };
-  }, [activeScanUnitKey, activeScanTask]);
 
   const getIndividualAcUnits = (task: any) => {
     const units: any[] = [];
@@ -268,8 +132,9 @@ export default function KaryawanDashboard() {
           key: `${detailIdx}-${i}`,
           serviceType: item.serviceType === 'none' ? item.category : item.serviceType,
           acType: item.acType,
-          acId: item.acId || null,
-          acName: item.acName || null,
+          photoBefore: item.photoBefore || null,
+          photoAfter: item.photoAfter || null,
+          notes: item.notes || null,
         });
       }
     });
@@ -295,57 +160,7 @@ export default function KaryawanDashboard() {
     }
   };
 
-  const handleRegisterNewAC = async (unitKey: string, task: any, prefilledModelName: string) => {
-    const input = acHistoryInputs[unitKey] || {};
-    const barcode = input.customerAcId?.trim();
-    const acName = input.name?.trim();
-    const acBrand = input.brand?.trim() || 'Umum';
-    
-    if (!barcode) {
-      alert('❌ Mohon isi / scan Barcode ID terlebih dahulu.');
-      return;
-    }
-    if (!acName) {
-      alert('❌ Mohon isi Nama Panggilan AC (misal: Kamar Utama).');
-      return;
-    }
 
-    const matchModel = models.find((m: any) => m.name === prefilledModelName);
-    const modelId = matchModel?.id || undefined;
-
-    try {
-      setIsLoading(true);
-      await api.registerCustomerAC({
-        id: barcode,
-        customerId: task.customerId,
-        brand: acBrand,
-        acModelId: modelId,
-        name: acName,
-        locationNotes: `Terdaftar via Teknisi Lapangan`
-      });
-
-      // Update local acHistoryInputs state
-      setAcHistoryInputs(prev => ({
-        ...prev,
-        [unitKey]: {
-          ...prev[unitKey],
-          isRegistered: true,
-          customerAcId: barcode,
-          name: acName,
-          brand: acBrand,
-        }
-      }));
-
-      // Link barcode and update database with quantity splitting
-      await linkBarcodeToOrderUnit(task, unitKey, barcode, acName);
-
-      alert('✅ AC baru berhasil didaftarkan dan stiker telah ditempel!');
-    } catch (err: any) {
-      alert('❌ Gagal mendaftarkan AC: ' + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Profile edit states
   const [editName, setEditName] = useState(activeUser?.name || '');
@@ -851,11 +666,34 @@ export default function KaryawanDashboard() {
 
   // Status transition: DITUGASKAN → CEK_LAYANAN
   const handleConfirmArrived = async (orderId: string) => {
+    const task = orders.find(o => o.id === orderId);
+    if (!task) return;
+
+    const flatAcDetail: any[] = [];
+    const details = Array.isArray(task.acDetail) ? task.acDetail : [task.acDetail];
+    details.forEach((item: any) => {
+      const qty = item.quantity || 1;
+      for (let i = 0; i < qty; i++) {
+        flatAcDetail.push({
+          category: item.category,
+          serviceType: item.serviceType,
+          acType: item.acType,
+          quantity: 1,
+          photoBefore: item.photoBefore || null,
+          photoAfter: item.photoAfter || null,
+          notes: item.notes || null
+        });
+      }
+    });
+
     try {
-      await api.updateOrder(orderId, { status: OrderStatus.CEK_LAYANAN });
+      const updatedOrder = await api.updateOrder(orderId, { 
+        status: OrderStatus.CEK_LAYANAN,
+        acDetail: flatAcDetail
+      });
       setOrders(prevOrders =>
         prevOrders.map(o =>
-          o.id === orderId ? { ...o, status: OrderStatus.CEK_LAYANAN } : o
+          o.id === orderId ? updatedOrder : o
         )
       );
       setPhotoBeforeUrl('');
@@ -865,34 +703,38 @@ export default function KaryawanDashboard() {
     }
   };
 
-  // Status transition: CEK_LAYANAN → PENGERJAAN
   const handleStartRepairAndWash = async (orderId: string) => {
     const task = orders.find(o => o.id === orderId);
+    if (!task) return;
     const individualUnits = getIndividualAcUnits(task);
     
-    // Validate that all ACs are registered & have photoBefore uploaded
-    for (const unit of individualUnits) {
+    // Validate that all ACs have photoBefore uploaded
+    for (let idx = 0; idx < individualUnits.length; idx++) {
+      const unit = individualUnits[idx];
       const input = acHistoryInputs[unit.key] || {};
-      const finalAcId = unit.acId || input.customerAcId;
-      if (!finalAcId) {
-        alert(`❌ Unit AC "${unit.serviceType} (${unit.acType})" belum terdaftar/ditempel stiker barcode.`);
-        return;
-      }
-      const beforePhoto = input.photoBefore;
+      const beforePhoto = input.photoBefore || unit.photoBefore;
       if (!beforePhoto) {
-        alert(`❌ Mohon upload foto kondisi awal (Before) untuk unit AC "${unit.acName || finalAcId}".`);
+        alert(`❌ Mohon upload foto kondisi awal (Before) untuk unit AC ke-${idx + 1} (${unit.serviceType}).`);
         return;
       }
     }
 
     try {
       setIsLoading(true);
-      const firstKey = individualUnits[0]?.key;
-      const firstPhoto = acHistoryInputs[firstKey]?.photoBefore || '';
+      const updatedAcDetail = (Array.isArray(task.acDetail) ? task.acDetail : [task.acDetail]).map((item: any, idx: number) => {
+        const input = acHistoryInputs[`${idx}-0`] || {};
+        return {
+          ...item,
+          photoBefore: input.photoBefore || item.photoBefore
+        };
+      });
+
+      const firstPhoto = updatedAcDetail[0]?.photoBefore || '';
 
       const updatedOrder = await api.updateOrder(orderId, {
         status: OrderStatus.PENGERJAAN,
-        photoBefore: firstPhoto
+        photoBefore: firstPhoto,
+        acDetail: updatedAcDetail
       });
       setOrders(prevOrders =>
         prevOrders.map(o =>
@@ -906,20 +748,23 @@ export default function KaryawanDashboard() {
     }
   };
 
-  // Status transition: PENGERJAAN → PAYMENT
   const handleSendBillToCustomer = async (orderId: string) => {
     const task = orders.find(o => o.id === orderId);
+    if (!task) return;
     const individualUnits = getIndividualAcUnits(task);
 
     // Validate photoAfter and notes for each AC
-    for (const unit of individualUnits) {
+    for (let idx = 0; idx < individualUnits.length; idx++) {
+      const unit = individualUnits[idx];
       const input = acHistoryInputs[unit.key] || {};
-      if (!input.photoAfter) {
-        alert(`❌ Mohon upload foto kondisi sesudah (After) untuk AC "${unit.acName || unit.acId || input.customerAcId}".`);
+      const afterPhoto = input.photoAfter || unit.photoAfter;
+      const notes = input.notes || unit.notes;
+      if (!afterPhoto) {
+        alert(`❌ Mohon upload foto kondisi sesudah (After) untuk unit AC ke-${idx + 1} (${unit.serviceType}).`);
         return;
       }
-      if (!input.notes?.trim()) {
-        alert(`❌ Mohon tulis catatan kondisi penyelesaian untuk AC "${unit.acName || unit.acId || input.customerAcId}".`);
+      if (!notes?.trim()) {
+        alert(`❌ Mohon tulis catatan kondisi penyelesaian untuk unit AC ke-${idx + 1} (${unit.serviceType}).`);
         return;
       }
     }
@@ -927,24 +772,20 @@ export default function KaryawanDashboard() {
     try {
       setIsLoading(true);
       const addonsCost = addonsUsed.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
-      const serviceCost = task?.serviceCost || 0;
+      const serviceCost = task.serviceCost || 0;
       const totalCost = serviceCost;
-      const finalPrice = Math.max(0, serviceCost + addonsCost - (task?.voucher_discount || 0));
+      const finalPrice = Math.max(0, serviceCost + addonsCost - (task.voucher_discount || 0));
 
-      // Compile AC history logs to be saved in DB
-      const acHistoryList = individualUnits.map(unit => {
-        const input = acHistoryInputs[unit.key] || {};
+      const updatedAcDetail = (Array.isArray(task.acDetail) ? task.acDetail : [task.acDetail]).map((item: any, idx: number) => {
+        const input = acHistoryInputs[`${idx}-0`] || {};
         return {
-          customerAcId: unit.acId || input.customerAcId,
-          serviceName: unit.serviceType,
-          photoBefore: input.photoBefore || '',
-          photoAfter: input.photoAfter || '',
-          notes: input.notes?.trim() || ''
+          ...item,
+          photoAfter: input.photoAfter || item.photoAfter,
+          notes: input.notes?.trim() || item.notes
         };
       });
 
-      const firstKey = individualUnits[0]?.key;
-      const firstPhotoAfter = acHistoryInputs[firstKey]?.photoAfter || '';
+      const firstPhotoAfter = updatedAcDetail[0]?.photoAfter || '';
 
       const updatedOrder = await api.updateOrder(orderId, {
         status: OrderStatus.PAYMENT,
@@ -955,7 +796,8 @@ export default function KaryawanDashboard() {
         finalPrice,
         paymentStatus: 'WAITING_APPROVAL',
         addonsUsed: addonsUsed,
-        acHistoryList: acHistoryList
+        acDetail: updatedAcDetail,
+        acHistoryList: []
       });
 
       setOrders(prevOrders =>
@@ -1413,100 +1255,30 @@ export default function KaryawanDashboard() {
                               {/* Photo BEFORE for each AC unit */}
                               <div className="space-y-4">
                                 <span className="text-[8.5px] font-black tracking-widest text-indigo-700 uppercase block">FOTO KONDISI AWAL (BEFORE) PER AC</span>
-                                {getIndividualAcUnits(task).map(unit => {
+                                {getIndividualAcUnits(task).map((unit, idx) => {
                                   const input = acHistoryInputs[unit.key] || {};
-                                  const finalAcId = unit.acId || input.customerAcId;
-                                  const isRegistered = !!unit.acId || input.isRegistered;
+                                  const beforePhoto = input.photoBefore || unit.photoBefore;
 
                                   return (
                                     <div key={unit.key} className="border border-indigo-100 bg-white p-3.5 rounded-xl space-y-3 shadow-xs">
                                       <div className="flex justify-between items-center text-[10.5px]">
-                                        <strong className="text-slate-800">{unit.serviceType}</strong>
+                                        <strong className="text-slate-800">Unit {idx + 1}: {unit.serviceType}</strong>
                                         <span className="text-[9.5px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-extrabold">
-                                          {isRegistered ? `Barcode: ${finalAcId}` : 'Belum Ada Barcode'}
+                                          {unit.acType}
                                         </span>
                                       </div>
-
-                                      {/* Barcode Registration form if AC not registered yet */}
-                                      {!isRegistered && (
-                                        <div className="bg-amber-50/50 border border-amber-250 p-2.5 rounded-lg space-y-2 text-[10.5px]">
-                                          <div className="text-[8px] font-black uppercase text-amber-700 tracking-wider">Registrasi & Tempel Barcode Baru</div>
-                                          <div className="grid grid-cols-2 gap-2">
-                                            <div className="relative flex items-center w-full">
-                                              <input
-                                                type="text"
-                                                placeholder="Scan/Isi Barcode AC"
-                                                value={input.customerAcId || ''}
-                                                onChange={e => setAcHistoryInputs(prev => ({
-                                                  ...prev,
-                                                  [unit.key]: { ...prev[unit.key], customerAcId: e.target.value }
-                                                }))}
-                                                className="w-full bg-white border border-slate-200 text-xs pl-2 pr-20 py-1.5 rounded-lg outline-none focus:border-indigo-500 transition-all"
-                                              />
-                                              <div className="absolute right-1 flex items-center gap-1">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleLookupBarcode(unit.key, input.customerAcId, task)}
-                                                  className="px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded text-[8px] font-black uppercase transition-all border border-emerald-200"
-                                                >
-                                                  Cari
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setActiveScanUnitKey(unit.key);
-                                                    setActiveScanTask(task);
-                                                  }}
-                                                  className="px-1.5 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[8px] font-black uppercase transition-all border border-indigo-200"
-                                                >
-                                                  📷 Scan
-                                                </button>
-                                              </div>
-                                            </div>
-                                            <input
-                                              type="text"
-                                              placeholder="Nama AC (Kamar Utama, dll)"
-                                              value={input.name || ''}
-                                              onChange={e => setAcHistoryInputs(prev => ({
-                                                ...prev,
-                                                [unit.key]: { ...prev[unit.key], name: e.target.value }
-                                              }))}
-                                              className="w-full bg-white border border-slate-200 text-xs px-2 py-1 rounded outline-none"
-                                            />
-                                          </div>
-                                          <div className="flex gap-2">
-                                            <input
-                                              type="text"
-                                              placeholder="Merek/Brand (LG, Daikin, dll)"
-                                              value={input.brand || ''}
-                                              onChange={e => setAcHistoryInputs(prev => ({
-                                                ...prev,
-                                                [unit.key]: { ...prev[unit.key], brand: e.target.value }
-                                              }))}
-                                              className="flex-1 bg-white border border-slate-200 text-xs px-2 py-1 rounded outline-none"
-                                            />
-                                            <button
-                                              type="button"
-                                              onClick={() => handleRegisterNewAC(unit.key, task, unit.acType)}
-                                              className="bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[9px] px-3 py-1 rounded cursor-pointer uppercase"
-                                            >
-                                              Daftar AC
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
 
                                       {/* Image selector */}
                                       <div className="flex flex-col gap-2">
                                         <label className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-1.8 rounded-xl text-[9.5px] font-black uppercase justify-center cursor-pointer h-9">
                                           <Camera size={13} />
-                                          Foto Before ({unit.acName || finalAcId || 'Pilih AC'})
+                                          Foto Before
                                           <input type="file" accept="image/*" onChange={(e) => handleAcImageUpload(e, unit.key, 'before')} className="hidden" />
                                         </label>
 
-                                        {input.photoBefore && (
+                                        {beforePhoto && (
                                           <div className="relative w-full h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
-                                            <img src={input.photoBefore} alt="Preview Before" className="w-full h-full object-contain" />
+                                            <img src={beforePhoto} alt="Preview Before" className="w-full h-full object-contain" />
                                             <button
                                               type="button"
                                               onClick={() => setAcHistoryInputs(prev => ({
@@ -2540,33 +2312,7 @@ export default function KaryawanDashboard() {
         </div>
       )}
 
-      {/* MODAL SCANNER QR */}
-      {activeScanUnitKey && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
-            <div className="p-5 border-b border-slate-850 flex justify-between items-center bg-slate-900">
-              <div className="text-left">
-                <h3 className="font-black text-xs text-white uppercase tracking-wider">Pindai QR Code AC</h3>
-                <p className="text-[10px] text-slate-500 font-medium mt-0.5">Arahkan kamera ke stiker QR di bodi AC</p>
-              </div>
-              <button 
-                onClick={() => setActiveScanUnitKey(null)}
-                className="text-slate-400 hover:text-white text-[10px] font-bold bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition"
-              >
-                Batal
-              </button>
-            </div>
-            <div className="p-5 flex flex-col items-center justify-center bg-slate-950/50">
-              <div className="w-full aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-black relative">
-                <div id="qr-reader" className="w-full h-full" />
-              </div>
-              <div className="text-[10px] font-bold text-indigo-400 mt-4 text-center animate-pulse">
-                Pastikan cahaya cukup & barcode di dalam area fokus
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </>
   );
 }
