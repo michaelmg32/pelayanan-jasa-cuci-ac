@@ -2645,6 +2645,55 @@ app.post('/api/addons/purchase', verifyToken, async (req, res) => {
   }
 });
 
+app.post('/api/addons/adjust', verifyToken, async (req, res) => {
+  const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
+
+  const { adjustments } = req.body;
+  if (!adjustments || !Array.isArray(adjustments)) {
+    return res.status(400).json({ error: 'adjustments array is required.' });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    for (const adj of adjustments) {
+      const { addonId, systemStock, physicalStock, notes } = adj;
+      const [existing] = await connection.query('SELECT * FROM ac_addons WHERE id = ?', [addonId]);
+      if (existing.length === 0) {
+        continue;
+      }
+      
+      const diff = Number(physicalStock) - Number(systemStock);
+      if (diff === 0) continue;
+
+      const type = diff > 0 ? 'masuk' : 'keluar';
+      const qty = Math.abs(diff);
+      const hpp = Number(existing[0].hpp) || 0;
+
+      await connection.query(
+        "INSERT INTO ac_addon_transactions (addonId, type, qty, price, notes) VALUES (?, ?, ?, ?, ?)",
+        [addonId, type, qty, hpp, notes || `Penyesuaian Stok (${diff > 0 ? 'Kelebihan' : 'Kekurangan'} Fisik)`]
+      );
+    }
+
+    await connection.commit();
+    await logActivity(req, 'Penyesuaian Stok Addon', `Melakukan penyesuaian stok untuk ${adjustments.length} item.`);
+
+    res.json({ success: true });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error('Error recording stock adjustments:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 app.get('/api/addons/transactions', verifyToken, async (req, res) => {
   const userRole = req.user.role ? req.user.role.toUpperCase() : '';
   if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'KEUANGAN') {

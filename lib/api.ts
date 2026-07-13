@@ -535,6 +535,24 @@ export const purchaseAddon = async (addonId: string, purchaseData: { qty: number
   }
 };
 
+export const adjustAddons = async (adjustments: { addonId: string; systemStock: number; physicalStock: number; notes?: string }[]) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/addons/adjust`, {
+      method: 'POST',
+      headers: getAuthHeaders(), cache: 'no-store',
+      body: JSON.stringify({ adjustments }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to adjust stock');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error adjusting stock:', error);
+    throw error;
+  }
+};
+
 // ===== FIXED ASSETS =====
 export const fetchFixedAssets = async (region_id?: string) => {
   try {

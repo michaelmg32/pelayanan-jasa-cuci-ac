@@ -32,13 +32,16 @@ import {
   ChevronUp,
   CheckCircle2,
   Star,
-  UserCheck
+  UserCheck,
+  Phone,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 
 type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORMANCE' | 'PROFIL';
 
 export default function KeuanganDashboard() {
-  const { activeUser, logout, regions, showAlert, appSettings, users, orders } = useApp();
+  const { activeUser, logout, regions, showAlert, appSettings, users, orders, setActiveUser } = useApp();
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -76,6 +79,129 @@ export default function KeuanganDashboard() {
   // Asset region info
   const userRegionName = regions.find(r => r.id === activeUser?.region_id)?.name || 'Seluruh Wilayah';
 
+  // Profile Form States
+  const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
+  const [editProfileName, setEditProfileName] = useState(activeUser?.name || '');
+  const [editProfilePhone, setEditProfilePhone] = useState(activeUser?.phone || '');
+  const [editProfileAddress, setEditProfileAddress] = useState(activeUser?.address || '');
+  const [editProfilePhoto, setEditProfilePhoto] = useState(activeUser?.photo || '');
+  const [editOldPassword, setEditOldPassword] = useState('');
+  const [editNewPassword, setEditNewPassword] = useState('');
+  const [editConfirmPassword, setEditConfirmPassword] = useState('');
+  const [profileErrorMsg, setProfileErrorMsg] = useState('');
+  const [saveProfileSuccess, setSaveProfileSuccess] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Synchronize state when activeUser changes
+  useEffect(() => {
+    if (activeUser) {
+      setEditProfileName(activeUser.name || '');
+      setEditProfilePhone(activeUser.phone || '');
+      setEditProfileAddress(activeUser.address || '');
+      setEditProfilePhoto(activeUser.photo || '');
+    }
+  }, [activeUser]);
+
+  // Client-side image compression
+  const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 600, 600, 0.75);
+        setEditProfilePhoto(compressedBase64);
+      } catch (err) {
+        console.error('Error compressing profile image:', err);
+        showAlert('❌ Gagal memproses foto profil. Silakan coba lagi.');
+      }
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editProfileName.trim()) {
+      setProfileErrorMsg('Nama tidak boleh kosong');
+      return;
+    }
+    try {
+      setIsUpdatingProfile(true);
+      setProfileErrorMsg('');
+      const updatedUser = await api.updateUser(activeUser!.id, {
+        name: editProfileName.trim(),
+        email: activeUser!.email,
+        phone: editProfilePhone.trim(),
+        role: activeUser!.role,
+        address: editProfileAddress.trim(),
+        photo: editProfilePhoto,
+      });
+      setActiveUser(updatedUser);
+      setEditProfilePhoto(updatedUser.photo || '');
+      setSaveProfileSuccess(true);
+      setProfileViewMode('readonly');
+      setTimeout(() => setSaveProfileSuccess(false), 2500);
+    } catch (error: any) {
+      setProfileErrorMsg(error?.message || 'Gagal memperbarui profil');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editNewPassword !== editConfirmPassword) {
+      setProfileErrorMsg('Konfirmasi password baru tidak cocok');
+      return;
+    }
+    try {
+      setIsUpdatingProfile(true);
+      setProfileErrorMsg('');
+      await api.updatePassword(activeUser!.id, { oldPassword: editOldPassword, newPassword: editNewPassword });
+      setSaveProfileSuccess(true);
+      setProfileViewMode('readonly');
+      setEditOldPassword('');
+      setEditNewPassword('');
+      setEditConfirmPassword('');
+      setTimeout(() => setSaveProfileSuccess(false), 2500);
+    } catch (error: any) {
+      setProfileErrorMsg(error?.message || 'Gagal mengubah password. Pastikan password lama benar.');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
   // Modal / Form States
   const [showAddAssetModal, setShowAddAssetModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any | null>(null);
@@ -92,7 +218,59 @@ export default function KeuanganDashboard() {
   const [addonHpp, setAddonHpp] = useState(0);
   const [addonDescription, setAddonDescription] = useState('');
 
+  // Stock Adjustment States
+  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
+  const [adjustmentCounts, setAdjustmentCounts] = useState<{ [addonId: string]: string }>({});
+  const [adjustmentNotes, setAdjustmentNotes] = useState<{ [addonId: string]: string }>({});
+  const [isPostingAdjustment, setIsPostingAdjustment] = useState(false);
+
+  const handleOpenAdjustmentModal = () => {
+    const initialCounts: { [addonId: string]: string } = {};
+    const initialNotes: { [addonId: string]: string } = {};
+    addons.forEach(a => {
+      initialCounts[a.id] = String(a.stock || 0);
+      initialNotes[a.id] = '';
+    });
+    setAdjustmentCounts(initialCounts);
+    setAdjustmentNotes(initialNotes);
+    setShowAdjustmentModal(true);
+  };
+
+  const handlePostAdjustment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const adjustmentsList = addons.map(a => {
+      const physicalStock = Number(adjustmentCounts[a.id]);
+      const systemStock = Number(a.stock || 0);
+      const notes = adjustmentNotes[a.id]?.trim() || '';
+      return {
+        addonId: a.id,
+        systemStock,
+        physicalStock,
+        notes: notes || `Penyesuaian Stok (${physicalStock - systemStock > 0 ? 'Kelebihan' : 'Kekurangan'} Fisik)`
+      };
+    }).filter(adj => adj.physicalStock !== adj.systemStock);
+
+    if (adjustmentsList.length === 0) {
+      showAlert('Tidak ada selisih stok yang diinputkan.');
+      return;
+    }
+
+    try {
+      setIsPostingAdjustment(true);
+      await api.adjustAddons(adjustmentsList);
+      showAlert(`✅ Berhasil memposting penyesuaian stok untuk ${adjustmentsList.length} barang.`);
+      setShowAdjustmentModal(false);
+      loadDashboardData();
+    } catch (err: any) {
+      console.error('Error posting adjustments:', err);
+      showAlert(`❌ Gagal memposting penyesuaian stok: ${err.message}`);
+    } finally {
+      setIsPostingAdjustment(false);
+    }
+  };
+
   // Stock-in / Purchase Modal
+  const [activeDetailModal, setActiveDetailModal] = useState<'BERGERAK' | 'TETAP' | 'PENDAPATAN' | 'LABA' | 'KINERJA' | null>(null);
   const [purchaseModalAddon, setPurchaseModalAddon] = useState<any | null>(null);
   const [purchaseQty, setPurchaseQty] = useState(1);
   const [purchasePrice, setPurchasePrice] = useState(0);
@@ -155,7 +333,7 @@ export default function KeuanganDashboard() {
     !activeUser?.region_id || o.region_id === activeUser.region_id
   );
   const completedRegionalOrders = regionalOrders.filter((o: any) => o.status === 'SELESAI');
-  const totalRevenue = completedRegionalOrders.reduce((sum, o: any) => sum + (Number(o.finalPrice) || Number(o.totalPrice) || 0), 0);
+  const totalRevenue = completedRegionalOrders.reduce((sum, o: any) => sum + (Number(o.finalPrice) || Number(o.totalCost) || 0), 0);
   const totalMargin = completedRegionalOrders.reduce((sum, o: any) => sum + (Number(o.margin) || 0), 0);
   const completionRate = regionalOrders.length > 0 
     ? Math.round((completedRegionalOrders.length / regionalOrders.length) * 100) 
@@ -547,50 +725,71 @@ export default function KeuanganDashboard() {
 
                   {/* Financial Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300"><div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                    <div 
+                      onClick={() => setActiveDetailModal('BERGERAK')}
+                      className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
+                    >
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang. <span className="underline opacity-90 block mt-1">Klik untuk detail →</span></p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl border border-emerald-400/30 shadow-lg shadow-emerald-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300"><div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                    <div 
+                      onClick={() => setActiveDetailModal('TETAP')}
+                      className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl border border-emerald-400/30 shadow-lg shadow-emerald-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
+                    >
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik. <span className="underline opacity-90 block mt-1">Klik untuk detail →</span></p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300"><div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+                    <div 
+                      onClick={() => setActiveDetailModal('BERGERAK')}
+                      className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
+                    >
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Jumlah Jenis Inventaris / Aset Tetap</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">
                         {addons.length} <span className="text-xs font-bold text-white/70 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-white/70 uppercase">Unit</span>
                       </h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk detail →</span></p>
                     </div>
                   </div>
 
                   {/* Branch Performance Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                    <div 
+                      onClick={() => setActiveDetailModal('PENDAPATAN')}
+                      className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
+                    >
                       <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pendapatan Cabang</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalRevenue.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Akumulasi omset lunas dari order Cabang {userRegionName}.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Akumulasi omset lunas dari order Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk rincian order →</span></p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-violet-500 to-indigo-650 p-6 rounded-3xl border border-violet-400/30 shadow-lg shadow-violet-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                    <div 
+                      onClick={() => setActiveDetailModal('LABA')}
+                      className="bg-gradient-to-br from-violet-500 to-indigo-650 p-6 rounded-3xl border border-violet-400/30 shadow-lg shadow-violet-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
+                    >
                       <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Laba Bersih Cabang (Estimasi)</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMargin.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Selisih pendapatan dikurangi modal & komisi wilayah.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Selisih pendapatan dikurangi modal & komisi wilayah. <span className="underline opacity-90 block mt-1">Klik untuk rincian laba →</span></p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-3xl border border-amber-400/30 shadow-lg shadow-amber-200/50 relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                    <div 
+                      onClick={() => setActiveDetailModal('KINERJA')}
+                      className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-3xl border border-amber-400/30 shadow-lg shadow-amber-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
+                    >
                       <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Kinerja & Kepuasan Layanan</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">
                         {completionRate}% <span className="text-xs font-bold text-white/70 uppercase">Selesai</span> / {avgRating} ★
                       </h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan penyelesaian tugas & rating Cabang {userRegionName}.</p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan penyelesaian tugas & rating Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk ulasan & rating staff →</span></p>
                     </div>
                   </div>
 
@@ -655,12 +854,20 @@ export default function KeuanganDashboard() {
                       <h2 className="text-lg font-black text-slate-800">Inventaris Aset Bergerak (Add-ons)</h2>
                       <p className="text-xs text-slate-500 mt-1 font-medium">Kelola stok sparepart, freon, dan material pelengkap jasa AC wilayah Anda.</p>
                     </div>
-                    <button
-                      onClick={() => { resetAddonForm(); setEditingAddon(null); setShowAddAddonModal(true); }}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-[0.98]"
-                    >
-                      <Plus size={14} /> Daftar Add-on Baru
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleOpenAdjustmentModal}
+                        className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-[0.98] cursor-pointer"
+                      >
+                        <Sparkles size={14} /> Penyesuaian Stok
+                      </button>
+                      <button
+                        onClick={() => { resetAddonForm(); setEditingAddon(null); setShowAddAddonModal(true); }}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-[0.98] cursor-pointer"
+                      >
+                        <Plus size={14} /> Daftar Add-on Baru
+                      </button>
+                    </div>
                   </div>
 
                   {/* Addon Inventory Table */}
@@ -1054,6 +1261,243 @@ export default function KeuanganDashboard() {
                   )}
                 </div>
               )}
+
+              {/* ================= TAB: PROFIL ================= */}
+              {activeTab === 'PROFIL' && (
+                <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 max-w-2xl mx-auto shadow-xl shadow-slate-200/50 animate-fade-in text-left">
+                  <div className="flex justify-between items-center px-1 border-b pb-3 border-slate-100">
+                    <div>
+                      <h3 className="font-extrabold text-sm uppercase text-slate-800">Profil Keuangan</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Informasi akun dan akses cabang Anda</p>
+                    </div>
+                    <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[8.5px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">
+                      KEUANGAN ({userRegionName})
+                    </span>
+                  </div>
+
+                  {saveProfileSuccess && (
+                    <div className="bg-emerald-100 border border-emerald-200 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold flex items-center gap-2">
+                      <Check size={14} /> Profil/Password berhasil diperbarui!
+                    </div>
+                  )}
+
+                  {profileErrorMsg && (
+                    <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-xl text-[11px] text-rose-700 font-semibold flex items-center gap-2">
+                      <X size={14} /> {profileErrorMsg}
+                    </div>
+                  )}
+
+                  {profileViewMode === 'readonly' && (
+                    <div className="space-y-5">
+                      <div className="flex flex-col items-center justify-center pb-4 border-b border-slate-150">
+                        <div className="w-20 h-20 bg-indigo-100 text-indigo-700 font-black text-lg flex items-center justify-center rounded-2xl shadow-sm border overflow-hidden">
+                          {activeUser?.photo ? (
+                            <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
+                          ) : (
+                            activeUser?.name?.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <h4 className="font-extrabold text-sm text-slate-850 mt-2">{activeUser?.name}</h4>
+                        <p className="text-[10px] text-slate-400 font-medium">{activeUser?.email}</p>
+                      </div>
+
+                      <div className="space-y-3.5">
+                        <div className="flex items-center justify-between border-b pb-3 border-slate-50">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nama Lengkap</p>
+                            <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser?.name}</p>
+                          </div>
+                          <UserIcon size={16} className="text-slate-350" />
+                        </div>
+
+                        <div className="flex items-center justify-between border-b pb-3 border-slate-50">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">No. Handphone</p>
+                            <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser?.phone || <span className="italic text-slate-400">Belum diatur</span>}</p>
+                          </div>
+                          <Phone size={16} className="text-slate-350" />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat Rumah</p>
+                            <p className="text-xs font-bold text-slate-800 mt-0.5">{activeUser?.address || <span className="italic text-slate-400">Belum diatur</span>}</p>
+                          </div>
+                          <MapPin size={16} className="text-slate-350" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-3">
+                        <button
+                          onClick={() => { setProfileErrorMsg(''); setProfileViewMode('edit-profile'); }}
+                          className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer text-center"
+                        >
+                          Edit Profil
+                        </button>
+                        <button
+                          onClick={() => { setProfileErrorMsg(''); setProfileViewMode('edit-password'); }}
+                          className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] py-2.5 rounded-xl uppercase transition cursor-pointer text-center"
+                        >
+                          Ubah Password
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {profileViewMode === 'edit-profile' && (
+                    <form onSubmit={handleSaveProfile} className="space-y-4">
+                      {/* Profile Photo Upload */}
+                      <div className="space-y-2 pb-2 border-b border-slate-100">
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block">Foto Profil</label>
+                        <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-150">
+                          <div className="w-14 h-14 bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center overflow-hidden border">
+                            {editProfilePhoto ? (
+                              <img src={editProfilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-bold">No Photo</span>
+                            )}
+                          </div>
+                          <div className="flex-grow text-left">
+                            <span className="text-[10px] text-slate-655 font-bold block mb-1">Unggah Foto Profil</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleProfilePhotoChange}
+                              className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-755 hover:file:bg-indigo-100 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Nama Lengkap</label>
+                        <input
+                          type="text"
+                          value={editProfileName}
+                          onChange={(e) => setEditProfileName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                          disabled={isUpdatingProfile}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">No. Handphone</label>
+                        <input
+                          type="text"
+                          value={editProfilePhone}
+                          onChange={(e) => setEditProfilePhone(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 disabled:opacity-50 transition"
+                          disabled={isUpdatingProfile}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Alamat Rumah</label>
+                        <textarea
+                          value={editProfileAddress}
+                          onChange={(e) => setEditProfileAddress(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl outline-none focus:border-indigo-500 h-16 resize-none disabled:opacity-50 transition"
+                          disabled={isUpdatingProfile}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setProfileViewMode('readonly')}
+                          disabled={isUpdatingProfile}
+                          className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-655 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition text-center"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isUpdatingProfile}
+                          className="w-full bg-indigo-600 hover:bg-indigo-755 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md text-center"
+                        >
+                          {isUpdatingProfile && <Loader size={12} className="animate-spin" />}
+                          {isUpdatingProfile ? 'Menyimpan...' : 'Simpan Profil'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {profileViewMode === 'edit-password' && (
+                    <form onSubmit={handleUpdatePassword} className="space-y-4">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start gap-2 mb-2">
+                        <ShieldCheck size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                        <p className="text-[9.5px] text-slate-555 font-medium leading-relaxed">
+                          Silakan masukkan password lama Anda untuk memverifikasi perubahan password baru.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Lama</label>
+                        <input
+                          type="password"
+                          value={editOldPassword}
+                          onChange={(e) => setEditOldPassword(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
+                          disabled={isUpdatingProfile}
+                          required
+                        />
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100">
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Password Baru</label>
+                        <input
+                          type="password"
+                          value={editNewPassword}
+                          onChange={(e) => setEditNewPassword(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
+                          disabled={isUpdatingProfile}
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Konfirmasi Password Baru</label>
+                        <input
+                          type="password"
+                          value={editConfirmPassword}
+                          onChange={(e) => setEditConfirmPassword(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 transition"
+                          disabled={isUpdatingProfile}
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileViewMode('readonly');
+                            setEditOldPassword('');
+                            setEditNewPassword('');
+                            setEditConfirmPassword('');
+                            setProfileErrorMsg('');
+                          }}
+                          disabled={isUpdatingProfile}
+                          className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-655 font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer transition text-center"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isUpdatingProfile}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-extrabold text-[10px] py-3 rounded-xl uppercase cursor-pointer flex items-center justify-center gap-2 transition shadow-md text-center"
+                        >
+                          {isUpdatingProfile && <Loader size={12} className="animate-spin" />}
+                          {isUpdatingProfile ? 'Menyimpan...' : 'Ubah Password'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1313,6 +1757,482 @@ export default function KeuanganDashboard() {
                   className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-[0.98]"
                 >
                   {isSubmitting ? 'Menyimpan...' : 'Catat & Update HPP'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ================= MODAL: DETAIL LAPORAN KEUANGAN & ASET ================= */}
+      {activeDetailModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <div>
+                <span className="text-[8px] bg-indigo-650 px-2.5 py-0.5 rounded font-black uppercase text-white tracking-widest">Detail Laporan Wilayah</span>
+                <h3 className="text-sm font-extrabold text-white mt-1">
+                  {activeDetailModal === 'BERGERAK' && `Aset Bergerak & Mutasi Cabang — ${userRegionName}`}
+                  {activeDetailModal === 'TETAP' && `Pembelian Aset Tetap Cabang — ${userRegionName}`}
+                  {activeDetailModal === 'PENDAPATAN' && `Rincian Pendapatan Cabang — ${userRegionName}`}
+                  {activeDetailModal === 'LABA' && `Rincian Laba Bersih & Margin Cabang — ${userRegionName}`}
+                  {activeDetailModal === 'KINERJA' && `Ulasan Pelanggan & Kinerja Staff — ${userRegionName}`}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setActiveDetailModal(null)} 
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 bg-slate-50 flex-1 text-xs">
+              {/* 1. ASET BERGERAK DETAIL */}
+              {activeDetailModal === 'BERGERAK' && (
+                <div className="space-y-5">
+                  <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Katalog Inventaris Wilayah</span>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs font-semibold text-slate-650">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                            <th className="py-2.5 px-3">Nama Barang</th>
+                            <th className="py-2.5 px-2 text-center">Stok</th>
+                            <th className="py-2.5 px-2">HPP</th>
+                            <th className="py-2.5 px-2">Harga Jual</th>
+                            <th className="py-2.5 px-3 text-right">Total Nilai HPP</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {addons.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-4 text-center text-slate-400">Tidak ada barang terdaftar.</td>
+                            </tr>
+                          ) : (
+                            addons.map(a => (
+                              <tr key={a.id} className="hover:bg-slate-50/50">
+                                <td className="py-2.5 px-3 font-bold text-slate-800">{a.name}</td>
+                                <td className="py-2.5 px-2 text-center">
+                                  <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-black ${a.stock < 20 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-600'}`}>
+                                    {a.stock || 0} unit
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2 font-mono text-slate-500">Rp {Number(a.hpp || 0).toLocaleString('id-ID')}</td>
+                                <td className="py-2.5 px-2 font-mono text-emerald-500">Rp {Number(a.price).toLocaleString('id-ID')}</td>
+                                <td className="py-2.5 px-3 text-right font-mono text-slate-800 font-extrabold">Rp {((a.stock || 0) * (a.hpp || 0)).toLocaleString('id-ID')}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-black text-slate-850">
+                      <span>TOTAL KEKAYAAN ASET BERGERAK (HPP):</span>
+                      <span className="text-sm text-indigo-600 font-mono">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+
+                  {/* Mutasi logs */}
+                  <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mutasi Stok Terakhir (Cabang)</span>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs font-semibold text-slate-650">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                            <th className="py-2.5 px-3">Waktu</th>
+                            <th className="py-2.5 px-3">Nama Barang</th>
+                            <th className="py-2.5 px-2">Jenis</th>
+                            <th className="py-2.5 px-2 text-center">Qty</th>
+                            <th className="py-2.5 px-3 text-right">Harga Unit</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {(() => {
+                            const regionalAddonIds = addons.map(a => a.id);
+                            const regTx = transactions.filter(t => regionalAddonIds.includes(t.addonId)).slice(0, 8);
+                            if (regTx.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={5} className="py-4 text-center text-slate-400">Belum ada riwayat mutasi stok.</td>
+                                </tr>
+                              );
+                            }
+                            return regTx.map(tx => (
+                              <tr key={tx.id} className="hover:bg-slate-50/50">
+                                <td className="py-2.5 px-3 text-slate-500 font-mono">{new Date(tx.createdAt).toLocaleString('id-ID')}</td>
+                                <td className="py-2.5 px-3 font-bold text-slate-800">{tx.addonName}</td>
+                                <td className="py-2.5 px-2">
+                                  <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${tx.type === 'masuk' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
+                                    {tx.type === 'masuk' ? 'Masuk' : 'Keluar'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2 text-center font-mono font-black">{tx.qty}x</td>
+                                <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-700">Rp {Number(tx.price).toLocaleString('id-ID')}</td>
+                              </tr>
+                            ));
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. ASET TETAP DETAIL */}
+              {activeDetailModal === 'TETAP' && (
+                <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Inventaris Peralatan Cabang</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-semibold text-slate-650">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                          <th className="py-2.5 px-3">Nama Alat / Aset</th>
+                          <th className="py-2.5 px-3">Tanggal Beli</th>
+                          <th className="py-2.5 px-3">Deskripsi</th>
+                          <th className="py-2.5 px-3 text-right">Harga Beli</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {fixedAssets.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-4 text-center text-slate-400">Belum ada aset tetap terdaftar.</td>
+                          </tr>
+                        ) : (
+                          fixedAssets.map(asset => (
+                            <tr key={asset.id} className="hover:bg-slate-50/50">
+                              <td className="py-2.5 px-3 font-bold text-slate-800">{asset.name}</td>
+                              <td className="py-2.5 px-3 text-slate-500">{new Date(asset.purchase_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                              <td className="py-2.5 px-3 text-slate-500 italic max-w-xs truncate">{asset.description || '-'}</td>
+                              <td className="py-2.5 px-3 text-right font-mono text-emerald-500 font-extrabold">Rp {Number(asset.purchase_price).toLocaleString('id-ID')}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-black text-slate-850">
+                    <span>TOTAL PENGELUARAN ASET TETAP:</span>
+                    <span className="text-sm text-emerald-500 font-mono">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. PENDAPATAN CABANG DETAIL */}
+              {activeDetailModal === 'PENDAPATAN' && (
+                <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rincian Order Selesai & Terbayar</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-semibold text-slate-650">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                          <th className="py-2.5 px-3">Order ID</th>
+                          <th className="py-2.5 px-3">Customer</th>
+                          <th className="py-2.5 px-2 text-center">Selesai</th>
+                          <th className="py-2.5 px-2">Jasa</th>
+                          <th className="py-2.5 px-2">Addon</th>
+                          <th className="py-2.5 px-3 text-right">Total Dibayar</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {completedRegionalOrders.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-4 text-center text-slate-400">Belum ada pendapatan terekam untuk cabang ini.</td>
+                          </tr>
+                        ) : (
+                          completedRegionalOrders.map(o => (
+                            <tr key={o.id} className="hover:bg-slate-50/50">
+                              <td className="py-2.5 px-3 font-mono text-[10px] text-slate-500">{o.id}</td>
+                              <td className="py-2.5 px-3 text-slate-800">
+                                <span className="font-bold block">{o.customerName}</span>
+                                <span className="text-[9px] text-slate-450">{o.customerPhone}</span>
+                              </td>
+                              <td className="py-2.5 px-2 text-center text-slate-500 font-mono">{o.completedAt ? new Date(o.completedAt).toLocaleDateString('id-ID') : new Date(o.scheduledDate).toLocaleDateString('id-ID')}</td>
+                              <td className="py-2.5 px-2 font-mono text-slate-500">Rp {Number(o.serviceCost || 0).toLocaleString('id-ID')}</td>
+                              <td className="py-2.5 px-2 font-mono text-slate-500">Rp {Number(o.addonsCost || 0).toLocaleString('id-ID')}</td>
+                              <td className="py-2.5 px-3 text-right font-mono text-rose-500 font-extrabold">Rp {Number(o.finalPrice || o.totalCost || 0).toLocaleString('id-ID')}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-black text-slate-850">
+                    <span>TOTAL PENDAPATAN BRUTO CABANG:</span>
+                    <span className="text-sm text-rose-500 font-mono">Rp {totalRevenue.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. LABA BERSIH CABANG DETAIL */}
+              {activeDetailModal === 'LABA' && (
+                <div className="space-y-4">
+                  <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Analisa Laba Rugi Cabang (Pekerjaan Selesai)</span>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs font-semibold text-slate-650">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                            <th className="py-2.5 px-3">Order ID & Customer</th>
+                            <th className="py-2.5 px-3 text-right">Pendapatan</th>
+                            <th className="py-2.5 px-3 text-right">HPP (Modal Jasa/Stok)</th>
+                            <th className="py-2.5 px-3 text-right">Laba Bersih (Margin)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {completedRegionalOrders.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="py-4 text-center text-slate-400">Belum ada data laba rugi.</td>
+                            </tr>
+                          ) : (
+                            completedRegionalOrders.map(o => {
+                              const rev = Number(o.finalPrice || o.totalCost || 0);
+                              const marg = Number(o.margin || 0);
+                              const hppVal = Math.max(0, rev - marg);
+                              return (
+                                <tr key={o.id} className="hover:bg-slate-50/50">
+                                  <td className="py-2.5 px-3 text-slate-850">
+                                    <span className="font-mono text-[9.5px] text-slate-450 block">{o.id}</span>
+                                    <span className="font-bold">{o.customerName}</span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-mono text-slate-800">Rp {rev.toLocaleString('id-ID')}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono text-slate-500">Rp {hppVal.toLocaleString('id-ID')}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono text-emerald-500 font-extrabold">Rp {marg.toLocaleString('id-ID')}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Financial calculation metrics breakdown */}
+                  <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100 p-4 rounded-2xl space-y-3">
+                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest block">Simulasi Laba Bersih Wilayah</span>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-white p-3 rounded-xl border border-indigo-100/70 shadow-xs">
+                        <span className="text-[8.5px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Total Omset</span>
+                        <span className="text-xs font-black text-slate-800 font-mono">Rp {totalRevenue.toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-indigo-100/70 shadow-xs">
+                        <span className="text-[8.5px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Estimasi HPP & Komisi</span>
+                        <span className="text-xs font-black text-slate-500 font-mono">Rp {(totalRevenue - totalMargin).toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-indigo-100/70 shadow-xs">
+                        <span className="text-[8.5px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Estimasi Laba Bersih</span>
+                        <span className="text-xs font-black text-emerald-500 font-mono">Rp {totalMargin.toLocaleString('id-ID')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. KINERJA STAFF & ULASAN DETAIL */}
+              {activeDetailModal === 'KINERJA' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                  
+                  {/* Leaderboard staff */}
+                  <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Peringkat & Kinerja Staff (Teknisi)</span>
+                    <div className="space-y-2">
+                      {(() => {
+                        const staffStats: { [name: string]: { completed: number, ratings: number[], sumRating: number } } = {};
+                        completedRegionalOrders.forEach(o => {
+                          const name = o.assignedEmployeeName || 'Belum Ditugaskan';
+                          if (!staffStats[name]) {
+                            staffStats[name] = { completed: 0, ratings: [], sumRating: 0 };
+                          }
+                          staffStats[name].completed += 1;
+                          if (typeof o.rating === 'number' && o.rating > 0) {
+                            staffStats[name].ratings.push(o.rating);
+                            staffStats[name].sumRating += o.rating;
+                          }
+                        });
+
+                        const staffList = Object.keys(staffStats).map(name => {
+                          const s = staffStats[name];
+                          const avg = s.ratings.length > 0 ? (s.sumRating / s.ratings.length).toFixed(1) : 'N/A';
+                          return { name, completed: s.completed, avgRating: avg };
+                        }).sort((a, b) => b.completed - a.completed);
+
+                        if (staffList.length === 0) {
+                          return <p className="text-center text-slate-400 py-4">Belum ada tugas selesai oleh staff.</p>;
+                        }
+
+                        return staffList.map((st, idx) => (
+                          <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 border rounded-xl hover:border-indigo-200 transition duration-150">
+                            <div>
+                              <span className="text-[10px] font-mono font-black text-slate-400 bg-slate-200/60 w-5 h-5 rounded-full inline-flex items-center justify-center mr-2">#{idx + 1}</span>
+                              <strong className="text-slate-800 font-bold">{st.name}</strong>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[10px] font-black text-indigo-700">{st.completed} Tugas Selesai</span>
+                              <span className="block text-[9.5px] font-bold text-amber-500">★ {st.avgRating} Rating</span>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Customer Review ulasan */}
+                  <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ulasan & Rating dari Pelanggan</span>
+                    <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                      {(() => {
+                        const reviews = completedRegionalOrders.filter(o => typeof o.rating === 'number' && o.rating > 0);
+                        if (reviews.length === 0) {
+                          return <p className="text-center text-slate-400 py-4">Belum ada ulasan yang terisi.</p>;
+                        }
+                        return reviews.map(r => (
+                          <div key={r.id} className="p-3 bg-slate-50 border border-slate-150 rounded-xl space-y-1.5 text-left hover:shadow-xs transition">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="font-bold text-slate-800 text-[11px]">{r.customerName}</span>
+                                <span className="text-[8px] font-mono text-slate-450 block">{r.id} | {r.completedAt ? new Date(r.completedAt).toLocaleDateString('id-ID') : ''}</span>
+                              </div>
+                              <span className="text-amber-400 font-black tracking-wide text-xs">
+                                {'★'.repeat(r.rating || 0)}
+                                <span className="text-slate-300">{'★'.repeat(5 - (r.rating || 0))}</span>
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-650 italic leading-relaxed bg-white p-2 rounded-lg border border-slate-100">
+                              "{r.ratingNotes || 'Tidak ada komentar tertulis.'}"
+                            </p>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-white border-t border-slate-100 text-right shrink-0">
+              <button 
+                onClick={() => setActiveDetailModal(null)} 
+                className="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] px-5 py-2.5 rounded-xl uppercase tracking-wider transition cursor-pointer"
+              >
+                Tutup Laporan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ================= MODAL: PENYESUAIAN STOK (STOCK OPNAME) ================= */}
+      {showAdjustmentModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <div>
+                <span className="text-[8px] bg-amber-600 px-2.5 py-0.5 rounded font-black uppercase text-white tracking-widest">Penyesuaian Persediaan (Stock Opname)</span>
+                <h3 className="text-sm font-extrabold text-white mt-1">
+                  Input Stok Fisik Cabang — {userRegionName}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowAdjustmentModal(false)} 
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePostAdjustment} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 bg-slate-50 flex-1 text-xs">
+                <div className="bg-amber-50 border border-amber-250 p-3.5 rounded-2xl flex items-start gap-2.5">
+                  <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-amber-800 font-semibold leading-relaxed">
+                    Instruksi: Masukkan jumlah <strong>Stok Fisik</strong> riil yang ada di gudang. Sistem akan secara otomatis menghitung selisih dan memposting jurnal mutasi stok penyesuaian (masuk/keluar).
+                  </p>
+                </div>
+
+                <div className="bg-white border border-slate-150 rounded-2xl overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-semibold text-slate-655 border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                          <th className="py-2.5 px-4 w-1/3">Nama Barang</th>
+                          <th className="py-2.5 px-2 text-center w-24">Stok Sistem</th>
+                          <th className="py-2.5 px-2 text-center w-28">Stok Fisik</th>
+                          <th className="py-2.5 px-2 text-center w-20">Selisih</th>
+                          <th className="py-2.5 px-4 w-1/3">Alasan / Catatan Penyesuaian</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {addons.map(addon => {
+                          const sysStock = addon.stock || 0;
+                          const physStockVal = adjustmentCounts[addon.id] || '';
+                          const physStock = physStockVal === '' ? sysStock : Number(physStockVal);
+                          const diff = physStock - sysStock;
+
+                          return (
+                            <tr key={addon.id} className="hover:bg-slate-50/50">
+                              <td className="py-3 px-4 font-bold text-slate-800">
+                                <span>{addon.name}</span>
+                                <span className="block text-[9px] font-medium text-slate-450 mt-0.5">HPP: Rp {Number(addon.hpp || 0).toLocaleString('id-ID')}</span>
+                              </td>
+                              <td className="py-3 px-2 text-center font-mono font-black text-slate-500">
+                                {sysStock} unit
+                              </td>
+                              <td className="py-3 px-2 text-center">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={physStockVal}
+                                  onChange={(e) => {
+                                    setAdjustmentCounts(prev => ({
+                                      ...prev,
+                                      [addon.id]: e.target.value
+                                    }));
+                                  }}
+                                  className="w-20 bg-white border border-slate-200 text-slate-850 text-xs px-2 py-1 rounded-lg focus:border-amber-500 outline-none text-center font-mono font-bold"
+                                />
+                              </td>
+                              <td className="py-3 px-2 text-center font-mono font-black">
+                                {diff > 0 && <span className="text-emerald-600 font-extrabold">+{diff}</span>}
+                                {diff < 0 && <span className="text-rose-600 font-extrabold">{diff}</span>}
+                                {diff === 0 && <span className="text-slate-400">0</span>}
+                              </td>
+                              <td className="py-3 px-4">
+                                <input
+                                  type="text"
+                                  placeholder="Contoh: Selisih hitung / rusak"
+                                  value={adjustmentNotes[addon.id] || ''}
+                                  onChange={(e) => {
+                                    setAdjustmentNotes(prev => ({
+                                      ...prev,
+                                      [addon.id]: e.target.value
+                                    }));
+                                  }}
+                                  className="w-full bg-white border border-slate-200 text-slate-850 text-xs px-3 py-1 rounded-lg focus:border-amber-500 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                                  disabled={diff === 0}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-2.5 shrink-0">
+                <button 
+                  type="button"
+                  onClick={() => setShowAdjustmentModal(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-655 font-black text-[10px] px-5 py-2.5 rounded-xl uppercase tracking-wider transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isPostingAdjustment}
+                  className="bg-amber-600 hover:bg-amber-500 text-white font-black text-[10px] px-5 py-2.5 rounded-xl uppercase tracking-wider transition cursor-pointer flex items-center gap-1.5 shadow-md"
+                >
+                  {isPostingAdjustment && <Loader size={12} className="animate-spin" />}
+                  {isPostingAdjustment ? 'Memposting...' : 'Posting Penyesuaian'}
                 </button>
               </div>
             </form>
