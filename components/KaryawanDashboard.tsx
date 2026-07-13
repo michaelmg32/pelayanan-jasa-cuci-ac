@@ -1110,6 +1110,28 @@ export default function KaryawanDashboard() {
                   <UserIcon size={14} className={activeTab === 'profile' ? 'text-emerald-600' : 'text-slate-400'} />
                   <span>Profil</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('gaji');
+                    setShowMoreMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'gaji' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
+                >
+                  <FileText size={14} className={activeTab === 'gaji' ? 'text-emerald-600' : 'text-slate-400'} />
+                  <span>Gaji & Poin</span>
+                </button>
+                {activeUser?.is_leader ? (
+                  <button
+                    onClick={() => {
+                      setActiveTab('team');
+                      setShowMoreMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'team' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
+                  >
+                    <Users size={14} className={activeTab === 'team' ? 'text-emerald-600' : 'text-slate-400'} />
+                    <span>Kinerja Tim</span>
+                  </button>
+                ) : null}
                 <hr className="my-1 border-slate-100" />
                 <button
                   onClick={() => {
