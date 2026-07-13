@@ -40,17 +40,21 @@ export default function KaryawanDashboard() {
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
 
   const [mySalary, setMySalary] = useState<any>(null);
-  const [myTeam, setMyTeam] = useState<any[]>([]);
+  const [myTeam, setMyTeam] = useState<any[] | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInfo = async () => {
       try {
         const resSalary = await fetch('/api/staff/my-salary', { headers: api.getAuthHeaders() });
         if (resSalary.ok) setMySalary((await resSalary.json()).data);
+        else setApiError('Gagal memuat data gaji. (Pastikan backend sudah di-deploy)');
         
         const resTeam = await fetch('/api/staff/team', { headers: api.getAuthHeaders() });
         if (resTeam.ok) setMyTeam((await resTeam.json()).team);
-      } catch (err) {}
+      } catch (err) {
+        setApiError('Koneksi ke server gagal.');
+      }
     };
     if (activeUser) fetchInfo();
   }, [activeUser]);
@@ -1679,9 +1683,13 @@ export default function KaryawanDashboard() {
             <div className="p-4 space-y-4">
               <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider pl-1 mb-2">Transparansi Pendapatan</h3>
               
-              {!mySalary ? (
+              {!mySalary && !apiError ? (
                 <div className="flex justify-center items-center h-40">
                   <Loader className="animate-spin text-emerald-500" size={32} />
+                </div>
+              ) : apiError ? (
+                <div className="bg-rose-50 text-rose-600 p-5 rounded-2xl text-center text-xs font-bold border border-rose-200 shadow-sm">
+                  ⚠️ {apiError}
                 </div>
               ) : (
                 <>
