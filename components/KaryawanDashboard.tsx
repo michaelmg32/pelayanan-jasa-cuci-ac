@@ -52,7 +52,10 @@ export default function KaryawanDashboard() {
         else setApiError('Gagal memuat data gaji. (Pastikan backend sudah di-deploy)');
         
         const resTeam = await fetch('/api/staff/team', { headers: api.getAuthHeaders() });
-        if (resTeam.ok) setMyTeam((await resTeam.json()).team);
+        if (resTeam.ok) {
+          const teamData = await resTeam.json();
+          setMyTeam(Array.isArray(teamData) ? teamData : (teamData.team || []));
+        }
       } catch (err) {
         setApiError('Koneksi ke server gagal.');
       }
