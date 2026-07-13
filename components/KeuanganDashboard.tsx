@@ -35,7 +35,7 @@ import {
   UserCheck
 } from 'lucide-react';
 
-type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORMANCE' | 'KLAIM' | 'PROFIL';
+type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORMANCE' | 'PROFIL';
 
 export default function KeuanganDashboard() {
   const { activeUser, logout, regions, showAlert, appSettings, users, orders } = useApp();
@@ -445,18 +445,7 @@ export default function KeuanganDashboard() {
                 <span>Kinerja Staff</span>
               </span>
             </button>
-            <button
-              onClick={() => { setActiveTab('KLAIM'); loadClaims(); }}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'KLAIM'
-                ? 'text-slate-900 border-slate-900'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <DollarSign size={15} />
-                <span>Persetujuan Klaim</span>
-              </span>
-            </button>
+            
 
           </div>
 

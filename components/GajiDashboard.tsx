@@ -3,12 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   fetchStaffGrades, createStaffGrade, updateStaffGrade, deleteStaffGrade,
-  assignGradeToUser, fetchSalaryStaff, previewSalary, generateSalary,
-  fetchSalaryRecords, updateSalaryStatus, fetchSalarySummary, getAuthHeaders
+  assignTeam, fetchSalaryStaff, getAuthHeaders
 } from '@/lib/api';
-import type { StaffGrade, SalaryRecord, StaffWithGrade, SalarySummary, User } from '@/types';
+import type { StaffGrade, User } from '@/types';
+import { Users, UserCheck, CheckCircle, Clock, Search, X } from 'lucide-react';
 
-// ===== HELPERS =====
 const formatRupiah = (n: any) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(n) || 0);
 
@@ -18,22 +17,17 @@ const formatMonth = (ym: string) => {
   return `${months[parseInt(m) - 1]} ${y}`;
 };
 
-const getCurrentMonth = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
-
-// ===== GRADE FORM MODAL =====
+// Modals
 function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onClose: () => void; onSave: () => void }) {
   const [form, setForm] = useState({
     name: grade?.name || '',
     description: grade?.description || '',
-    base_salary: grade?.base_salary || 0,
-    fixed_bonus: grade?.fixed_bonus || 0,
-    bonus_per_order: grade?.bonus_per_order || 0,
-    daily_base_salary: grade?.daily_base_salary || 0,
-    daily_travel_allowance: grade?.daily_travel_allowance || 0,
-    point_reward: grade?.point_reward || 0,
+    leader_daily_base_salary: grade?.leader_daily_base_salary || 0,
+    leader_daily_travel_allowance: grade?.leader_daily_travel_allowance || 0,
+    leader_point_reward: grade?.leader_point_reward || 0,
+    member_daily_base_salary: grade?.member_daily_base_salary || 0,
+    member_daily_travel_allowance: grade?.member_daily_travel_allowance || 0,
+    member_point_reward: grade?.member_point_reward || 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,46 +39,64 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
       if (grade) { await updateStaffGrade(grade.id, form); }
       else { await createStaffGrade(form); }
       onSave(); onClose();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
-    } finally { setLoading(false); }
+    } catch (err: any) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="gaji-modal-overlay" onClick={onClose}>
-      <div className="gaji-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="gaji-modal" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
         <div className="gaji-modal-header">
-          <h3>{grade ? '✏️ Edit Grade' : '➕ Tambah Grade Baru'}</h3>
+          <h3>{grade ? 'Edit Grade / Tim' : '➕ Tambah Grade Tim Baru'}</h3>
           <button className="gaji-modal-close" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="gaji-form-group">
-            <label>Nama Grade *</label>
-            <input className="gaji-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="contoh: Senior, Teknisi A, Junior B..." required />
+            <label>Nama Grade / Tim *</label>
+            <input required className="gaji-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Teknisi AC VIP" />
           </div>
           <div className="gaji-form-group">
             <label>Deskripsi</label>
-            <textarea className="gaji-input gaji-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Keterangan singkat grade ini..." rows={2} />
+            <textarea className="gaji-input gaji-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi tim..." />
           </div>
-          <div className="gaji-form-row">
-            <div className="gaji-form-group">
-              <label>💰 Gaji Pokok Harian (Rp)</label>
-              <input className="gaji-input" type="number" min="0" value={form.daily_base_salary} onChange={e => setForm({ ...form, daily_base_salary: Number(e.target.value) })} />
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#4f46e5', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UserCheck size={16} /> Gaji Leader</h4>
+              <div className="gaji-form-group">
+                <label>Gaji Pokok Harian (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.leader_daily_base_salary} onChange={e => setForm({ ...form, leader_daily_base_salary: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group">
+                <label>Uang Jalan Harian (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.leader_daily_travel_allowance} onChange={e => setForm({ ...form, leader_daily_travel_allowance: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group">
+                <label>Poin per Order Selesai</label>
+                <input type="number" min="0" step="0.1" className="gaji-input" value={form.leader_point_reward} onChange={e => setForm({ ...form, leader_point_reward: Number(e.target.value) })} />
+              </div>
             </div>
-            <div className="gaji-form-group">
-              <label>🚗 Uang Jalan Harian (Rp)</label>
-              <input className="gaji-input" type="number" min="0" value={form.daily_travel_allowance} onChange={e => setForm({ ...form, daily_travel_allowance: Number(e.target.value) })} />
+            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#0ea5e9', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Users size={16} /> Gaji Anggota</h4>
+              <div className="gaji-form-group">
+                <label>Gaji Pokok Harian (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.member_daily_base_salary} onChange={e => setForm({ ...form, member_daily_base_salary: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group">
+                <label>Uang Jalan Harian (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.member_daily_travel_allowance} onChange={e => setForm({ ...form, member_daily_travel_allowance: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group">
+                <label>Poin per Order Selesai</label>
+                <input type="number" min="0" step="0.1" className="gaji-input" value={form.member_point_reward} onChange={e => setForm({ ...form, member_point_reward: Number(e.target.value) })} />
+              </div>
             </div>
           </div>
-          <div className="gaji-form-group">
-            <label>⭐ Poin per Order Selesai</label>
-            <input className="gaji-input" type="number" min="0" value={form.point_reward} onChange={e => setForm({ ...form, point_reward: Number(e.target.value) })} />
-            <span className="gaji-hint">Diberikan setiap tugas diselesaikan (1 Poin = Rp 1.000)</span>
-          </div>
-          {error && <div className="gaji-error-msg">{error}</div>}
-          <div className="gaji-modal-actions">
+          
+          {error && <div className="gaji-error">{error}</div>}
+          <div className="gaji-modal-actions" style={{ marginTop: '1.5rem' }}>
             <button type="button" className="gaji-btn gaji-btn-ghost" onClick={onClose}>Batal</button>
-            <button type="submit" className="gaji-btn gaji-btn-primary" disabled={loading}>{loading ? '⏳ Menyimpan...' : '💾 Simpan Grade'}</button>
+            <button type="submit" className="gaji-btn gaji-btn-primary" disabled={loading}>{loading ? '⏳...' : '💾 Simpan Grade'}</button>
           </div>
         </form>
       </div>
@@ -92,590 +104,355 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
   );
 }
 
-// ===== MARK PAID MODAL =====
-function MarkPaidModal({ record, onClose, onSave }: { record: SalaryRecord; onClose: () => void; onSave: () => void }) {
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const handlePay = async () => {
-    setLoading(true);
-    try { await updateSalaryStatus(record.id, 'PAID', notes); onSave(); onClose(); }
-    catch { /* ignore */ } finally { setLoading(false); }
-  };
-  return (
-    <div className="gaji-modal-overlay" onClick={onClose}>
-      <div className="gaji-modal" onClick={e => e.stopPropagation()}>
-        <div className="gaji-modal-header">
-          <h3>✅ Tandai Gaji Lunas</h3>
-          <button className="gaji-modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="gaji-confirm-info">
-          <div className="gaji-confirm-row"><span>Karyawan</span><strong>{record.staff_name}</strong></div>
-          <div className="gaji-confirm-row"><span>Periode</span><strong>{formatMonth(record.period_month)}</strong></div>
-          <div className="gaji-confirm-row"><span>Total Gaji</span><strong className="gaji-highlight">{formatRupiah(record.total_salary)}</strong></div>
-        </div>
-        <div className="gaji-form-group" style={{ marginTop: '1rem' }}>
-          <label>Catatan (opsional)</label>
-          <textarea className="gaji-input gaji-textarea" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Contoh: Transfer via BCA..." rows={2} />
-        </div>
-        <div className="gaji-modal-actions">
-          <button className="gaji-btn gaji-btn-ghost" onClick={onClose}>Batal</button>
-          <button className="gaji-btn gaji-btn-success" onClick={handlePay} disabled={loading}>{loading ? '⏳...' : '✅ Konfirmasi Lunas'}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ===== MAIN COMPONENT =====
-interface GajiDashboardProps {
-  activeUser: User;
-  embedded?: boolean;
-}
-
-export default function GajiDashboard({ activeUser, embedded = false }: GajiDashboardProps) {
-  const userRole = activeUser.role as string;
-  const userRegionId = activeUser.region_id || '';
-
-  const [activeTab, setActiveTab] = useState<'grade' | 'staff' | 'proses' | 'riwayat' | 'summary'>('grade');
-
-  // Grade state
+export default function GajiDashboard({ activeUser, embedded = false }: { activeUser: User, embedded?: boolean }) {
+  const [activeTab, setActiveTab] = useState<'grade' | 'assign' | 'proses' | 'riwayat'>('grade');
+  
+  // Data State
   const [grades, setGrades] = useState<StaffGrade[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
+  const [claims, setClaims] = useState<any[]>([]);
+  const [historyClaims, setHistoryClaims] = useState<any[]>([]);
+
+  // UI State
+  const [loading, setLoading] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [editingGrade, setEditingGrade] = useState<StaffGrade | null>(null);
-  const [gradeLoading, setGradeLoading] = useState(false);
 
-  // Staff state
-  const [staffList, setStaffList] = useState<StaffWithGrade[]>([]);
-  const [assigningStaffId, setAssigningStaffId] = useState<string | null>(null);
-  const [assignGradeValue, setAssignGradeValue] = useState<string>('');
-
-  // Proses Gaji state
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [preview, setPreview] = useState<SalaryRecord[]>([]);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [generateMsg, setGenerateMsg] = useState('');
-
-  // Riwayat state
-  const [records, setRecords] = useState<SalaryRecord[]>([]);
-  const [filterMonth, setFilterMonth] = useState('');
-  const [markPaidRecord, setMarkPaidRecord] = useState<SalaryRecord | null>(null);
-  const [recordsLoading, setRecordsLoading] = useState(false);
-
-  // Summary state
-  const [summary, setSummary] = useState<SalarySummary[]>([]);
-  const [summaryYear, setSummaryYear] = useState(new Date().getFullYear());
+  // Assign Team State
+  const [assignGradeId, setAssignGradeId] = useState('');
+  const [assignLeaderId, setAssignLeaderId] = useState('');
+  const [assignMemberIds, setAssignMemberIds] = useState<string[]>([]);
+  const [assignError, setAssignError] = useState('');
+  const [assignSuccess, setAssignSuccess] = useState('');
 
   const loadGrades = useCallback(async () => {
-    setGradeLoading(true);
-    try { setGrades(await fetchStaffGrades()); } finally { setGradeLoading(false); }
+    try { const data = await fetchStaffGrades(); setGrades(data); } catch { }
   }, []);
 
   const loadStaff = useCallback(async () => {
-    try { setStaffList(await fetchSalaryStaff()); } catch { /* ignore */ }
+    try { const data = await fetchSalaryStaff(); setStaffList(data); } catch { }
   }, []);
 
-  const loadRecords = useCallback(async () => {
-    setRecordsLoading(true);
-    try { setRecords(await fetchSalaryRecords(filterMonth ? { period_month: filterMonth } : undefined)); }
-    finally { setRecordsLoading(false); }
-  }, [filterMonth]);
-
-  const loadSummary = useCallback(async () => {
-    try { setSummary(await fetchSalarySummary(summaryYear)); } catch { /* ignore */ }
-  }, [summaryYear]);
+  const loadClaims = useCallback(async () => {
+    try {
+      const res = await fetch('/api/claims', { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setClaims(data.filter((c: any) => c.status === 'pending'));
+        setHistoryClaims(data.filter((c: any) => c.status !== 'pending'));
+      }
+    } catch { }
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'grade') loadGrades();
-    if (activeTab === 'staff') { loadGrades(); loadStaff(); }
-    if (activeTab === 'riwayat') loadRecords();
-    if (activeTab === 'summary') loadSummary();
-  }, [activeTab, loadGrades, loadStaff, loadRecords, loadSummary]);
+    if (activeTab === 'assign') { loadGrades(); loadStaff(); }
+    if (activeTab === 'proses' || activeTab === 'riwayat') { loadStaff(); loadClaims(); }
+  }, [activeTab, loadGrades, loadStaff, loadClaims]);
 
-  const handleDeleteGrade = async (id: string, name: string) => {
-    if (!confirm(`Hapus grade "${name}"? Semua karyawan dengan grade ini akan direset.`)) return;
-    try { await deleteStaffGrade(id); loadGrades(); }
-    catch (err: unknown) { alert(err instanceof Error ? err.message : 'Gagal menghapus.'); }
+  const handleAssignTeam = async () => {
+    setAssignError(''); setAssignSuccess('');
+    if (!assignGradeId || !assignLeaderId) {
+      setAssignError('Silakan pilih Grade dan Team Leader.'); return;
+    }
+    setLoading(true);
+    try {
+      await assignTeam(assignGradeId, assignLeaderId, assignMemberIds);
+      setAssignSuccess('Tim berhasil dibentuk!');
+      loadStaff();
+      setAssignGradeId(''); setAssignLeaderId(''); setAssignMemberIds([]);
+    } catch (err: any) { setAssignError(err.message); }
+    finally { setLoading(false); }
   };
 
-  const handlePreview = async () => {
-    setPreviewLoading(true); setPreview([]); setGenerateMsg('');
-    try {
-      const data = await previewSalary(selectedMonth, userRole === 'OWNER' ? undefined : userRegionId);
-      setPreview(data.results || []);
-    } catch (err: unknown) {
-      setGenerateMsg(`❌ ${err instanceof Error ? err.message : 'Gagal preview.'}`);
-    } finally { setPreviewLoading(false); }
+  const toggleMember = (id: string) => {
+    if (assignMemberIds.includes(id)) {
+      setAssignMemberIds(assignMemberIds.filter(m => m !== id));
+    } else {
+      setAssignMemberIds([...assignMemberIds, id]);
+    }
   };
 
-  const handleGenerate = async () => {
-    if (!confirm(`Kunci & simpan data gaji untuk bulan ${formatMonth(selectedMonth)}?\n\nSlip yang sudah LUNAS tidak akan tertimpa.`)) return;
-    setGenerating(true); setGenerateMsg('');
+  const handleProcessClaim = async (claimId: string, status: 'approved' | 'rejected') => {
+    if (status === 'approved' && !confirm('Yakin ingin menyetujui pencairan dana ini?')) return;
+    if (status === 'rejected' && !confirm('Yakin ingin menolak klaim ini? Dana/Poin akan dikembalikan.')) return;
     try {
-      const data = await generateSalary(selectedMonth, userRole === 'OWNER' ? undefined : userRegionId);
-      setGenerateMsg(`✅ Berhasil menyimpan gaji ${data.saved} karyawan. (${data.skipped} dilewati karena sudah LUNAS)`);
-      setPreview([]);
-    } catch (err: unknown) {
-      setGenerateMsg(`❌ ${err instanceof Error ? err.message : 'Gagal generate.'}`);
-    } finally { setGenerating(false); }
-  };
-
-  
-  const handleAssignLeader = async (staffId: string, leaderId: string) => {
-    try {
-      const res = await fetch(`/api/users/${staffId}/leader`, {
+      const res = await fetch(`/api/claims/${claimId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ leader_id: leaderId || null })
+        body: JSON.stringify({ status })
       });
-      if (res.ok) { loadStaff(); }
-      else alert('Gagal assign leader');
-    } catch (e) {}
+      if (res.ok) {
+        alert('Klaim berhasil diproses.');
+        loadClaims(); loadStaff();
+      } else {
+        const err = await res.json();
+        alert('Gagal memproses klaim: ' + err.error);
+      }
+    } catch (e: any) {
+      alert('Terjadi kesalahan: ' + e.message);
+    }
   };
-
-  const handleAssignGrade = async (staffId: string) => {
-    try { await assignGradeToUser(staffId, assignGradeValue || null); setAssigningStaffId(null); loadStaff(); }
-    catch (err: unknown) { alert(err instanceof Error ? err.message : 'Gagal assign grade.'); }
-  };
-
-  const totalPreview = preview.reduce((s, r) => s + r.total_salary, 0);
-  const totalPaid = records.filter(r => r.status === 'PAID').reduce((s, r) => s + r.total_salary, 0);
-  const totalPending = records.filter(r => r.status === 'PENDING').reduce((s, r) => s + r.total_salary, 0);
-
-  const tabs = [
-    { id: 'grade', label: '🏅 Kelola Grade', desc: 'Tingkatan & gaji pokok' },
-    { id: 'staff', label: '👥 Assign Grade', desc: 'Atur grade karyawan' },
-    { id: 'proses', label: '⚙️ Proses Gaji', desc: 'Hitung & kunci gaji' },
-    { id: 'riwayat', label: '📋 Riwayat Slip', desc: 'Histori pembayaran' },
-    ...(userRole === 'OWNER' ? [{ id: 'summary', label: '📊 Ringkasan', desc: 'Total biaya wilayah' }] : []),
-  ] as const;
 
   return (
-    <div className={`gaji-page ${embedded ? 'gaji-embedded' : ''}`}>
-      <style>{`
-        * { box-sizing: border-box; }
-        .gaji-page { min-height: 100vh; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); font-family: 'Inter', 'Segoe UI', sans-serif; color: #e2e8f0; }
-        
-        /* EMBEDDED LIGHT MODE STYLING */
-        .gaji-page.gaji-embedded { min-height: auto; background: transparent; padding: 0; color: #1e293b; }
-        .gaji-page.gaji-embedded .gaji-content { padding: 1.5rem 0; max-width: 100%; }
-        .gaji-page.gaji-embedded .gaji-tabs-wrapper { padding: 0.25rem; background: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0; }
-        .gaji-page.gaji-embedded .gaji-tab { color: #64748b; }
-        .gaji-page.gaji-embedded .gaji-tab:hover { color: #1e293b; }
-        .gaji-page.gaji-embedded .gaji-tab.active { color: #4f46e5; border-bottom-color: #4f46e5; background: rgba(79,70,229,0.06); border-radius: 8px; }
-        .gaji-page.gaji-embedded .gaji-tab-sub { color: #94a3b8; }
-        .gaji-page.gaji-embedded .gaji-card { background: #ffffff; border: 1px solid rgba(226,232,240,0.6); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.05); border-radius: 24px; color: #334155; }
-        .gaji-page.gaji-embedded .gaji-card-title { color: #0f172a; font-weight: 900; }
-        .gaji-page.gaji-embedded .gaji-grade-card { background: #ffffff; border: 1px solid rgba(226,232,240,0.8); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05); border-radius: 20px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .gaji-page.gaji-embedded .gaji-grade-card:hover { border-color: #818cf8; transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(99,102,241,0.15); }
-        .gaji-page.gaji-embedded .gaji-grade-desc { color: #64748b; font-weight: 500; }
-        .gaji-page.gaji-embedded .gaji-salary-breakdown { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; }
-        .gaji-page.gaji-embedded .gaji-salary-row { color: #475569; font-weight: 600; }
-        .gaji-page.gaji-embedded .gaji-salary-row.total { border-top: 1px dashed #cbd5e1; color: #4f46e5; font-weight: 900; }
-        .gaji-page.gaji-embedded .gaji-btn-ghost { background: #ffffff; color: #475569; border: 1px solid #e2e8f0; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .gaji-page.gaji-embedded .gaji-btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
-        .gaji-page.gaji-embedded .gaji-btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; border-radius: 12px; font-weight: 800; }
-        .gaji-page.gaji-embedded .gaji-btn-danger:hover { background: #fee2e2; border-color: #fca5a5; }
-        .gaji-page.gaji-embedded .gaji-table th { background: rgba(248,250,252,0.8); backdrop-filter: blur(8px); color: #64748b; border-bottom: 2px solid #e2e8f0; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-        .gaji-page.gaji-embedded .gaji-table td { border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 600; }
-        .gaji-page.gaji-embedded .gaji-table tr:hover td { background: #f8fafc; }
-        .gaji-page.gaji-embedded .gaji-input { background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 12px; font-weight: 600; transition: all 0.2s; }
-        .gaji-page.gaji-embedded .gaji-input:focus { border-color: #6366f1; background: #ffffff; box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
-        .gaji-page.gaji-embedded .gaji-input::placeholder { color: #94a3b8; font-weight: 500; }
-        .gaji-page.gaji-embedded select.gaji-input option { background: #ffffff; color: #0f172a; }
-        .gaji-page.gaji-embedded .gaji-hint { color: #64748b; font-weight: 500; }
-        .gaji-page.gaji-embedded .gaji-empty { color: #64748b; font-weight: 600; }
-        .gaji-page.gaji-embedded .gaji-confirm-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; }
-        .gaji-page.gaji-embedded .gaji-confirm-row { color: #475569; font-weight: 600; }
-        .gaji-page.gaji-embedded .gaji-preview-total { background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        .gaji-page.gaji-embedded .gaji-preview-total div div { color: #64748b !important; font-weight: 700; }
-        .gaji-page.gaji-embedded .gaji-preview-total div .gaji-highlight { color: #4f46e5 !important; font-weight: 900; }
-        .gaji-page.gaji-embedded .gaji-month-display { background: #eef2ff; border: 1px solid #e0e7ff; color: #4f46e5; border-radius: 12px; font-weight: 800; }
-        .gaji-page.gaji-embedded .gaji-stat-card { background: #ffffff; border: 1px solid rgba(226,232,240,0.6); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-radius: 20px; transition: transform 0.2s; }
-        .gaji-page.gaji-embedded .gaji-stat-card:hover { transform: translateY(-2px); }
-        .gaji-page.gaji-embedded .gaji-stat-card .stat-label { color: #64748b; font-weight: 800; }
-        .gaji-page.gaji-embedded .gaji-stat-card .stat-value { color: #0f172a; font-weight: 900; }
-        .gaji-page.gaji-embedded .gaji-stat-card.purple .stat-value { color: #4f46e5; }
-        .gaji-page.gaji-embedded .gaji-stat-card.purple { border-color: rgba(99,102,241,0.2); background: linear-gradient(to bottom right, #ffffff, #f5f3ff); }
-        .gaji-page.gaji-embedded .gaji-confirm-info strong.gaji-highlight { color: #4f46e5 !important; }
-        .gaji-page.gaji-embedded .gaji-empty-icon { opacity: 0.6; color: #94a3b8; }
-        .gaji-page.gaji-embedded div[style*="rgba(255,255,255"] { color: #64748b !important; }
-        .gaji-page.gaji-embedded span[style*="rgba(255,255,255"] { color: #64748b !important; }
-        .gaji-page.gaji-embedded td[style*="opacity: 0.5"] { color: #64748b !important; opacity: 1 !important; }
-        .gaji-page.gaji-embedded td[style*="rgba(255,255,255"] { color: #64748b !important; }
-        .gaji-page.gaji-embedded div[style*="background: rgba(96,165,250,0.08)"] { background: #eff6ff !important; border-color: #bfdbfe !important; color: #1e3a8a !important; font-weight: 800; }
-        .gaji-page.gaji-embedded div[style*="background: rgba(251,146,60,0.08)"] { background: #fff7ed !important; border-color: #fed7aa !important; color: #7c2d12 !important; font-weight: 800; }
-        .gaji-page.gaji-embedded .gaji-info-text { color: #475569 !important; font-weight: 600; }
-        
-        .gaji-header { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
-        .gaji-header-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; text-decoration: none; }
-        .gaji-header-back:hover { background: rgba(255,255,255,0.2); transform: translateX(-2px); }
-        .gaji-header-title { flex: 1; }
-        .gaji-header-title h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .gaji-header-title p { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 0.1rem; }
-        .gaji-role-badge { background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; }
-        .gaji-user-info { font-size: 0.78rem; color: rgba(255,255,255,0.5); }
-
-        .gaji-tabs-wrapper { background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 0 2rem; display: flex; gap: 0.25rem; overflow-x: auto; }
-        .gaji-tab { padding: 1rem 1.25rem; cursor: pointer; border: none; background: transparent; color: rgba(255,255,255,0.5); font-size: 0.875rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
-        .gaji-tab:hover { color: rgba(255,255,255,0.8); }
-        .gaji-tab.active { color: #a78bfa; border-bottom-color: #a78bfa; background: rgba(167,139,250,0.05); }
-        .gaji-tab-sub { font-size: 0.7rem; opacity: 0.6; display: block; }
-
-        .gaji-content { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-        .gaji-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; }
-        .gaji-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
-        .gaji-card-title { font-size: 1.1rem; font-weight: 600; color: #f1f5f9; }
-
-        .gaji-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .gaji-stat-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; text-align: center; }
-        .gaji-stat-card .stat-label { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-        .gaji-stat-card .stat-value { font-size: 1.2rem; font-weight: 700; color: #f1f5f9; }
-        .gaji-stat-card.purple { border-color: rgba(167,139,250,0.3); } .gaji-stat-card.purple .stat-value { color: #a78bfa; }
-        .gaji-stat-card.green { border-color: rgba(52,211,153,0.3); } .gaji-stat-card.green .stat-value { color: #34d399; }
-        .gaji-stat-card.orange { border-color: rgba(251,146,60,0.3); } .gaji-stat-card.orange .stat-value { color: #fb923c; }
-
-        .gaji-grade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-        .gaji-grade-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; transition: all 0.2s; }
-        .gaji-grade-card:hover { border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.05); transform: translateY(-2px); }
-        .gaji-grade-badge { display: inline-block; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; padding: 0.3rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; }
-        .gaji-grade-desc { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 0.75rem; }
-        .gaji-salary-breakdown { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.75rem; font-size: 0.8rem; }
-        .gaji-salary-row { display: flex; justify-content: space-between; margin-bottom: 0.35rem; color: rgba(255,255,255,0.7); }
-        .gaji-salary-row.total { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.35rem; margin-top: 0.35rem; color: #a78bfa; font-weight: 700; font-size: 0.875rem; }
-        .gaji-grade-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-
-        .gaji-btn { padding: 0.6rem 1.25rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; }
-        .gaji-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .gaji-btn-primary { background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; }
-        .gaji-btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
-        .gaji-btn-success { background: linear-gradient(135deg, #059669, #10b981); color: white; }
-        .gaji-btn-success:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
-        .gaji-btn-danger { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-        .gaji-btn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.35); }
-        .gaji-btn-ghost { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
-        .gaji-btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
-        .gaji-btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
-
-        .gaji-table-wrap { overflow-x: auto; border-radius: 10px; }
-        .gaji-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .gaji-table th { background: rgba(0,0,0,0.3); padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.5); font-weight: 600; white-space: nowrap; }
-        .gaji-table td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); vertical-align: middle; }
-        .gaji-table tr:hover td { background: rgba(255,255,255,0.03); }
-        .gaji-table tr:last-child td { border-bottom: none; }
-
-        .gaji-status { display: inline-block; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; }
-        .gaji-status.PAID { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
-        .gaji-status.PENDING { background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
-
-        .gaji-form-group { margin-bottom: 1rem; }
-        .gaji-form-group label { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.4rem; font-weight: 500; }
-        .gaji-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .gaji-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.65rem 0.9rem; color: #f1f5f9; font-size: 0.875rem; outline: none; transition: border-color 0.2s; font-family: inherit; }
-        .gaji-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
-        .gaji-input::placeholder { color: rgba(255,255,255,0.3); }
-        .gaji-textarea { resize: vertical; min-height: 70px; }
-        .gaji-hint { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 0.3rem; display: block; }
-        select.gaji-input option { background: #1e1b4b; }
-
-        .gaji-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.15s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .gaji-modal { background: linear-gradient(135deg, #1e1b4b, #1a1a2e); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.75rem; width: 100%; max-width: 480px; animation: slideUp 0.2s ease; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .gaji-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .gaji-modal-header h3 { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; }
-        .gaji-modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.2rem; cursor: pointer; padding: 0.25rem; }
-        .gaji-modal-close:hover { color: white; }
-        .gaji-modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
-
-        .gaji-error-msg { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
-        .gaji-success-msg { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: #34d399; padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
-        .gaji-empty { text-align: center; padding: 3rem; color: rgba(255,255,255,0.4); }
-        .gaji-empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
-        .gaji-spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .gaji-highlight { color: #a78bfa; font-weight: 700; }
-        .gaji-confirm-info { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 1rem; }
-        .gaji-confirm-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem; }
-        .gaji-confirm-row:last-child { margin-bottom: 0; }
-        .gaji-filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
-        .gaji-preview-total { background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2)); border: 1px solid rgba(124,58,237,0.3); border-radius: 10px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
-        .gaji-month-display { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.875rem; color: #a78bfa; font-weight: 600; border: 1px solid rgba(167,139,250,0.3); }
-        .gaji-region-tag { display: inline-block; background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.72rem; }
-
-        @media (max-width: 640px) {
-          .gaji-header { padding: 1rem; }
-          .gaji-content { padding: 1rem; }
-          .gaji-form-row { grid-template-columns: 1fr; }
-          .gaji-tab-sub { display: none; }
-        }
-      `}</style>
-
-      {/* HEADER */}
-      {!embedded && (
-        <header className="gaji-header">
-          <a href="/dashboard/admin" className="gaji-header-back">← Dashboard</a>
-          <div className="gaji-header-title">
-            <h1>💼 Sistem Penggajian</h1>
-            <p>Kelola grade, hitung & catat gaji karyawan per wilayah</p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-            <span className="gaji-role-badge">{userRole}</span>
-            <span className="gaji-user-info">{activeUser.name}</span>
-          </div>
-        </header>
-      )}
-
-      {/* TABS */}
-      <div className="gaji-tabs-wrapper">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`gaji-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-          >
-            {tab.label}
-            <span className="gaji-tab-sub">{tab.desc}</span>
+    <div className="gaji-container" style={{ padding: embedded ? '0' : '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      
+      {/* HEADER NAV */}
+      <nav className="gaji-nav">
+        {[
+          { id: 'grade', icon: '🏅', label: 'Kelola Grade', desc: 'Templat tim & gaji' },
+          { id: 'assign', icon: '👥', label: 'Assign Grade', desc: 'Bentuk tim & leader' },
+          { id: 'proses', icon: '💰', label: 'Proses Gaji', desc: 'Saldo & Klaim' },
+          { id: 'riwayat', icon: '🧾', label: 'Riwayat Slip', desc: 'Histori pencairan' }
+        ].map(t => (
+          <button key={t.id} className={`gaji-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id as any)}>
+            <div className="gaji-tab-icon">{t.icon}</div>
+            <div className="gaji-tab-text">
+              <strong>{t.label}</strong>
+              <span>{t.desc}</span>
+            </div>
           </button>
         ))}
-      </div>
+      </nav>
 
-      {/* CONTENT */}
       <div className="gaji-content">
-
-        {/* ====== TAB: KELOLA GRADE ====== */}
+        {/* ================= 1. KELOLA GRADE ================= */}
         {activeTab === 'grade' && (
-          <>
-            <div className="gaji-card">
-              <div className="gaji-card-header">
-                <div>
-                  <div className="gaji-card-title">🏅 Kelola Grade Karyawan</div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.25rem' }}>Buat tingkatan karyawan beserta konfigurasi gaji & bonus</div>
-                </div>
-                <button className="gaji-btn gaji-btn-primary" onClick={() => { setEditingGrade(null); setShowGradeModal(true); }}>➕ Tambah Grade</button>
+          <div className="gaji-card animate-fade-in">
+            <div className="gaji-card-header">
+              <h2>🏅 Kelola Templat Tim & Grade</h2>
+              <button className="gaji-btn gaji-btn-primary" onClick={() => { setEditingGrade(null); setShowGradeModal(true); }}>
+                ➕ Tambah Grade
+              </button>
+            </div>
+            {grades.length === 0 ? (
+              <div className="gaji-empty">
+                <div className="gaji-empty-icon">🏅</div>
+                <p>Belum ada grade. Buat templat tim pertama Anda!</p>
               </div>
-              {gradeLoading ? <div className="gaji-empty"><div className="gaji-spinner" /></div>
-                : grades.length === 0 ? (
-                  <div className="gaji-empty"><div className="gaji-empty-icon">🏅</div><p>Belum ada grade. Buat grade pertama!</p></div>
-                ) : (
-                  <div className="gaji-grade-grid">
-                    {grades.map(g => (
-                      <div key={g.id} className="gaji-grade-card">
-                        <div className="gaji-grade-badge">{g.name}</div>
-                        {userRole === 'OWNER' && g.regionName && <div style={{ marginBottom: '0.5rem' }}><span className="gaji-region-tag">🌏 {g.regionName}</span></div>}
-                        {g.description && <div className="gaji-grade-desc">{g.description}</div>}
-                        <div className="gaji-salary-breakdown">
-                          <div className="gaji-salary-row"><span>💰 Gaji Pokok Harian</span><span>{formatRupiah(g.daily_base_salary || 0)}</span></div>
-                          <div className="gaji-salary-row"><span>🚗 Uang Jalan Harian</span><span>{formatRupiah(g.daily_travel_allowance || 0)}</span></div>
-                          <div className="gaji-salary-row total"><span>⭐ Poin per Tugas</span><span>{g.point_reward || 0} Poin</span></div>
-                        </div>
-                        <div className="gaji-grade-actions">
-                          <button className="gaji-btn gaji-btn-ghost gaji-btn-sm" onClick={() => { setEditingGrade(g); setShowGradeModal(true); }}>✏️ Edit</button>
-                          <button className="gaji-btn gaji-btn-danger gaji-btn-sm" onClick={() => handleDeleteGrade(g.id, g.name)}>🗑️ Hapus</button>
-                        </div>
+            ) : (
+              <div className="gaji-grid">
+                {grades.map(g => (
+                  <div key={g.id} className="gaji-grade-card" style={{ border: '1px solid #e2e8f0', padding: '1.5rem', borderRadius: '1rem', backgroundColor: '#fff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>{g.name}</h3>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{g.description || 'Tidak ada deskripsi'}</span>
                       </div>
-                    ))}
+                      <div className="gaji-actions">
+                        <button className="gaji-icon-btn" onClick={() => { setEditingGrade(g); setShowGradeModal(true); }}>✏️</button>
+                        <button className="gaji-icon-btn text-danger" onClick={async () => {
+                          if (confirm('Yakin hapus grade ini?')) { await deleteStaffGrade(g.id); loadGrades(); }
+                        }}>🗑️</button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4f46e5', marginBottom: '0.5rem' }}>👨‍💼 LEADER</div>
+                        <div style={{ fontSize: '0.85rem' }}>Gaji: <strong>{formatRupiah(g.leader_daily_base_salary)}</strong>/hari</div>
+                        <div style={{ fontSize: '0.85rem' }}>Jalan: <strong>{formatRupiah(g.leader_daily_travel_allowance)}</strong>/hari</div>
+                        <div style={{ fontSize: '0.85rem' }}>Poin: <strong>{g.leader_point_reward}</strong>/order</div>
+                      </div>
+                      <div style={{ backgroundColor: '#f0f9ff', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0ea5e9', marginBottom: '0.5rem' }}>👨‍🔧 MEMBER</div>
+                        <div style={{ fontSize: '0.85rem' }}>Gaji: <strong>{formatRupiah(g.member_daily_base_salary)}</strong>/hari</div>
+                        <div style={{ fontSize: '0.85rem' }}>Jalan: <strong>{formatRupiah(g.member_daily_travel_allowance)}</strong>/hari</div>
+                        <div style={{ fontSize: '0.85rem' }}>Poin: <strong>{g.member_point_reward}</strong>/order</div>
+                      </div>
+                    </div>
                   </div>
-                )}
-            </div>
-            <div className="gaji-info-box-blue" style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem' }}>
-              <strong style={{ color: '#3b82f6' }}>ℹ️ Cara Kerja Bonus:</strong><br />
-              <span className="gaji-info-text">Total Gaji = Gaji Pokok + Bonus Tetap + (Bonus per Order × Jumlah Order Selesai di Bulan Itu)</span>
-            </div>
-          </>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
-        {/* ====== TAB: ASSIGN GRADE ====== */}
-        {activeTab === 'staff' && (
-          <div className="gaji-card">
-            <div className="gaji-card-header">
-              <div>
-                <div className="gaji-card-title">👥 Atur Grade Karyawan</div>
-                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.25rem' }}>Tetapkan tingkatan grade untuk setiap karyawan (teknisi)</div>
+        {/* ================= 2. ASSIGN GRADE (BENTUK TIM) ================= */}
+        {activeTab === 'assign' && (
+          <div className="gaji-card animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+            {/* Kiri: Form Pembentukan Tim */}
+            <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#1e293b' }}>👥 Bentuk Tim Baru</h2>
+              <div className="gaji-form-group">
+                <label>Pilih Grade / Templat Tim</label>
+                <select className="gaji-input" value={assignGradeId} onChange={e => setAssignGradeId(e.target.value)}>
+                  <option value="">-- Pilih Grade --</option>
+                  {grades.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
               </div>
-            </div>
-            <div className="gaji-table-wrap">
-              <table className="gaji-table">
-                <thead>
-                  <tr>
-                    <th>Nama Karyawan</th>
-                    {userRole === 'OWNER' && <th>Wilayah</th>}
-                    <th>Grade Saat Ini</th><th>Team Leader</th>
-                    <th>Gaji Pokok</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {staffList.length === 0 ? (
-                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Tidak ada data karyawan</td></tr>
-                  ) : staffList.map(s => (
-                    <tr key={s.id}>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{s.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{s.email}</div>
-                      </td>
-                      {userRole === 'OWNER' && <td><span className="gaji-region-tag">{s.regionName || '-'}</span></td>}
-                      <td>
-                        {s.grade_name
-                          ? <span className="gaji-grade-badge" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>{s.grade_name}</span>
-                          : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem' }}>— Belum diatur —</span>}
-                      </td>
-                      <td>{s.base_salary ? formatRupiah(s.base_salary) : '—'}</td>
-                      <td>
-                        {assigningStaffId === s.id ? (
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <select className="gaji-input" style={{ width: 'auto', minWidth: '140px' }} value={assignGradeValue} onChange={e => setAssignGradeValue(e.target.value)}>
-                              <option value="">— Hapus Grade —</option>
-                              {grades.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                            </select>
-                            <button className="gaji-btn gaji-btn-success gaji-btn-sm" onClick={() => handleAssignGrade(s.id)}>✅</button>
-                            <button className="gaji-btn gaji-btn-ghost gaji-btn-sm" onClick={() => setAssigningStaffId(null)}>✕</button>
-                          </div>
-                        ) : (
-                          <button className="gaji-btn gaji-btn-ghost gaji-btn-sm" onClick={() => { setAssigningStaffId(s.id); setAssignGradeValue(s.grade_id || ''); }}>✏️ Atur Grade</button>
-                        )}
-                      </td>
-                    </tr>
+              <div className="gaji-form-group">
+                <label>Pilih Team Leader</label>
+                <select className="gaji-input" value={assignLeaderId} onChange={e => setAssignLeaderId(e.target.value)}>
+                  <option value="">-- Pilih Karyawan --</option>
+                  {staffList.filter(s => !assignMemberIds.includes(s.id)).map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
-                </tbody>
-              </table>
+                </select>
+              </div>
+              
+              <div className="gaji-form-group" style={{ marginTop: '1.5rem' }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Anggota Tim Terpilih</span>
+                  <span style={{ color: '#4f46e5', fontWeight: 700 }}>{assignMemberIds.length} Orang</span>
+                </label>
+                {assignMemberIds.length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '0.5rem 0' }}>Belum ada anggota yang dipilih dari daftar di samping.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {assignMemberIds.map(id => {
+                      const st = staffList.find(s => s.id === id);
+                      return (
+                        <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{st?.name}</span>
+                          <button type="button" onClick={() => toggleMember(id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14}/></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {assignError && <div className="gaji-error" style={{ fontSize: '0.8rem', marginTop: '1rem' }}>{assignError}</div>}
+              {assignSuccess && <div style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 600, marginTop: '1rem', padding: '0.75rem', backgroundColor: '#d1fae5', borderRadius: '0.5rem' }}>{assignSuccess}</div>}
+
+              <button 
+                className="gaji-btn gaji-btn-primary" 
+                style={{ width: '100%', marginTop: '1.5rem' }}
+                onClick={handleAssignTeam}
+                disabled={loading || !assignGradeId || !assignLeaderId}
+              >
+                {loading ? 'Menyimpan...' : '💾 Simpan Tim'}
+              </button>
+            </div>
+
+            {/* Kanan: Daftar Karyawan (Pilih Member) */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', margin: 0 }}>Pilih Anggota Tim</h3>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input type="text" placeholder="Cari karyawan..." className="gaji-input" style={{ paddingLeft: '2rem', padding: '0.4rem 0.75rem 0.4rem 2rem', fontSize: '0.85rem' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                {staffList.filter(s => s.id !== assignLeaderId).map(staff => (
+                  <div 
+                    key={staff.id} 
+                    onClick={() => toggleMember(staff.id)}
+                    style={{ 
+                      padding: '1rem', borderRadius: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
+                      border: assignMemberIds.includes(staff.id) ? '2px solid #4f46e5' : '1px solid #e2e8f0',
+                      backgroundColor: assignMemberIds.includes(staff.id) ? '#eef2ff' : '#fff'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: assignMemberIds.includes(staff.id) ? '#4f46e5' : '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.8rem' }}>
+                          {staff.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b' }}>{staff.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.1rem' }}>
+                            {staff.grade_name || 'Belum ada Grade'}
+                            {staff.is_leader ? <span style={{ color: '#4f46e5', fontWeight: 700, marginLeft: '0.25rem' }}>(Leader)</span> : ''}
+                            {staff.leader_name ? <span style={{ marginLeft: '0.25rem' }}>• Tim {staff.leader_name}</span> : ''}
+                          </div>
+                        </div>
+                      </div>
+                      {assignMemberIds.includes(staff.id) && <CheckCircle size={18} color="#4f46e5" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* ====== TAB: PROSES GAJI ====== */}
+        {/* ================= 3. PROSES GAJI (SALDO & KLAIM) ================= */}
         {activeTab === 'proses' && (
-          <>
-            <div className="gaji-card">
-              <div className="gaji-card-title" style={{ marginBottom: '1rem' }}>⚙️ Proses Gaji Bulanan</div>
-              <div className="gaji-filter-row">
-                <div className="gaji-form-group" style={{ margin: 0 }}>
-                  <label style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.35rem' }}>Pilih Bulan</label>
-                  <input type="month" className="gaji-input" style={{ width: 'auto' }} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} />
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
-                  <button className="gaji-btn gaji-btn-ghost" onClick={handlePreview} disabled={previewLoading}>{previewLoading ? '⏳ Menghitung...' : '👁️ Preview Kalkulasi'}</button>
-                </div>
-              </div>
-              {generateMsg && <div className={generateMsg.startsWith('✅') ? 'gaji-success-msg' : 'gaji-error-msg'}>{generateMsg}</div>}
-              {preview.length > 0 && (() => {
-                const paidCount = preview.filter(r => r.status === 'PAID').length;
-                const isAllPaid = paidCount === preview.length;
-
-                return (
-                  <>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <span className="gaji-month-display">📅 {formatMonth(selectedMonth)}</span>
-                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginLeft: '0.75rem' }}>
-                        Preview kalkulasi — {isAllPaid ? 'Semua data terkunci (Lunas)' : 'belum disimpan'}
-                      </span>
-                    </div>
-                    <div className="gaji-table-wrap">
-                      <table className="gaji-table">
-                        <thead>
-                          <tr>
-                            <th>Karyawan</th><th>Grade</th><th>Gaji Pokok</th>
-                            <th>Order Selesai</th><th>Bonus/Order</th><th>Bonus Tetap</th><th>Total Gaji</th>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Info Pengajuan Klaim Pending */}
+            {claims.length > 0 && (
+              <div className="gaji-card animate-fade-in" style={{ borderLeft: '4px solid #fbbf24', backgroundColor: '#fffbeb' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#b45309', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={18} /> Pengajuan Klaim Menunggu Persetujuan ({claims.length})</h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="gaji-table" style={{ background: '#fff', borderRadius: '0.5rem' }}>
+                    <thead>
+                      <tr>
+                        <th>TANGGAL</th>
+                        <th>KARYAWAN</th>
+                        <th>JENIS KLAIM</th>
+                        <th>NOMINAL</th>
+                        <th>CATATAN</th>
+                        <th>AKSI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {claims.map(c => {
+                        const staff = staffList.find(s => s.id === c.user_id);
+                        return (
+                          <tr key={c.id}>
+                            <td>{new Date(c.created_at).toLocaleDateString('id-ID')}</td>
+                            <td style={{ fontWeight: 600 }}>{staff?.name || c.user_id}</td>
+                            <td>{c.type === 'points' ? <span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>Tukar Poin</span> : <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>Tarik Saldo Gaji</span>}</td>
+                            <td style={{ fontWeight: 700, color: '#1e293b' }}>
+                              {c.type === 'points' ? `${c.points_claimed} Poin` : formatRupiah(c.amount)}
+                            </td>
+                            <td style={{ fontSize: '0.8rem', color: '#64748b' }}>{c.notes || '-'}</td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button onClick={() => handleProcessClaim(c.id, 'approved')} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>✅ ACC</button>
+                                <button onClick={() => handleProcessClaim(c.id, 'rejected')} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>❌ Tolak</button>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {preview.map((r, i) => {
-                            const isPaid = r.status === 'PAID';
-                            return (
-                              <tr key={i} style={isPaid ? { opacity: 0.65 } : {}}>
-                                <td>
-                                  <div style={{ fontWeight: 600 }}>{r.staff_name}</div>
-                                  {isPaid && <div style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 'bold' }}>✅ Gaji Sudah Dibayar (Lunas)</div>}
-                                </td>
-                                <td><span className="gaji-grade-badge" style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}>{r.grade_name}</span></td>
-                                <td>{formatRupiah(r.base_salary)}</td>
-                                <td style={{ textAlign: 'center' }}><span style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', padding: '0.15rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem' }}>{r.total_orders_completed}</span></td>
-                                <td>{formatRupiah(r.order_bonus)}</td>
-                                <td>{formatRupiah(r.fixed_bonus)}</td>
-                                <td>
-                                  <strong style={{ color: isPaid ? '#34d399' : '#a78bfa' }}>{formatRupiah(r.total_salary)}</strong>
-                                  {isPaid && <span style={{ display: 'block', fontSize: '0.65rem', color: '#34d399', fontStyle: 'italic' }}>Terkunci</span>}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {isAllPaid && (
-                      <div className="gaji-success-msg" style={{ marginTop: '1rem', background: 'rgba(52,211,153,0.1)', borderColor: 'rgba(52,211,153,0.3)', color: '#34d399' }}>
-                        ℹ️ <strong>Semua Sudah Lunas:</strong> Seluruh karyawan di cabang ini telah menerima pembayaran gaji bulan ini. Data kalkulasi dikunci.
-                      </div>
-                    )}
-                    <div className="gaji-preview-total">
-                      <div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Total Biaya Gaji Bulan Ini</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#a78bfa' }}>{formatRupiah(totalPreview)}</div>
-                      </div>
-                      <button 
-                        className="gaji-btn gaji-btn-success" 
-                        onClick={handleGenerate} 
-                        disabled={generating || isAllPaid}
-                      >
-                        {generating ? '⏳ Menyimpan...' : isAllPaid ? '🔒 Semua Sudah Lunas' : '🔒 Kunci & Simpan Gaji'}
-                      </button>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            <div className="gaji-info-box-orange" style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)', borderRadius: '12px', padding: '1rem 1.25rem', fontSize: '0.83rem' }}>
-              <strong style={{ color: '#ea580c' }}>⚠️ Perhatian:</strong> <span className="gaji-info-text">Slip yang sudah ditandai <strong>LUNAS</strong> tidak akan bisa ditimpa ulang.</span>
-            </div>
-          </>
-        )}
-
-        {/* ====== TAB: RIWAYAT SLIP ====== */}
-        {activeTab === 'riwayat' && (
-          <>
-            <div className="gaji-stats">
-              <div className="gaji-stat-card"><div className="stat-label">Total Slip</div><div className="stat-value">{records.length}</div></div>
-              <div className="gaji-stat-card green"><div className="stat-label">✅ Sudah Lunas</div><div className="stat-value">{records.filter(r => r.status === 'PAID').length}</div></div>
-              <div className="gaji-stat-card orange"><div className="stat-label">⏳ Belum Lunas</div><div className="stat-value">{records.filter(r => r.status === 'PENDING').length}</div></div>
-              <div className="gaji-stat-card purple"><div className="stat-label">💰 Total Lunas</div><div className="stat-value">{formatRupiah(totalPaid)}</div></div>
-              <div className="gaji-stat-card"><div className="stat-label">⏳ Total Pending</div><div className="stat-value">{formatRupiah(totalPending)}</div></div>
-            </div>
-            <div className="gaji-card">
-              <div className="gaji-card-header">
-                <div className="gaji-card-title">📋 Riwayat Slip Gaji</div>
-                <div className="gaji-filter-row" style={{ margin: 0 }}>
-                  <input type="month" className="gaji-input" style={{ width: 'auto' }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
-                  <button className="gaji-btn gaji-btn-ghost" onClick={loadRecords} disabled={recordsLoading}>{recordsLoading ? '⏳' : '🔄 Muat'}</button>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <div className="gaji-table-wrap">
+            )}
+
+            <div className="gaji-card animate-fade-in">
+              <div className="gaji-card-header">
+                <h2>💰 Saldo Gaji & Poin Karyawan</h2>
+              </div>
+              <div className="table-responsive">
                 <table className="gaji-table">
                   <thead>
                     <tr>
-                      <th>Karyawan</th>{userRole === 'OWNER' && <th>Wilayah</th>}
-                      <th>Grade</th><th>Periode</th><th>Gaji Pokok</th>
-                      <th>Bonus Order</th><th>Bonus Tetap</th><th>Total</th><th>Status</th><th>Aksi</th>
+                      <th>NAMA STAFF</th>
+                      <th>GRADE / TIM</th>
+                      <th>SALDO UANG (GAJI)</th>
+                      <th>SALDO POIN</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {records.length === 0 ? (
-                      <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2.5rem', opacity: 0.5 }}>Belum ada riwayat slip gaji. Proses gaji di tab &quot;Proses Gaji&quot;.</td></tr>
-                    ) : records.map(r => (
-                      <tr key={r.id}>
-                        <td><div style={{ fontWeight: 600 }}>{r.staff_name}</div></td>
-                        {userRole === 'OWNER' && <td><span className="gaji-region-tag">{r.regionName || '-'}</span></td>}
-                        <td>{r.grade_name ? <span className="gaji-grade-badge" style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}>{r.grade_name}</span> : '—'}</td>
-                        <td><span className="gaji-month-display" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>{formatMonth(r.period_month)}</span></td>
-                        <td>{formatRupiah(r.base_salary)}</td>
-                        <td>{formatRupiah(r.order_bonus)}<div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{r.total_orders_completed} order</div></td>
-                        <td>{formatRupiah(r.fixed_bonus)}</td>
-                        <td><strong style={{ color: '#a78bfa' }}>{formatRupiah(r.total_salary)}</strong></td>
-                        <td><span className={`gaji-status ${r.status}`}>{r.status === 'PAID' ? '✅ Lunas' : '⏳ Pending'}</span></td>
+                    {staffList.length === 0 ? (
+                      <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem' }}>Belum ada data staff.</td></tr>
+                    ) : staffList.map(s => (
+                      <tr key={s.id}>
                         <td>
-                          {r.status === 'PENDING'
-                            ? <button className="gaji-btn gaji-btn-success gaji-btn-sm" onClick={() => setMarkPaidRecord(r)}>💳 Bayar</button>
-                            : <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>{r.paid_at ? new Date(r.paid_at).toLocaleDateString('id-ID') : '✅'}</div>}
+                          <div style={{ fontWeight: 700, color: '#1e293b' }}>{s.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.email}</div>
+                        </td>
+                        <td>
+                          {s.grade_name ? (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: s.is_leader ? '#eef2ff' : '#f8fafc', border: s.is_leader ? '1px solid #c7d2fe' : '1px solid #e2e8f0', padding: '0.3rem 0.6rem', borderRadius: '2rem' }}>
+                              {s.is_leader ? <span style={{ color: '#4f46e5', fontWeight: 800, fontSize: '0.75rem' }}>LEADER</span> : <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.75rem' }}>MEMBER</span>}
+                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>{s.grade_name}</span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>Belum ada grade</span>
+                          )}
+                        </td>
+                        <td>
+                          <strong style={{ color: '#059669', fontSize: '1.1rem' }}>{formatRupiah(s.salary_balance || 0)}</strong>
+                        </td>
+                        <td>
+                          <strong style={{ color: '#d97706', fontSize: '1.1rem' }}>{s.points_balance || 0}</strong> <span style={{ fontSize: '0.75rem', color: '#64748b' }}>pts</span>
                         </td>
                       </tr>
                     ))}
@@ -683,60 +460,57 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                 </table>
               </div>
             </div>
-          </>
+          </div>
         )}
 
-        {/* ====== TAB: SUMMARY (OWNER ONLY) ====== */}
-        {activeTab === 'summary' && userRole === 'OWNER' && (
-          <div className="gaji-card">
+        {/* ================= 4. RIWAYAT SLIP ================= */}
+        {activeTab === 'riwayat' && (
+          <div className="gaji-card animate-fade-in">
             <div className="gaji-card-header">
-              <div className="gaji-card-title">📊 Ringkasan Biaya Gaji Seluruh Wilayah</div>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <select className="gaji-input" style={{ width: 'auto' }} value={summaryYear} onChange={e => setSummaryYear(Number(e.target.value))}>
-                  {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-                <button className="gaji-btn gaji-btn-ghost" onClick={loadSummary}>🔄 Muat</button>
-              </div>
+              <h2>🧾 Riwayat Pencairan (Slip)</h2>
             </div>
-            {summary.length === 0 ? (
-              <div className="gaji-empty"><div className="gaji-empty-icon">📊</div><p>Belum ada data gaji untuk tahun {summaryYear}.</p></div>
-            ) : (
-              <div className="gaji-table-wrap">
-                <table className="gaji-table">
-                  <thead>
-                    <tr><th>Wilayah</th><th>Periode</th><th>Jumlah Staff</th><th>Total Gaji Pokok</th><th>Total Bonus</th><th>Total Biaya</th><th>Lunas</th><th>Pending</th></tr>
-                  </thead>
-                  <tbody>
-                    {summary.map((s, i) => (
-                      <tr key={i}>
-                        <td><span className="gaji-region-tag">🌏 {s.regionName}</span></td>
-                        <td><span className="gaji-month-display" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>{formatMonth(s.period_month)}</span></td>
-                        <td style={{ textAlign: 'center' }}>{s.total_staff}</td>
-                        <td>{formatRupiah(s.total_base)}</td>
-                        <td>{formatRupiah(Number(s.total_order_bonus) + Number(s.total_fixed_bonus))}</td>
-                        <td><strong style={{ color: '#a78bfa' }}>{formatRupiah(s.total_salary_cost)}</strong></td>
-                        <td><span style={{ color: '#34d399' }}>{s.paid_count}</span><span style={{ color: 'rgba(255,255,255,0.3)' }}>/{s.total_staff}</span></td>
-                        <td>{Number(s.pending_count) > 0 ? <span style={{ color: '#fb923c', fontWeight: 600 }}>{s.pending_count}</span> : <span style={{ color: '#34d399' }}>✅</span>}</td>
+            <div className="table-responsive">
+              <table className="gaji-table">
+                <thead>
+                  <tr>
+                    <th>TANGGAL</th>
+                    <th>KARYAWAN</th>
+                    <th>JENIS</th>
+                    <th>NOMINAL</th>
+                    <th>STATUS</th>
+                    <th>CATATAN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyClaims.length === 0 ? (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Belum ada riwayat pencairan.</td></tr>
+                  ) : historyClaims.map(c => {
+                    const staff = staffList.find(s => s.id === c.user_id);
+                    return (
+                      <tr key={c.id}>
+                        <td style={{ color: '#64748b', fontSize: '0.9rem' }}>{new Date(c.created_at).toLocaleString('id-ID')}</td>
+                        <td style={{ fontWeight: 600 }}>{staff?.name || c.user_id}</td>
+                        <td>{c.type === 'points' ? 'Tukar Poin' : 'Tarik Saldo'}</td>
+                        <td style={{ fontWeight: 700 }}>{c.type === 'points' ? `${c.points_claimed} Poin` : formatRupiah(c.amount)}</td>
+                        <td>
+                          {c.status === 'approved' ? (
+                            <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '0.3rem 0.6rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>✅ Berhasil</span>
+                          ) : (
+                            <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.3rem 0.6rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>❌ Ditolak</span>
+                          )}
+                        </td>
+                        <td style={{ fontSize: '0.8rem', color: '#64748b' }}>{c.notes || '-'}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, color: 'rgba(255,255,255,0.7)', padding: '0.85rem 1rem' }}>Grand Total Tahun {summaryYear}:</td>
-                      <td style={{ fontWeight: 800, color: '#a78bfa', fontSize: '1rem', padding: '0.85rem 1rem' }}>{formatRupiah(summary.reduce((s, r) => s + Number(r.total_salary_cost), 0))}</td>
-                      <td colSpan={2} />
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
-      {/* MODALS */}
       {showGradeModal && <GradeModal grade={editingGrade} onClose={() => setShowGradeModal(false)} onSave={loadGrades} />}
-      {markPaidRecord && <MarkPaidModal record={markPaidRecord} onClose={() => setMarkPaidRecord(null)} onSave={loadRecords} />}
     </div>
   );
 }

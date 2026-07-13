@@ -874,24 +874,42 @@ export const createStaffGrade = async (data: {
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || 'Gagal membuat grade.');
-  }
-  return await response.json();
+  name: string;
+  description: string;
+  region_id?: string;
+  leader_daily_base_salary: number;
+  leader_daily_travel_allowance: number;
+  leader_point_reward: number;
+  member_daily_base_salary: number;
+  member_daily_travel_allowance: number;
+  member_point_reward: number;
+}) => {
+  const res = await fetch(`${API_BASE_URL}/staff-grades`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Gagal membuat grade');
+  return res.json();
 };
 
 export const updateStaffGrade = async (id: string, data: {
-  name: string; description?: string;
-  base_salary?: number; fixed_bonus?: number; bonus_per_order?: number;
+  name: string;
+  description: string;
+  leader_daily_base_salary: number;
+  leader_daily_travel_allowance: number;
+  leader_point_reward: number;
+  member_daily_base_salary: number;
+  member_daily_travel_allowance: number;
+  member_point_reward: number;
 }) => {
-  const response = await fetch(`${API_BASE_URL}/staff-grades/${id}`, {
-    method: 'PUT', headers: getAuthHeaders(),
+  const res = await fetch(`${API_BASE_URL}/staff-grades/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || 'Gagal memperbarui grade.');
-  }
-  return await response.json();
+  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update grade');
+  return res.json();
 };
 
 export const deleteStaffGrade = async (id: string) => {
@@ -915,6 +933,16 @@ export const assignGradeToUser = async (userId: string, gradeId: string | null) 
     throw new Error(err.error || 'Gagal mengatur grade karyawan.');
   }
   return await response.json();
+};
+
+export const assignTeam = async (grade_id: string, leader_id: string, member_ids: string[]) => {
+  const res = await fetch(`${API_BASE_URL}/staff/assign-team`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ grade_id, leader_id, member_ids }),
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update team');
+  return res.json();
 };
 
 // --- SALARY ---

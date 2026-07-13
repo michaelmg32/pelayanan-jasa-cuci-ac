@@ -3341,10 +3341,8 @@ app.get('/api/staff-grades', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     let query = `
-      SELECT sg.*, sc.base_salary, sc.fixed_bonus, sc.bonus_per_order,
-             sc.id as config_id, r.name as regionName
+      SELECT sg.*, r.name as regionName
       FROM staff_grades sg
-      LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id AND sc.region_id = sg.region_id
       LEFT JOIN regions r ON sg.region_id = r.id
     `;
     let params = [];
@@ -3362,7 +3360,6 @@ app.get('/api/staff-grades', verifyToken, async (req, res) => {
   }
 });
 
-// POST create new grade
 app.post('/api/staff-grades', verifyToken, async (req, res) => {
   let connection;
   try {
@@ -3372,21 +3369,30 @@ app.post('/api/staff-grades', verifyToken, async (req, res) => {
     if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
-    const { name, description, region_id, base_salary = 0, fixed_bonus = 0, bonus_per_order = 0 } = req.body;
-    const targetRegion = region_id || user.region_id;
+    const { 
+      name, description, region_id,
+      leader_daily_base_salary = 0, leader_daily_travel_allowance = 0, leader_point_reward = 0,
+      member_daily_base_salary = 0, member_daily_travel_allowance = 0, member_point_reward = 0
+    } = req.body;
+    let targetRegion = region_id || user.region_id;
+    if (!targetRegion && (roleLower === 'owner' || roleLower === 'keuangan')) {
+       const [regions] = await connection.query('SELECT id FROM regions LIMIT 1');
+       if (regions.length > 0) targetRegion = regions[0].id;
+    }
     if (!targetRegion) return res.status(400).json({ error: 'region_id diperlukan.' });
 
     const gradeId = `grade-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     await connection.query(
-      'INSERT INTO staff_grades (id, region_id, name, description) VALUES (?, ?, ?, ?)',
-      [gradeId, targetRegion, name.trim(), description?.trim() || null]
-    );
-
-    // Also create salary config for this grade
-    const configId = `salcfg-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    await connection.query(
-      'INSERT INTO staff_salary_configs (id, grade_id, region_id, base_salary, fixed_bonus, bonus_per_order) VALUES (?, ?, ?, ?, ?, ?)',
-      [configId, gradeId, targetRegion, base_salary, fixed_bonus, bonus_per_order]
+      `INSERT INTO staff_grades (
+        id, region_id, name, description,
+        leader_daily_base_salary, leader_daily_travel_allowance, leader_point_reward,
+        member_daily_base_salary, member_daily_travel_allowance, member_point_reward
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        gradeId, targetRegion, name.trim(), description?.trim() || null,
+        leader_daily_base_salary, leader_daily_travel_allowance, leader_point_reward,
+        member_daily_base_salary, member_daily_travel_allowance, member_point_reward
+      ]
     );
 
     await logActivity(req, 'Tambah Grade Karyawan', `Membuat grade baru: ${name} di wilayah ${targetRegion}`);
@@ -3401,7 +3407,7 @@ app.post('/api/staff-grades', verifyToken, async (req, res) => {
   }
 });
 
-// PUT update grade + salary config
+// PUT update grade
 app.put('/api/staff-grades/:id', verifyToken, async (req, res) => {
   let connection;
   try {
@@ -3412,34 +3418,30 @@ app.put('/api/staff-grades/:id', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Akses ditolak.' });
     }
     const { id } = req.params;
-    const { name, description, base_salary, fixed_bonus, bonus_per_order } = req.body;
+    const { 
+      name, description,
+      leader_daily_base_salary = 0, leader_daily_travel_allowance = 0, leader_point_reward = 0,
+      member_daily_base_salary = 0, member_daily_travel_allowance = 0, member_point_reward = 0
+    } = req.body;
 
-    // Verify ownership for admin
     if (roleLower === 'admin') {
       const [check] = await connection.query('SELECT id FROM staff_grades WHERE id = ? AND region_id = ?', [id, user.region_id]);
       if (check.length === 0) return res.status(403).json({ error: 'Grade tidak ditemukan di wilayah Anda.' });
     }
 
     await connection.query(
-      'UPDATE staff_grades SET name = ?, description = ? WHERE id = ?',
-      [name.trim(), description?.trim() || null, id]
+      `UPDATE staff_grades SET 
+        name = ?, description = ?,
+        leader_daily_base_salary = ?, leader_daily_travel_allowance = ?, leader_point_reward = ?,
+        member_daily_base_salary = ?, member_daily_travel_allowance = ?, member_point_reward = ?
+       WHERE id = ?`,
+      [
+        name.trim(), description?.trim() || null,
+        leader_daily_base_salary, leader_daily_travel_allowance, leader_point_reward,
+        member_daily_base_salary, member_daily_travel_allowance, member_point_reward,
+        id
+      ]
     );
-
-    // Update or insert salary config
-    const [existing] = await connection.query('SELECT id FROM staff_salary_configs WHERE grade_id = ?', [id]);
-    if (existing.length > 0) {
-      await connection.query(
-        'UPDATE staff_salary_configs SET base_salary = ?, fixed_bonus = ?, bonus_per_order = ? WHERE grade_id = ?',
-        [base_salary || 0, fixed_bonus || 0, bonus_per_order || 0, id]
-      );
-    } else {
-      const [grade] = await connection.query('SELECT region_id FROM staff_grades WHERE id = ?', [id]);
-      const configId = `salcfg-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-      await connection.query(
-        'INSERT INTO staff_salary_configs (id, grade_id, region_id, base_salary, fixed_bonus, bonus_per_order) VALUES (?, ?, ?, ?, ?, ?)',
-        [configId, id, grade[0].region_id, base_salary || 0, fixed_bonus || 0, bonus_per_order || 0]
-      );
-    }
 
     await logActivity(req, 'Update Grade Karyawan', `Memperbarui grade ID: ${id}`);
     res.json({ success: true, message: 'Grade berhasil diperbarui.' });
@@ -3488,6 +3490,45 @@ app.put('/api/users/:id/grade', verifyToken, async (req, res) => {
     const roleLower = user.role?.toLowerCase();
     if (roleLower !== 'keuangan' && roleLower !== 'owner') {
       return res.status(403).json({ error: 'Akses ditolak.' });
+
+// PUT assign team
+app.put('/api/staff/assign-team', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const user = req.user;
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== 'keuangan' && roleLower !== 'owner') {
+      return res.status(403).json({ error: 'Akses ditolak.' });
+    }
+    
+    const { grade_id, leader_id, member_ids = [] } = req.body;
+    if (!grade_id || !leader_id) {
+      return res.status(400).json({ error: 'grade_id dan leader_id diperlukan.' });
+    }
+
+    await connection.beginTransaction();
+    
+    // Set leader
+    await connection.query('UPDATE users SET grade_id = ?, is_leader = 1, leader_id = NULL WHERE id = ?', [grade_id, leader_id]);
+    
+    // Unassign old members of this leader to avoid stale data if we want strict sync
+    await connection.query('UPDATE users SET leader_id = NULL WHERE leader_id = ?', [leader_id]);
+    
+    if (member_ids.length > 0) {
+      const placeholders = member_ids.map(() => '?').join(',');
+      await connection.query(`UPDATE users SET grade_id = ?, is_leader = 0, leader_id = ? WHERE id IN (${placeholders})`, [grade_id, leader_id, ...member_ids]);
+    }
+    
+    await connection.commit();
+    res.json({ success: true, message: 'Tim berhasil ditugaskan.' });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
     }
     const { grade_id } = req.body;
     await connection.query('UPDATE users SET grade_id = ? WHERE id = ?', [grade_id || null, req.params.id]);
@@ -3738,13 +3779,17 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
     connection = await pool.getConnection();
     const user = req.user;
     let query = `
-      SELECT u.id, u.name, u.email, u.phone, u.region_id, u.grade_id,
-             sg.name as grade_name, sc.base_salary, sc.fixed_bonus, sc.bonus_per_order,
-             r.name as regionName
+      SELECT u.id, u.name, u.email, u.phone, u.region_id, u.grade_id, u.is_leader, u.leader_id,
+             u.salary_balance, u.points_balance,
+             sg.name as grade_name,
+             sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
+             sg.member_daily_base_salary, sg.member_daily_travel_allowance, sg.member_point_reward,
+             r.name as regionName,
+             leader.name as leader_name
       FROM users u
       LEFT JOIN staff_grades sg ON u.grade_id = sg.id
-      LEFT JOIN staff_salary_configs sc ON sg.id = sc.grade_id
       LEFT JOIN regions r ON u.region_id = r.id
+      LEFT JOIN users leader ON u.leader_id = leader.id
       WHERE u.role = 'karyawan'
     `;
     const params = [];
@@ -3849,6 +3894,13 @@ app.post('/api/claims', verifyToken, async (req, res) => {
         return res.status(400).json({ error: 'Points balance insufficient' });
       }
       await connection.query('UPDATE users SET points_balance = points_balance - ? WHERE id = ?', [points_claimed, req.user.id]);
+    } else if (type === 'daily_salary') {
+      const [users] = await connection.query('SELECT salary_balance FROM users WHERE id = ?', [req.user.id]);
+      const bal = users[0]?.salary_balance || 0;
+      if (bal < amount) {
+        return res.status(400).json({ error: 'Salary balance insufficient' });
+      }
+      await connection.query('UPDATE users SET salary_balance = salary_balance - ? WHERE id = ?', [amount, req.user.id]);
     }
     await connection.query(
       'INSERT INTO claims (user_id, type, amount, points_claimed, status, notes) VALUES (?, ?, ?, ?, "pending", ?)',
@@ -3901,6 +3953,8 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
     
     if (status === 'rejected' && claim.type === 'points') {
       await connection.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [claim.points_claimed, claim.user_id]);
+    } else if (status === 'rejected' && claim.type === 'daily_salary') {
+      await connection.query('UPDATE users SET salary_balance = salary_balance + ? WHERE id = ?', [claim.amount, claim.user_id]);
     }
     
     await connection.query('UPDATE claims SET status = ? WHERE id = ?', [status, req.params.id]);
