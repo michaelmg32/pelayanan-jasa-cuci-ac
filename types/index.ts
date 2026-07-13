@@ -36,6 +36,11 @@ export interface User {
   ktpPhoto?: string;
   selfiePhoto?: string;
   status?: string;
+  is_leader?: boolean;
+  leader_id?: string;
+  salary_balance?: number;
+  points_balance?: number;
+  grade_id?: string;
 }
 
 export interface ACModel {
@@ -165,14 +170,12 @@ export interface StaffGrade {
   regionName?: string;
   name: string;
   description?: string;
-  // Joined from staff_salary_configs
-  config_id?: string;
-  base_salary?: number;
-  fixed_bonus?: number;
-  bonus_per_order?: number;
-  daily_base_salary?: number;
-  daily_travel_allowance?: number;
-  point_reward?: number;
+  leader_daily_base_salary: number;
+  leader_daily_travel_allowance: number;
+  leader_point_reward: number;
+  member_daily_base_salary: number;
+  member_daily_travel_allowance: number;
+  member_point_reward: number;
   createdAt?: string;
   updatedAt?: string;
 }
