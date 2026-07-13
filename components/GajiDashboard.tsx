@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   fetchStaffGrades, createStaffGrade, updateStaffGrade, deleteStaffGrade,
   assignGradeToUser, fetchSalaryStaff, previewSalary, generateSalary,
-  fetchSalaryRecords, updateSalaryStatus, fetchSalarySummary
+  fetchSalaryRecords, updateSalaryStatus, fetchSalarySummary, getAuthHeaders
 } from '@/lib/api';
 import type { StaffGrade, SalaryRecord, StaffWithGrade, SalarySummary, User } from '@/types';
 
@@ -225,7 +225,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
     try {
       const res = await fetch(`/api/users/${staffId}/leader`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...api.getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ leader_id: leaderId || null })
       });
       if (res.ok) { loadStaff(); }
