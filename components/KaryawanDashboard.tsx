@@ -1706,6 +1706,22 @@ export default function KaryawanDashboard() {
                         <span className="text-xl font-black">{mySalary.points_balance || 0}</span>
                       </div>
                     </div>
+                    <div className="mt-4 pt-4 border-t border-emerald-500/50 flex gap-3">
+                      <button 
+                        onClick={() => handleClaim('daily_salary', Number(mySalary.salary_balance))}
+                        disabled={!mySalary.salary_balance || Number(mySalary.salary_balance) <= 0}
+                        className="flex-1 bg-white text-emerald-700 py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Klaim Gaji
+                      </button>
+                      <button 
+                        onClick={() => handleClaim('points', Number(mySalary.points_balance))}
+                        disabled={!mySalary.points_balance || Number(mySalary.points_balance) <= 0}
+                        className="flex-1 bg-teal-800 text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Klaim Poin
+                      </button>
+                    </div>
                   </div>
 
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
