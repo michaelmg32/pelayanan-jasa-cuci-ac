@@ -31,6 +31,9 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
     base_salary: grade?.base_salary || 0,
     fixed_bonus: grade?.fixed_bonus || 0,
     bonus_per_order: grade?.bonus_per_order || 0,
+    daily_base_salary: grade?.daily_base_salary || 0,
+    daily_travel_allowance: grade?.daily_travel_allowance || 0,
+    point_reward: grade?.point_reward || 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,18 +68,18 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
           </div>
           <div className="gaji-form-row">
             <div className="gaji-form-group">
-              <label>💰 Gaji Pokok (Rp)</label>
-              <input className="gaji-input" type="number" min="0" value={form.base_salary} onChange={e => setForm({ ...form, base_salary: Number(e.target.value) })} />
+              <label>💰 Gaji Pokok Harian (Rp)</label>
+              <input className="gaji-input" type="number" min="0" value={form.daily_base_salary} onChange={e => setForm({ ...form, daily_base_salary: Number(e.target.value) })} />
             </div>
             <div className="gaji-form-group">
-              <label>🎁 Bonus Tetap (Rp)</label>
-              <input className="gaji-input" type="number" min="0" value={form.fixed_bonus} onChange={e => setForm({ ...form, fixed_bonus: Number(e.target.value) })} />
+              <label>🚗 Uang Jalan Harian (Rp)</label>
+              <input className="gaji-input" type="number" min="0" value={form.daily_travel_allowance} onChange={e => setForm({ ...form, daily_travel_allowance: Number(e.target.value) })} />
             </div>
           </div>
           <div className="gaji-form-group">
-            <label>⚡ Bonus per Order Selesai (Rp)</label>
-            <input className="gaji-input" type="number" min="0" value={form.bonus_per_order} onChange={e => setForm({ ...form, bonus_per_order: Number(e.target.value) })} />
-            <span className="gaji-hint">Dikalikan jumlah order selesai dalam sebulan</span>
+            <label>⭐ Poin per Order Selesai</label>
+            <input className="gaji-input" type="number" min="0" value={form.point_reward} onChange={e => setForm({ ...form, point_reward: Number(e.target.value) })} />
+            <span className="gaji-hint">Diberikan setiap tugas diselesaikan (1 Poin = Rp 1.000)</span>
           </div>
           {error && <div className="gaji-error-msg">{error}</div>}
           <div className="gaji-modal-actions">
@@ -215,6 +218,19 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
     } catch (err: unknown) {
       setGenerateMsg(`❌ ${err instanceof Error ? err.message : 'Gagal generate.'}`);
     } finally { setGenerating(false); }
+  };
+
+  
+  const handleAssignLeader = async (staffId: string, leaderId: string) => {
+    try {
+      const res = await fetch(`/api/users/${staffId}/leader`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...api.getAuthHeaders() },
+        body: JSON.stringify({ leader_id: leaderId || null })
+      });
+      if (res.ok) { loadStaff(); }
+      else alert('Gagal assign leader');
+    } catch (e) {}
   };
 
   const handleAssignGrade = async (staffId: string) => {
@@ -450,10 +466,9 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                         {userRole === 'OWNER' && g.regionName && <div style={{ marginBottom: '0.5rem' }}><span className="gaji-region-tag">🌏 {g.regionName}</span></div>}
                         {g.description && <div className="gaji-grade-desc">{g.description}</div>}
                         <div className="gaji-salary-breakdown">
-                          <div className="gaji-salary-row"><span>💰 Gaji Pokok</span><span>{formatRupiah(g.base_salary || 0)}</span></div>
-                          <div className="gaji-salary-row"><span>🎁 Bonus Tetap</span><span>{formatRupiah(g.fixed_bonus || 0)}</span></div>
-                          <div className="gaji-salary-row"><span>⚡ Bonus/Order</span><span>{formatRupiah(g.bonus_per_order || 0)}</span></div>
-                          <div className="gaji-salary-row total"><span>Total (tanpa order bonus)</span><span>{formatRupiah(Number(g.base_salary || 0) + Number(g.fixed_bonus || 0))}</span></div>
+                          <div className="gaji-salary-row"><span>💰 Gaji Pokok Harian</span><span>{formatRupiah(g.daily_base_salary || 0)}</span></div>
+                          <div className="gaji-salary-row"><span>🚗 Uang Jalan Harian</span><span>{formatRupiah(g.daily_travel_allowance || 0)}</span></div>
+                          <div className="gaji-salary-row total"><span>⭐ Poin per Tugas</span><span>{g.point_reward || 0} Poin</span></div>
                         </div>
                         <div className="gaji-grade-actions">
                           <button className="gaji-btn gaji-btn-ghost gaji-btn-sm" onClick={() => { setEditingGrade(g); setShowGradeModal(true); }}>✏️ Edit</button>
@@ -486,7 +501,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: GajiDash
                   <tr>
                     <th>Nama Karyawan</th>
                     {userRole === 'OWNER' && <th>Wilayah</th>}
-                    <th>Grade Saat Ini</th>
+                    <th>Grade Saat Ini</th><th>Team Leader</th>
                     <th>Gaji Pokok</th>
                     <th>Aksi</th>
                   </tr>

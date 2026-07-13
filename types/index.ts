@@ -170,6 +170,9 @@ export interface StaffGrade {
   base_salary?: number;
   fixed_bonus?: number;
   bonus_per_order?: number;
+  daily_base_salary?: number;
+  daily_travel_allowance?: number;
+  point_reward?: number;
   createdAt?: string;
   updatedAt?: string;
 }

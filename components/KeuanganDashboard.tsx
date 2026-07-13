@@ -35,7 +35,7 @@ import {
   UserCheck
 } from 'lucide-react';
 
-type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORMANCE' | 'PROFIL';
+type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORMANCE' | 'KLAIM' | 'PROFIL';
 
 export default function KeuanganDashboard() {
   const { activeUser, logout, regions, showAlert, appSettings, users, orders } = useApp();
@@ -102,6 +102,27 @@ export default function KeuanganDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch initial dashboard data
+  
+  const [claimsList, setClaimsList] = useState<any[]>([]);
+  const loadClaims = async () => {
+    try {
+      const res = await fetch('/api/claims', { headers: api.getAuthHeaders() });
+      if (res.ok) setClaimsList(await res.json());
+    } catch(e) {}
+  };
+  const handleApproveClaim = async (id: string, status: string) => {
+    if (!window.confirm(`Tandai klaim ini sebagai ${status}?`)) return;
+    try {
+      const res = await fetch(`/api/claims/${id}`, { 
+        method: 'PUT', 
+        headers: api.getAuthHeaders(), 
+        body: JSON.stringify({ status }) 
+      });
+      if (res.ok) { showAlert('Klaim berhasil diperbarui'); loadClaims(); }
+      else showAlert('Gagal memproses klaim');
+    } catch(e) { showAlert('Error memproses klaim'); }
+  };
+
   const loadDashboardData = async () => {
     setIsLoadingData(true);
     try {
@@ -422,6 +443,18 @@ export default function KeuanganDashboard() {
               <span className="flex items-center gap-2">
                 <UserCheck size={15} />
                 <span>Kinerja Staff</span>
+              </span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('KLAIM'); loadClaims(); }}
+              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'KLAIM'
+                ? 'text-slate-900 border-slate-900'
+                : 'text-slate-600 border-transparent hover:text-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <DollarSign size={15} />
+                <span>Persetujuan Klaim</span>
               </span>
             </button>
 

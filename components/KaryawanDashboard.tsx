@@ -34,9 +34,46 @@ export default function KaryawanDashboard() {
   const alert = showAlert;
 
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'gaji' | 'team'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
+
+  const [mySalary, setMySalary] = useState<any>(null);
+  const [myTeam, setMyTeam] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchInfo = async () => {
+      try {
+        const resSalary = await fetch('/api/staff/my-salary', { headers: api.getAuthHeaders() });
+        if (resSalary.ok) setMySalary((await resSalary.json()).data);
+        
+        const resTeam = await fetch('/api/staff/team', { headers: api.getAuthHeaders() });
+        if (resTeam.ok) setMyTeam((await resTeam.json()).team);
+      } catch (err) {}
+    };
+    if (activeUser) fetchInfo();
+  }, [activeUser]);
+
+  const handleClaim = async (type: 'salary' | 'points', amount: number) => {
+    if (!window.confirm(`Ajukan klaim ${type === 'salary' ? 'Gaji & Uang Jalan' : 'Poin'}?`)) return;
+    try {
+      const res = await fetch('/api/claims', {
+        method: 'POST',
+        headers: api.getAuthHeaders(),
+        body: JSON.stringify({ type, amount, points_claimed: type === 'points' ? amount : 0 })
+      });
+      if (res.ok) {
+        alert('Klaim berhasil diajukan dan menunggu persetujuan keuangan.');
+        const resSalary = await fetch('/api/staff/my-salary', { headers: api.getAuthHeaders() });
+        if (resSalary.ok) setMySalary((await resSalary.json()).data);
+      } else {
+        alert('Gagal mengajukan klaim.');
+      }
+    } catch (e) {
+      alert('Error saat mengajukan klaim.');
+    }
+  };
+
 
   // Work panel modal
   const [activeWorkingTask, setActiveWorkingTask] = useState<any | null>(null);

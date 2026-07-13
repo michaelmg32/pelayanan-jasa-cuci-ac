@@ -3762,6 +3762,156 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
   }
 });
 
+
+// ==========================================
+// NEW: HIERARCHY, CLAIMS, & POINTS ENDPOINTS
+// ==========================================
+
+// 1. Assign Team Leader
+app.put('/api/users/:id/leader', verifyToken, async (req, res) => {
+  if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { leader_id } = req.body;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.query('UPDATE users SET leader_id = ? WHERE id = ?', [leader_id || null, req.params.id]);
+    res.json({ message: 'Leader updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// 2. Get My Team (For Team Leader)
+app.get('/api/staff/team', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [team] = await connection.query('SELECT id, name, email, phone, photo, points_balance, grade_id FROM users WHERE leader_id = ? AND role = "karyawan"', [req.user.id]);
+    res.json(team);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// 3. Get Staff Dashboard Data (My Salary & Points)
+app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [users] = await connection.query('SELECT points_balance, grade_id FROM users WHERE id = ?', [req.user.id]);
+    const user = users[0];
+    
+    let daily_base_salary = 0, daily_travel_allowance = 0, point_reward = 0;
+    if (user.grade_id) {
+      const [grades] = await connection.query('SELECT daily_base_salary, daily_travel_allowance, point_reward FROM staff_grades WHERE id = ?', [user.grade_id]);
+      if (grades.length > 0) {
+        daily_base_salary = Number(grades[0].daily_base_salary) || 0;
+        daily_travel_allowance = Number(grades[0].daily_travel_allowance) || 0;
+        point_reward = Number(grades[0].point_reward) || 0;
+      }
+    }
+    
+    const [claims] = await connection.query('SELECT * FROM claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id]);
+    
+    res.json({ 
+      points_balance: user?.points_balance || 0,
+      daily_base_salary,
+      daily_travel_allowance,
+      point_reward,
+      claims
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// 4. Request Claim
+app.post('/api/claims', verifyToken, async (req, res) => {
+  const { type, amount, points_claimed, notes } = req.body;
+  if (!['daily_salary', 'points'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid claim type' });
+  }
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    if (type === 'points') {
+      const [users] = await connection.query('SELECT points_balance FROM users WHERE id = ?', [req.user.id]);
+      const bal = users[0]?.points_balance || 0;
+      if (bal < points_claimed) {
+        return res.status(400).json({ error: 'Points balance insufficient' });
+      }
+      await connection.query('UPDATE users SET points_balance = points_balance - ? WHERE id = ?', [points_claimed, req.user.id]);
+    }
+    await connection.query(
+      'INSERT INTO claims (user_id, type, amount, points_claimed, status, notes) VALUES (?, ?, ?, ?, "pending", ?)',
+      [req.user.id, type, amount || 0, points_claimed || 0, notes || '']
+    );
+    res.json({ message: 'Claim requested successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// 5. Get All Claims
+app.get('/api/claims', verifyToken, async (req, res) => {
+  if (req.user.role !== 'keuangan' && req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [claims] = await connection.query(`
+      SELECT c.*, u.name as user_name, u.role as user_role 
+      FROM claims c 
+      JOIN users u ON c.user_id = u.id 
+      ORDER BY c.created_at DESC
+    `);
+    res.json(claims);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// 6. Approve / Reject Claim
+app.put('/api/claims/:id', verifyToken, async (req, res) => {
+  if (req.user.role !== 'keuangan' && req.user.role !== 'admin' && req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { status } = req.body;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [claimRows] = await connection.query('SELECT * FROM claims WHERE id = ?', [req.params.id]);
+    if (claimRows.length === 0) return res.status(404).json({ error: 'Claim not found' });
+    const claim = claimRows[0];
+    
+    if (claim.status !== 'pending') return res.status(400).json({ error: 'Claim already processed' });
+    
+    if (status === 'rejected' && claim.type === 'points') {
+      await connection.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [claim.points_claimed, claim.user_id]);
+    }
+    
+    await connection.query('UPDATE claims SET status = ? WHERE id = ?', [status, req.params.id]);
+    res.json({ message: 'Claim updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 nextApp.prepare().then(() => {
   // Semua request selain /api akan diserahkan ke Next.js
   app.all('*', (req, res) => {
