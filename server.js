@@ -3652,7 +3652,6 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
     const now = new Date();
     const localDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
     const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
-
     const [users] = await connection.query(`
       SELECT u.id, u.name, u.is_leader, u.points_balance, u.salary_balance, sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
              sg.member_daily_base_salary, sg.member_daily_travel_allowance, sg.member_point_reward
@@ -3669,30 +3668,9 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
       FROM orders o
       WHERE o.workerId = ?
         AND o.status = 'SELESAI'
-        AND DATE_FORMAT(o.completedAt, '%Y-%m') = ?
-    `, [userId, currentMonthStr]);
+        AND o.completedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    `, [userId]);
 
-    let totalAc = 0;
-    const workedDaysSet = new Set();
-
-    orders.forEach(o => {
-      if (o.completed_at) {
-        workedDaysSet.add(new Date(o.completed_at).toISOString().split('T')[0]);
-      }
-      try {
-        if (o.acDetail) {
-          const detail = typeof o.acDetail === 'string' ? JSON.parse(o.acDetail) : o.acDetail;
-          const items = Array.isArray(detail) ? detail : [detail];
-          items.forEach(item => {
-            if (item.serviceType !== 'none') {
-              totalAc += (Number(item.quantity) || 1);
-            }
-          });
-        }
-      } catch (e) {}
-    });
-
-    const daysWorked = workedDaysSet.size;
     let dailyBase = 0, dailyTravel = 0, pointReward = 0;
     if (user.is_leader) {
       dailyBase = Number(user.leader_daily_base_salary) || 0;
@@ -3704,30 +3682,8 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
       pointReward = Number(user.member_point_reward) || 0;
     }
 
-    const projectedBase = dailyBase * daysWorked;
-    const projectedTravel = dailyTravel * daysWorked;
-    const projectedPoints = pointReward * totalAc;
-
     const [claims] = await connection.query('SELECT * FROM claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
 
-    res.json({
-      success: true,
-      data: {
-        points_balance: user.points_balance || 0,
-        salary_balance: user.salary_balance || 0,
-        days_worked: daysWorked,
-        total_ac_serviced: totalAc,
-        projected_base_salary: projectedBase,
-        projected_travel_allowance: projectedTravel,
-        projected_total_salary: projectedBase + projectedTravel,
-        projected_points: projectedPoints,
-        daily_base_salary: dailyBase, // for backward compatibility
-        daily_travel_allowance: dailyTravel,
-        point_reward: pointReward,
-        claims: claims
-      }
-    });
-  } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
     if (connection) connection.release();

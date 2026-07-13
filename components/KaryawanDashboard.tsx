@@ -1725,44 +1725,27 @@ export default function KaryawanDashboard() {
                   </div>
 
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider mb-4">Berdasarkan Pekerjaan Selesai (Bulan Ini)</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Total Kehadiran Kerja</span>
-                        <span className="font-bold text-slate-800">{mySalary.days_worked} Hari</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Estimasi Gaji Pokok</span>
-                        <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_base_salary)}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Estimasi Uang Makan/Jalan</span>
-                        <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_travel_allowance)}</span>
-                      </div>
-                      <hr className="border-slate-100 my-2" />
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-800 font-extrabold">Total Est. Gaji Tetap</span>
-                        <span className="font-black text-emerald-600 text-lg">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_total_salary)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider mb-4">Bonus Performa (Bulan Ini)</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Total AC Diselesaikan</span>
-                        <span className="font-bold text-slate-800">{mySalary.total_ac_serviced} Unit</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Bonus / Poin per AC</span>
-                        <span className="font-bold text-slate-800">{mySalary.point_reward}</span>
-                      </div>
-                      <hr className="border-slate-100 my-2" />
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-800 font-extrabold">Total Estimasi Bonus</span>
-                        <span className="font-black text-blue-600 text-lg">{mySalary.projected_points}</span>
-                      </div>
+                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider mb-4">Histori Perubahan Saldo (30 Hari Terakhir)</h3>
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                      {mySalary.history?.length === 0 ? (
+                        <div className="text-center py-6 text-slate-400 text-sm">Belum ada histori.</div>
+                      ) : (
+                        mySalary.history?.map((h: any, i: number) => (
+                          <div key={h.id || i} className="flex justify-between items-center p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                            <div>
+                              <div className="font-bold text-slate-700 text-sm">{h.title}</div>
+                              <div className="text-[10px] text-slate-500 mt-1">{new Date(h.date).toLocaleString('id-ID', {day: 'numeric', month:'short', hour:'2-digit', minute:'2-digit'})} • {h.notes}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`font-black ${h.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {h.amount > 0 ? '+' : ''}{h.type.includes('poin') ? `${h.amount} Poin` : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(h.amount)}
+                              </div>
+                              {h.status === 'pending' && <span className="text-[9px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase mt-1 inline-block">Pending</span>}
+                              {h.status === 'rejected' && <span className="text-[9px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full uppercase mt-1 inline-block">Ditolak</span>}
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </>
