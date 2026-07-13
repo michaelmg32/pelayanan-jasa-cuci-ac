@@ -992,7 +992,7 @@ app.delete('/api/regions/:id', verifyToken, async (req, res) => {
 app.get('/api/users', verifyToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
-        let query = 'SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt, region_id FROM users';
+        let query = 'SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt, region_id, is_leader FROM users';
     let params = [];
     const userRole = req.user.role ? req.user.role.toUpperCase() : '';
     if (userRole === 'ADMIN' || userRole === 'KARYAWAN') {
