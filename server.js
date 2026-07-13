@@ -3859,7 +3859,7 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
     const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
 
     const [users] = await connection.query(`
-      SELECT u.id, u.name, u.is_leader, u.points_balance, sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
+      SELECT u.id, u.name, u.is_leader, u.points_balance, u.salary_balance, sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
              sg.member_daily_base_salary, sg.member_daily_travel_allowance, sg.member_point_reward
       FROM users u
       LEFT JOIN staff_grades sg ON u.grade_id = sg.id
@@ -3919,6 +3919,7 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
       success: true,
       data: {
         points_balance: user.points_balance || 0,
+        salary_balance: user.salary_balance || 0,
         days_worked: daysWorked,
         total_ac_serviced: totalAc,
         projected_base_salary: projectedBase,

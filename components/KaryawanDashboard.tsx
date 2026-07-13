@@ -1693,6 +1693,21 @@ export default function KaryawanDashboard() {
                 </div>
               ) : (
                 <>
+                  {/* Saldo Tersedia */}
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl shadow-sm border border-emerald-700 p-5 text-white">
+                    <h3 className="font-extrabold text-emerald-100 text-[10px] uppercase tracking-widest mb-3">Total Saldo Belum Diklaim</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-emerald-100/80 text-[10px] font-bold block mb-0.5">Saldo Gaji Utama</span>
+                        <span className="text-xl font-black">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.salary_balance || 0)}</span>
+                      </div>
+                      <div className="border-l border-emerald-400/30 pl-4">
+                        <span className="text-emerald-100/80 text-[10px] font-bold block mb-0.5">Saldo Poin Bonus</span>
+                        <span className="text-xl font-black">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.points_balance || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                     <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider mb-4">Berdasarkan Pekerjaan Selesai (Bulan Ini)</h3>
                     <div className="space-y-3">
