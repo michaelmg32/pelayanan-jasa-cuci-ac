@@ -7,6 +7,7 @@ import * as api from '@/lib/api';
 import {
   Home,
   Clock,
+  Users,
   User as UserIcon,
   X,
   Sliders,
@@ -1647,6 +1648,108 @@ export default function KaryawanDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+
+          {/* ==================== TAB: GAJI & POIN ==================== */}
+          {activeTab === 'gaji' && (
+            <div className="p-4 space-y-4">
+              <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider pl-1 mb-2">Transparansi Pendapatan</h3>
+              
+              {!mySalary ? (
+                <div className="flex justify-center items-center h-40">
+                  <Loader className="animate-spin text-emerald-500" size={32} />
+                </div>
+              ) : (
+                <>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider mb-4">Berdasarkan Pekerjaan Selesai (Bulan Ini)</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-medium">Total Kehadiran Kerja</span>
+                        <span className="font-bold text-slate-800">{mySalary.days_worked} Hari</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-medium">Estimasi Gaji Pokok</span>
+                        <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_base_salary)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-medium">Estimasi Uang Makan/Jalan</span>
+                        <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_travel_allowance)}</span>
+                      </div>
+                      <hr className="border-slate-100 my-2" />
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-800 font-extrabold">Total Est. Gaji Tetap</span>
+                        <span className="font-black text-emerald-600 text-lg">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_total_salary)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider mb-4">Bonus Performa (Bulan Ini)</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-medium">Total AC Diselesaikan</span>
+                        <span className="font-bold text-slate-800">{mySalary.total_ac_serviced} Unit</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-medium">Bonus / Poin per AC</span>
+                        <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.point_reward)}</span>
+                      </div>
+                      <hr className="border-slate-100 my-2" />
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-800 font-extrabold">Total Estimasi Bonus</span>
+                        <span className="font-black text-blue-600 text-lg">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_points)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ==================== TAB: KINERJA TIM ==================== */}
+          {activeTab === 'team' && (
+            <div className="p-4 space-y-4">
+              <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider pl-1 mb-2">Kinerja Anggota Tim (Bulan Ini)</h3>
+              
+              {!myTeam ? (
+                 <div className="flex justify-center items-center h-40">
+                   <Loader className="animate-spin text-emerald-500" size={32} />
+                 </div>
+              ) : myTeam.length === 0 ? (
+                <div className="bg-white border rounded-2xl p-7 text-center space-y-3 shadow-xs">
+                  <span className="text-xl">👥</span>
+                  <p className="font-bold text-slate-850 text-xs uppercase">Belum ada anggota tim di bawah Anda.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {myTeam.map(member => (
+                    <div key={member.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-extrabold text-slate-800 uppercase">{member.name}</h4>
+                          <p className="text-[10px] text-slate-500 font-medium">{member.phone || '-'}</p>
+                        </div>
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${member.status === 'aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {member.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <div className="text-center border-r border-slate-200">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">AC Selesai</span>
+                          <span className="font-bold text-sm text-slate-800">{member.total_ac_serviced} Unit</span>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Est. Bonus Member</span>
+                          <span className="font-bold text-sm text-blue-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(member.projected_points)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

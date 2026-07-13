@@ -3853,28 +3853,142 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    const [users] = await connection.query('SELECT points_balance, grade_id FROM users WHERE id = ?', [req.user.id]);
+    const userId = req.user.id;
+    const now = new Date();
+    const localDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const [users] = await connection.query(`
+      SELECT u.id, u.name, u.is_leader, u.points_balance, sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
+             sg.member_daily_base_salary, sg.member_daily_travel_allowance, sg.member_point_reward
+      FROM users u
+      LEFT JOIN staff_grades sg ON u.grade_id = sg.id
+      WHERE u.id = ?
+    `, [userId]);
+
+    if (users.length === 0) return res.status(404).json({ error: 'User tidak ditemukan' });
     const user = users[0];
-    
-    let daily_base_salary = 0, daily_travel_allowance = 0, point_reward = 0;
-    if (user.grade_id) {
-      const [grades] = await connection.query('SELECT daily_base_salary, daily_travel_allowance, point_reward FROM staff_grades WHERE id = ?', [user.grade_id]);
-      if (grades.length > 0) {
-        daily_base_salary = Number(grades[0].daily_base_salary) || 0;
-        daily_travel_allowance = Number(grades[0].daily_travel_allowance) || 0;
-        point_reward = Number(grades[0].point_reward) || 0;
+
+    const [orders] = await connection.query(`
+      SELECT o.id, o.completedAt as completed_at, o.acDetail
+      FROM orders o
+      WHERE (o.workerId = ? OR o.id IN (SELECT order_id FROM order_assignments WHERE user_id = ?))
+        AND o.status = 'SELESAI'
+        AND DATE_FORMAT(o.completedAt, '%Y-%m') = ?
+    `, [userId, userId, currentMonthStr]);
+
+    let totalAc = 0;
+    const workedDaysSet = new Set();
+
+    orders.forEach(o => {
+      if (o.completed_at) {
+        workedDaysSet.add(new Date(o.completed_at).toISOString().split('T')[0]);
       }
-    }
-    
-    const [claims] = await connection.query('SELECT * FROM claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id]);
-    
-    res.json({ 
-      points_balance: user?.points_balance || 0,
-      daily_base_salary,
-      daily_travel_allowance,
-      point_reward,
-      claims
+      try {
+        if (o.acDetail) {
+          const detail = typeof o.acDetail === 'string' ? JSON.parse(o.acDetail) : o.acDetail;
+          const items = Array.isArray(detail) ? detail : [detail];
+          items.forEach(item => {
+            if (item.serviceType !== 'none') {
+              totalAc += (Number(item.quantity) || 1);
+            }
+          });
+        }
+      } catch (e) {}
     });
+
+    const daysWorked = workedDaysSet.size;
+    let dailyBase = 0, dailyTravel = 0, pointReward = 0;
+    if (user.is_leader) {
+      dailyBase = Number(user.leader_daily_base_salary) || 0;
+      dailyTravel = Number(user.leader_daily_travel_allowance) || 0;
+      pointReward = Number(user.leader_point_reward) || 0;
+    } else {
+      dailyBase = Number(user.member_daily_base_salary) || 0;
+      dailyTravel = Number(user.member_daily_travel_allowance) || 0;
+      pointReward = Number(user.member_point_reward) || 0;
+    }
+
+    const projectedBase = dailyBase * daysWorked;
+    const projectedTravel = dailyTravel * daysWorked;
+    const projectedPoints = pointReward * totalAc;
+
+    const [claims] = await connection.query('SELECT * FROM claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
+
+    res.json({
+      success: true,
+      data: {
+        points_balance: user.points_balance || 0,
+        days_worked: daysWorked,
+        total_ac_serviced: totalAc,
+        projected_base_salary: projectedBase,
+        projected_travel_allowance: projectedTravel,
+        projected_total_salary: projectedBase + projectedTravel,
+        projected_points: projectedPoints,
+        daily_base_salary: dailyBase, // for backward compatibility
+        daily_travel_allowance: dailyTravel,
+        point_reward: pointReward,
+        claims: claims
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// GET my team performance
+app.get('/api/staff/team', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const userId = req.user.id;
+    const now = new Date();
+    const localDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const [leaderCheck] = await connection.query('SELECT is_leader FROM users WHERE id = ?', [userId]);
+    if (!leaderCheck.length || !leaderCheck[0].is_leader) {
+      return res.status(403).json({ error: 'Bukan team leader.' });
+    }
+
+    const [members] = await connection.query(`
+      SELECT u.id, u.name, u.phone, u.status, sg.member_point_reward
+      FROM users u
+      LEFT JOIN staff_grades sg ON u.grade_id = sg.id
+      WHERE u.leader_id = ?
+    `, [userId]);
+
+    for (let member of members) {
+      const [orders] = await connection.query(`
+        SELECT o.id, o.completedAt as completed_at, o.acDetail
+        FROM orders o
+        WHERE (o.workerId = ? OR o.id IN (SELECT order_id FROM order_assignments WHERE user_id = ?))
+          AND o.status = 'SELESAI'
+          AND DATE_FORMAT(o.completedAt, '%Y-%m') = ?
+      `, [member.id, member.id, currentMonthStr]);
+
+      let totalAc = 0;
+      orders.forEach(o => {
+        try {
+          if (o.acDetail) {
+            const detail = typeof o.acDetail === 'string' ? JSON.parse(o.acDetail) : o.acDetail;
+            const items = Array.isArray(detail) ? detail : [detail];
+            items.forEach(item => {
+              if (item.serviceType !== 'none') {
+                totalAc += (Number(item.quantity) || 1);
+              }
+            });
+          }
+        } catch (e) {}
+      });
+
+      member.total_ac_serviced = totalAc;
+      member.projected_points = (Number(member.member_point_reward) || 0) * totalAc;
+    }
+
+    res.json({ success: true, team: members });
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
