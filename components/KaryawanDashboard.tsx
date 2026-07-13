@@ -1703,7 +1703,7 @@ export default function KaryawanDashboard() {
                       </div>
                       <div className="border-l border-emerald-400/30 pl-4">
                         <span className="text-emerald-100/80 text-[10px] font-bold block mb-0.5">Saldo Poin Bonus</span>
-                        <span className="text-xl font-black">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.points_balance || 0)}</span>
+                        <span className="text-xl font-black">{mySalary.points_balance || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -1740,12 +1740,12 @@ export default function KaryawanDashboard() {
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-slate-500 font-medium">Bonus / Poin per AC</span>
-                        <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.point_reward)}</span>
+                        <span className="font-bold text-slate-800">{mySalary.point_reward}</span>
                       </div>
                       <hr className="border-slate-100 my-2" />
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-slate-800 font-extrabold">Total Estimasi Bonus</span>
-                        <span className="font-black text-blue-600 text-lg">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(mySalary.projected_points)}</span>
+                        <span className="font-black text-blue-600 text-lg">{mySalary.projected_points}</span>
                       </div>
                     </div>
                   </div>

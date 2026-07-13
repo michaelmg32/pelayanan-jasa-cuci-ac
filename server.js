@@ -2135,7 +2135,7 @@ app.put('/api/orders/:id', async (req, res) => {
       // -------------------------------------------------------------
       // AUTO-INCREMENT SALARY & POINTS BALANCE
       // -------------------------------------------------------------
-      if (oldOrder && order.status === 'SELESAI' && oldOrder.status !== 'SELESAI') {
+      if (oldOrder && order.status === 'SELESAI' && oldOrder.status !== 'SELESAI' && !oldOrder.completedAt) {
         try {
           const workerIds = [];
           if (order.workerId) workerIds.push(order.workerId);
