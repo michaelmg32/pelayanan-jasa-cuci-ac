@@ -3509,6 +3509,36 @@ app.put('/api/staff/assign-team', verifyToken, async (req, res) => {
 
     await connection.beginTransaction();
     
+    // 1. Bersihkan semua orang yang sebelumnya berada di grade/tim ini
+    await connection.query('UPDATE users SET grade_id = NULL, is_leader = 0, leader_id = NULL WHERE grade_id = ?', [grade_id]);
+    
+    // 2. Set Leader baru untuk tim ini
+    await connection.query('UPDATE users SET grade_id = ?, is_leader = 1, leader_id = NULL WHERE id = ?', [grade_id, leader_id]);
+    
+    // 3. Set Member baru untuk tim ini
+    if (member_ids.length > 0) {
+      const placeholders = member_ids.map(() => '?').join(',');
+      await connection.query(`UPDATE users SET grade_id = ?, is_leader = 0, leader_id = ? WHERE id IN (${placeholders})`, [grade_id, leader_id, ...member_ids]);
+    }
+    
+    await connection.commit();
+    res.json({ success: true, message: 'Tim berhasil ditugaskan.' });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+    }
+    
+    const { grade_id, leader_id, member_ids = [] } = req.body;
+    if (!grade_id || !leader_id) {
+      return res.status(400).json({ error: 'grade_id dan leader_id diperlukan.' });
+    }
+
+    await connection.beginTransaction();
+    
     // Set leader
     await connection.query('UPDATE users SET grade_id = ?, is_leader = 1, leader_id = NULL WHERE id = ?', [grade_id, leader_id]);
     

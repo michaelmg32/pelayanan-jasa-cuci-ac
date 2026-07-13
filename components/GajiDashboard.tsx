@@ -150,6 +150,19 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
     if (activeTab === 'proses' || activeTab === 'riwayat') { loadStaff(); loadClaims(); }
   }, [activeTab, loadGrades, loadStaff, loadClaims]);
 
+  // Auto-prepopulate Leader & Members when a Team (Grade) is selected
+  useEffect(() => {
+    if (assignGradeId && staffList.length > 0) {
+      const currentLeader = staffList.find(s => s.grade_id === assignGradeId && s.is_leader);
+      setAssignLeaderId(currentLeader ? currentLeader.id : '');
+      const currentMembers = staffList.filter(s => s.grade_id === assignGradeId && !s.is_leader).map(s => s.id);
+      setAssignMemberIds(currentMembers);
+    } else {
+      setAssignLeaderId('');
+      setAssignMemberIds([]);
+    }
+  }, [assignGradeId, staffList]);
+
   const handleAssignTeam = async () => {
     setAssignError(''); setAssignSuccess('');
     if (!assignGradeId || !assignLeaderId) {
@@ -272,9 +285,9 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
           <div className="gaji-card animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
             {/* Kiri: Form Pembentukan Tim */}
             <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#1e293b' }}>👥 Bentuk Tim Baru</h2>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#1e293b' }}>👥 Susunan Tim</h2>
               <div className="gaji-form-group">
-                <label>Pilih Grade / Templat Tim</label>
+                <label>Pilih Grade (Tim)</label>
                 <select className="gaji-input" value={assignGradeId} onChange={e => setAssignGradeId(e.target.value)}>
                   <option value="">-- Pilih Grade --</option>
                   {grades.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
