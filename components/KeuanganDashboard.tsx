@@ -502,8 +502,8 @@ export default function KeuanganDashboard() {
 
   return (
     <div className="flex-1 flex flex-col bg-[#f8fafc] text-slate-800 text-left min-h-0 h-full overflow-hidden">
-      {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
-      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
+      {/* GLOBAL HEADER BAR */}
+      <div className="bg-slate-900 text-white px-5 pt-4 pb-12 shrink-0 shadow-md rounded-b-[32px] flex justify-between items-start z-30 relative overflow-hidden">
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
           <a href="/" className="w-14 h-14 bg-gradient-to-tr from-rose-500 to-orange-400 rounded-2xl shadow-xl shadow-rose-900/20 flex items-center justify-center text-white mb-3 transform -rotate-6 hover:rotate-0 transition duration-300 relative z-10 overflow-hidden border-2 border-white/50 cursor-pointer block">
@@ -517,7 +517,7 @@ export default function KeuanganDashboard() {
           </a>
           <div className="text-left flex items-center gap-2.5">
             <div>
-              <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h1>
+              <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'Sugar AC'}</h1>
               <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Keuangan</p>
             </div>
             <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
@@ -525,137 +525,72 @@ export default function KeuanganDashboard() {
             </span>
           </div>
         </div>
-
-        {/* Three-dots menu button */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMoreMenu(prev => !prev);
-            }}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
-          >
-            <MoreVertical size={18} />
-          </button>
-
-          {showMoreMenu && (
-            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
-              <button
-                onClick={() => {
-                  setActiveTab('OVERVIEW');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab !== 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <ClipboardList size={14} className={activeTab !== 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Dashboard</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('PROFIL');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <UserIcon size={14} className={activeTab === 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Profile</span>
-              </button>
-              <hr className="my-1 border-slate-100" />
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  logout();
-                }}
-                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
-              >
-                <LogOut size={14} />
-                <span>Logout</span>
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* ===================== CONTROL TABS SYSTEM ===================== */}
-      {activeTab !== 'PROFIL' && (
-        <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex items-center justify-between gap-1 overflow-x-auto flex-nowrap">
-          <div className="flex gap-1">
-            <button
-              onClick={() => setActiveTab('OVERVIEW')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'OVERVIEW'
-                ? 'text-slate-900 border-slate-900'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <TrendingUp size={15} />
-                <span>Ringkasan Keuangan</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('BERGERAK')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'BERGERAK'
-                ? 'text-slate-900 border-slate-900'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <Box size={15} />
-                <span>Aset Bergerak</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('TETAP')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'TETAP'
-                ? 'text-slate-900 border-slate-900'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <Building size={15} />
-                <span>Aset Tetap</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('RIWAYAT')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'RIWAYAT'
-                ? 'text-slate-900 border-slate-900'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <History size={15} />
-                <span>Riwayat Mutasi</span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('STAFF_PERFORMANCE')}
-              className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'STAFF_PERFORMANCE'
-                ? 'text-slate-900 border-slate-900'
-                : 'text-slate-600 border-transparent hover:text-slate-800'
-                }`}
-            >
-              <span className="flex items-center gap-2">
-                <UserCheck size={15} />
-                <span>Kinerja Staff</span>
-              </span>
-            </button>
+      {/* ===================== NEW CONTROL TABS SYSTEM ===================== */}
+      <div className="px-5 -mt-8 relative z-20 shrink-0 mb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
             
+            <div onClick={() => setActiveTab('OVERVIEW')} className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'OVERVIEW' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                 <TrendingUp size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Ringkasan</span>
+            </div>
+            
+            <div onClick={() => setActiveTab('BERGERAK')} className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'BERGERAK' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                 <Box size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Bergerak</span>
+            </div>
+            
+            <div onClick={() => setActiveTab('TETAP')} className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'TETAP' ? 'bg-amber-100 text-amber-600 border border-amber-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                 <Building size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Tetap</span>
+            </div>
+            
+            <div onClick={() => setActiveTab('RIWAYAT')} className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'RIWAYAT' ? 'bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                 <History size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Mutasi</span>
+            </div>
 
+            <div onClick={() => setActiveTab('STAFF_PERFORMANCE')} className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'STAFF_PERFORMANCE' ? 'bg-cyan-100 text-cyan-600 border border-cyan-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                 <UserCheck size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Kinerja</span>
+            </div>
+
+            <div onClick={() => setActiveTab('PROFIL')} className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'PROFIL' ? 'bg-purple-100 text-purple-600 border border-purple-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                 <UserIcon size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Profil</span>
+            </div>
+
+            <div onClick={logout} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center bg-slate-50 text-slate-600 border border-slate-100 transition-colors group-hover:bg-rose-100 group-hover:text-rose-600 group-hover:border-rose-200 shadow-sm">
+                 <LogOut size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider group-hover:text-rose-600 transition-colors">Keluar</span>
+            </div>
+            
+            <div onClick={loadDashboardData} className="flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-transform">
+              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center bg-slate-50 text-slate-600 border border-slate-100 shadow-sm hover:bg-slate-100">
+                 <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </div>
+              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Refresh</span>
+            </div>
+            
           </div>
-
-          <button
-            onClick={loadDashboardData}
-            className="mr-2 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors whitespace-nowrap flex items-center gap-2"
-          >
-            🔄 Refresh
-          </button>
         </div>
-      )}
+      </div>
 
       {/* Workspace Area */}
       <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6">
