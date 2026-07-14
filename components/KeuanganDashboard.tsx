@@ -321,11 +321,18 @@ export default function KeuanganDashboard() {
 
   useEffect(() => {
     loadDashboardData();
+    loadClaims();
   }, [activeUser]);
 
   // Asset Totals
   const totalMovingAssetValue = addons.reduce((sum, item) => sum + (Number(item.hpp) || 0) * (Number(item.stock) || 0), 0);
   const totalFixedAssetValue = fixedAssets.reduce((sum, item) => sum + (Number(item.purchase_price) || 0), 0);
+
+  // Claimed Salary Calculation
+  const approvedClaims = claimsList.filter(c => ['DISETUJUI', 'DIBAYAR', 'SELESAI', 'APPROVED'].includes(c.status?.toUpperCase()));
+  const totalClaimedPoints = approvedClaims.filter(c => c.type === 'points').reduce((sum, c) => sum + (Number(c.amount) || Number(c.points_claimed) || 0), 0);
+  const totalClaimedSalary = approvedClaims.filter(c => c.type === 'daily_salary' || c.type === 'salary').reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+  const totalStaffSalaryExpense = (totalClaimedPoints * 1000) + totalClaimedSalary;
 
   // Regional Branch Performance
   const regionalOrders = (orders || []).filter((o: any) => 
@@ -621,15 +628,13 @@ export default function KeuanganDashboard() {
                     </div>
 
                     <div 
-                      onClick={() => setActiveDetailModal('BERGERAK')}
+                      onClick={() => setActiveTab('STAFF_PERFORMANCE')}
                       className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
                     >
                       <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
-                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Jumlah Jenis Inventaris / Aset Tetap</p>
-                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">
-                        {addons.length} <span className="text-xs font-bold text-white/70 uppercase">Barang</span> / {fixedAssets.length} <span className="text-xs font-bold text-white/70 uppercase">Unit</span>
-                      </h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk detail →</span></p>
+                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Pengeluaran Gaji Karyawan</p>
+                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalStaffSalaryExpense.toLocaleString('id-ID')}</h2>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Total klaim gaji & poin yang sudah dibayarkan. <span className="underline opacity-90 block mt-1">Kelola Kinerja Staff →</span></p>
                     </div>
 
                     <div 
