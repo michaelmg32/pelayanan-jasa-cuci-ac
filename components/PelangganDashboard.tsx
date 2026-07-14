@@ -243,7 +243,7 @@ export default function PelangganDashboard() {
       if (filtered.length > 0) {
         setSelectedService(filtered[0].name);
       } else {
-        setSelectedService('none');
+        setSelectedService('');
       }
     }
   }, [models, categories, services]);
@@ -337,7 +337,7 @@ export default function PelangganDashboard() {
     if (filtered.length > 0) {
       setSelectedService(filtered[0].name);
     } else {
-      setSelectedService('none');
+      setSelectedService('');
     }
   };
 
@@ -361,11 +361,15 @@ export default function PelangganDashboard() {
   const estimatedCost = cartServices.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const handleAddServiceToCart = () => {
     if (currentServicePrice === 0) {
-      alert('❌ Maaf, harga untuk layanan dan model AC ini belum tersedia. Silakan hubungi admin.');
+      if (!selectedService) {
+        alert('❌ Silakan pilih jenis layanan terlebih dahulu.');
+      } else {
+        alert('❌ Maaf, harga untuk layanan dan model AC ini belum tersedia. Silakan hubungi admin.');
+      }
       return;
     }
     const catObj = categories.find(c => c.id === selectedCategory);
-    const categoryName = catObj ? catObj.name : 'Inspeksi & Konsultasi';
+    const categoryName = catObj ? catObj.name : '';
     
     setCartServices([...cartServices, {
       acType: selectedModel,
@@ -486,7 +490,7 @@ export default function PelangganDashboard() {
         if (filtered.length > 0) {
           setSelectedService(filtered[0].name);
         } else {
-          setSelectedService('none');
+          setSelectedService('');
         }
       }
       setQuantity(1);
@@ -1957,7 +1961,7 @@ export default function PelangganDashboard() {
                           </option>
                         ))}
                       {services.filter(s => s.categoryId === selectedCategory).length === 0 && (
-                        <option value="none">Inspeksi & Konsultasi</option>
+                        <option value="" disabled>-- Tidak ada layanan --</option>
                       )}
                     </select>
                   </div>
