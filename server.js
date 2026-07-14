@@ -368,18 +368,6 @@ const initializeDatabaseSettings = async () => {
       }
       console.log(`✅ Backfilled financial columns for ${existingOrders.length} orders successfully.`);
     }
-    // Auto-migration: Create activity_logs table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS activity_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        admin_id VARCHAR(50) NOT NULL,
-        admin_name VARCHAR(255) NOT NULL,
-        action VARCHAR(255) NOT NULL,
-        details TEXT,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log("✅ Auto-migrated 'activity_logs' table in database");
 
     // Auto-migration: Create ac_addon_transactions table
     await connection.query(`
@@ -652,41 +640,11 @@ app.put('/api/settings', verifyToken, async (req, res) => {
 
 // ===== ACTIVITY LOGS HELPER & API =====
 const logActivity = async (req, action, details) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return;
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded && decoded.role === 'admin') {
-      const connection = await pool.getConnection();
-      const [users] = await connection.query('SELECT name FROM users WHERE id = ?', [decoded.id]);
-      const adminName = users.length > 0 ? users[0].name : 'Unknown Admin';
-
-      await connection.query(
-        'INSERT INTO activity_logs (admin_id, admin_name, action, details) VALUES (?, ?, ?, ?)',
-        [decoded.id, adminName, action, details]
-      );
-      connection.release();
-    }
-  } catch (err) {
-    console.error('Error logging activity:', err);
-  }
+  // Activity logging disabled
 };
 
 app.get('/api/activity-logs', verifyToken, async (req, res) => {
-  if (req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    const [logs] = await connection.query('SELECT * FROM activity_logs ORDER BY createdAt DESC LIMIT 200');
-    res.json(logs);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  } finally {
-    if (connection) connection.release();
-  }
+  res.json([]);
 });
 
 // ===== AUTHENTICATION API =====

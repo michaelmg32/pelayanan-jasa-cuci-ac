@@ -697,16 +697,7 @@ export const updateSettings = async (settingsData: {
 
 // ===== ACTIVITY LOGS =====
 export const fetchActivityLogs = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/activity-logs`, {
-      headers: getAuthHeaders(), cache: 'no-store',
-    });
-    if (!response.ok) throw new Error('Failed to fetch activity logs');
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching activity logs:', error);
-    return [];
-  }
+  return [];
 };
 
 // ===== VOUCHERS API =====

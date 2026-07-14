@@ -39,7 +39,7 @@ export default function OwnerDashboard() {
 
   const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null);
   const [expandedDashboardRegionId, setExpandedDashboardRegionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'users' | 'regions' | 'settings'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [addons, setAddons] = useState<any[]>([]);
   const [fixedAssets, setFixedAssets] = useState<any[]>([]);
@@ -131,28 +131,6 @@ export default function OwnerDashboard() {
   const [newRegionName, setNewRegionName] = useState('');
   const [isAddingRegion, setIsAddingRegion] = useState(false);
   const [reportRegionId, setReportRegionId] = useState('ALL');
-
-  // Activity Logs States
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
-  const [isLogsLoading, setIsLogsLoading] = useState(false);
-
-  useEffect(() => {
-    if (activeTab === 'activity-logs') {
-      loadActivityLogs();
-    }
-  }, [activeTab]);
-
-  const loadActivityLogs = async () => {
-    setIsLogsLoading(true);
-    try {
-      const logs = await api.fetchActivityLogs();
-      setActivityLogs(logs);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLogsLoading(false);
-    }
-  };
 
   // Sync edits when user props update
   useEffect(() => {
@@ -908,14 +886,6 @@ export default function OwnerDashboard() {
               <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'users' ? 'text-indigo-700' : 'text-slate-500'}`}>Akses</span>
             </div>
 
-            {!activeUser?.region_id && (
-              <div onClick={() => setActiveTab('activity-logs')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
-                <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border ${activeTab === 'activity-logs' ? 'bg-gradient-to-br from-indigo-50 to-blue-100/50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50'}`}>
-                   <ShieldCheck size={24} strokeWidth={2.5} />
-                </div>
-                <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'activity-logs' ? 'text-indigo-700' : 'text-slate-500'}`}>Log</span>
-              </div>
-            )}
 
             <div onClick={() => {
               if (window.confirm('Apakah Anda yakin ingin keluar?')) {
@@ -1175,71 +1145,6 @@ export default function OwnerDashboard() {
           </div>
         )}
 
-        {/* ===================== TAB: USER MANAGEMENT ===================== */}
-        {activeTab === 'activity-logs' && (
-          <div className="bg-white border rounded-2xl p-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Log Aktivitas Admin</h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Pemantauan transparansi tindakan admin</p>
-              </div>
-              <button
-                onClick={loadActivityLogs}
-                disabled={isLogsLoading}
-                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-              >
-                {isLogsLoading ? <Loader size={12} className="animate-spin" /> : <TrendingUp size={12} />}
-                Segarkan
-              </button>
-            </div>
-
-            {isLogsLoading ? (
-              <div className="py-10 flex flex-col items-center justify-center text-indigo-600">
-                <Loader className="animate-spin mb-2" size={24} />
-                <p className="text-[10px] font-bold">Memuat log...</p>
-              </div>
-            ) : activityLogs.length === 0 ? (
-              <div className="text-center py-10 text-slate-400 text-[10px] font-medium">
-                Belum ada aktivitas admin yang tercatat.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="relative border-l-2 border-slate-100 ml-3 md:ml-4 space-y-6 pb-4">
-                  {activityLogs.map((log) => (
-                    <div key={log.id} className="relative pl-6">
-                      <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-white"></div>
-                      <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 shadow-sm hover:shadow-md transition">
-                        <div className="flex justify-between items-start mb-1.5">
-                          <div className="font-black text-xs text-slate-800 flex items-center gap-1.5">
-                            <ShieldCheck size={14} className="text-indigo-600" />
-                            {log.action}
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full whitespace-nowrap">
-                            {new Date(log.createdAt).toLocaleString('id-ID', {
-                              day: '2-digit', month: 'short', year: 'numeric',
-                              hour: '2-digit', minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                        <div className="text-[10.5px] text-slate-600 font-medium mb-2 leading-relaxed">
-                          {log.details}
-                        </div>
-                        <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200/60 mt-1">
-                          <div className="w-4 h-4 bg-indigo-100 text-indigo-700 font-black rounded flex items-center justify-center text-[8px] uppercase">
-                            {log.admin_name.charAt(0)}
-                          </div>
-                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide">
-                            Admin: <span className="text-slate-700">{log.admin_name}</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {activeTab === 'profile' && (
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 w-full shadow-sm">
