@@ -45,12 +45,12 @@ export default function KeuanganDashboard() {
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
-  const [performanceDate, setPerformanceDate] = useState(() => {
+  const [filterStartDate, setFilterStartDate] = useState(() => {
     const d = new Date();
     d.setDate(1);
     return d.toISOString().split('T')[0];
   });
-  const [performanceEndDate, setPerformanceEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [filterEndDate, setFilterEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [expandedPerformanceStaffId, setExpandedPerformanceStaffId] = useState<string | null>(null);
 
   // Helper functions
@@ -944,24 +944,7 @@ export default function KeuanganDashboard() {
                           <h3 className="font-black text-slate-800 uppercase tracking-wide flex items-center gap-2"><BarChart2 size={18} className="text-indigo-600" /> Laporan Kinerja Staff</h3>
                           <p className="text-[11px] text-slate-500 font-medium mt-1">Pantau jumlah pesanan selesai, rating rata-rata, dan pemakaian sparepart / addons</p>
                         </div>
-                        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 shrink-0">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rentang Tanggal:</label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="date"
-                              value={performanceDate}
-                              onChange={(e) => setPerformanceDate(e.target.value)}
-                              className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
-                            />
-                            <span className="text-[10px] font-bold text-slate-400">S/D</span>
-                            <input
-                              type="date"
-                              value={performanceEndDate}
-                              onChange={(e) => setPerformanceEndDate(e.target.value)}
-                              className="bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 rounded-xl font-bold focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition"
-                            />
-                          </div>
-                        </div>
+                        
                       </div>
 
                       <div className="grid grid-cols-1 gap-5">
@@ -970,7 +953,7 @@ export default function KeuanganDashboard() {
                             if (o.assignedTo !== staff.id || o.status !== 'SELESAI') return false;
                             const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
                             const orderDate = getLocalDateOnly(orderDateStr);
-                            return orderDate >= performanceDate && orderDate <= performanceEndDate;
+                            return orderDate >= filterStartDate && orderDate <= filterEndDate;
                           });
 
                           const completedCount = staffOrders.length;

@@ -531,6 +531,28 @@ export default function OwnerDashboard() {
 
     return (
       <>
+        {/* Global Date Filter (Top Right) */}
+        <div className="flex justify-end mb-4">
+          <div className="bg-white/80 backdrop-blur border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Filter Tanggal:</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-700 font-bold">
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 font-mono"
+              />
+              <span className="text-slate-400">s/d</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 font-mono"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* 4 Cards Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-4">
           <div onClick={() => setShowMovingAssetModal(true)} className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer">
@@ -712,26 +734,6 @@ export default function OwnerDashboard() {
 
             {/* Modal Body */}
             <div className="p-4 overflow-y-auto">
-              {/* Date Filters inside Modal */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
-                <span className="text-xs font-bold text-slate-500">Filter Periode</span>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
-                  <input
-                    type="date"
-                    value={filterStartDate}
-                    onChange={(e) => setFilterStartDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-                  />
-                  <span>s/d</span>
-                  <input
-                    type="date"
-                    value={filterEndDate}
-                    onChange={(e) => setFilterEndDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-                  />
-                </div>
-              </div>
-
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
                   <div>
