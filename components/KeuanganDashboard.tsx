@@ -724,7 +724,7 @@ export default function KeuanganDashboard() {
                   </div>
 
                   {/* Financial Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div 
                       onClick={() => setActiveDetailModal('BERGERAK')}
                       className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
@@ -757,9 +757,6 @@ export default function KeuanganDashboard() {
                       <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk detail →</span></p>
                     </div>
                   </div>
-
-                  {/* Branch Performance Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div 
                       onClick={() => setActiveDetailModal('PENDAPATAN')}
                       className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
@@ -770,53 +767,10 @@ export default function KeuanganDashboard() {
                       <p className="text-[9.5px] text-white/70 mt-2 font-medium">Akumulasi omset lunas dari order Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk rincian order →</span></p>
                     </div>
 
-                    <div 
-                      onClick={() => setActiveDetailModal('LABA')}
-                      className="bg-gradient-to-br from-violet-500 to-indigo-650 p-6 rounded-3xl border border-violet-400/30 shadow-lg shadow-violet-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
-                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Laba Bersih Cabang (Estimasi)</p>
-                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMargin.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Selisih pendapatan dikurangi modal & komisi wilayah. <span className="underline opacity-90 block mt-1">Klik untuk rincian laba →</span></p>
-                    </div>
-
-                    <div 
-                      onClick={() => setActiveDetailModal('KINERJA')}
-                      className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-3xl border border-amber-400/30 shadow-lg shadow-amber-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
-                      <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Kinerja & Kepuasan Layanan</p>
-                      <h2 className="text-2xl font-black text-white mt-1 relative z-10">
-                        {completionRate}% <span className="text-xs font-bold text-white/70 uppercase">Selesai</span> / {avgRating} ★
-                      </h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan penyelesaian tugas & rating Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk ulasan & rating staff →</span></p>
-                    </div>
                   </div>
 
                   {/* Overview Lists / Activity info */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Fixed Assets Summary List */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 relative">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Aset Tetap Terakhir</h4>
-                        <button onClick={() => setActiveTab('TETAP')} className="text-[10px] font-bold text-cyan-400 hover:underline">Lihat Semua →</button>
-                      </div>
-                      {fixedAssets.length === 0 ? (
-                        <p className="text-slate-500 text-xs py-4 text-center">Belum ada aset tetap terdaftar.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {fixedAssets.slice(0, 4).map(asset => (
-                            <div key={asset.id} className="flex justify-between items-center p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition hover:-translate-y-0.5">
-                              <div>
-                                <span className="text-xs font-bold text-slate-800 block">{asset.name}</span>
-                                <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Beli: {new Date(asset.purchase_date).toLocaleDateString('id-ID')}</span>
-                              </div>
-                              <span className="text-xs font-black text-emerald-400">Rp {Number(asset.purchase_price).toLocaleString('id-ID')}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  <div className="grid grid-cols-1 gap-6">
 
                     {/* Inventory Low Stock warnings */}
                     <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 relative">
