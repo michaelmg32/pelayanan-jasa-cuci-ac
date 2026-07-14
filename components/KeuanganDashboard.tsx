@@ -528,64 +528,64 @@ export default function KeuanganDashboard() {
       </div>
 
       {/* ===================== NEW CONTROL TABS SYSTEM ===================== */}
-      <div className="px-5 -mt-8 relative z-20 shrink-0 mb-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+      <div className="px-5 -mt-8 relative z-20 shrink-0 mb-2 max-w-5xl mx-auto w-full">
+        <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/40 border border-slate-100/60 p-4 md:p-5">
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-y-5 gap-x-2">
             
-            <div onClick={() => setActiveTab('OVERVIEW')} className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'OVERVIEW' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
-                 <TrendingUp size={22} strokeWidth={2.5} />
+            <div onClick={() => setActiveTab('OVERVIEW')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'OVERVIEW' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                 <TrendingUp size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Ringkasan</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'OVERVIEW' ? 'text-blue-700' : 'text-slate-500'}`}>Ringkasan</span>
             </div>
             
-            <div onClick={() => setActiveTab('BERGERAK')} className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'BERGERAK' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
-                 <Box size={22} strokeWidth={2.5} />
+            <div onClick={() => setActiveTab('BERGERAK')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'BERGERAK' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                 <Box size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Bergerak</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'BERGERAK' ? 'text-emerald-700' : 'text-slate-500'}`}>Bergerak</span>
             </div>
             
-            <div onClick={() => setActiveTab('TETAP')} className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'TETAP' ? 'bg-amber-100 text-amber-600 border border-amber-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
-                 <Building size={22} strokeWidth={2.5} />
+            <div onClick={() => setActiveTab('TETAP')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'TETAP' ? 'bg-amber-100 text-amber-600 border border-amber-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                 <Building size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Tetap</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'TETAP' ? 'text-amber-700' : 'text-slate-500'}`}>Tetap</span>
             </div>
             
-            <div onClick={() => setActiveTab('RIWAYAT')} className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'RIWAYAT' ? 'bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
-                 <History size={22} strokeWidth={2.5} />
+            <div onClick={() => setActiveTab('RIWAYAT')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'RIWAYAT' ? 'bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                 <History size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Mutasi</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'RIWAYAT' ? 'text-indigo-700' : 'text-slate-500'}`}>Mutasi</span>
             </div>
 
-            <div onClick={() => setActiveTab('STAFF_PERFORMANCE')} className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'STAFF_PERFORMANCE' ? 'bg-cyan-100 text-cyan-600 border border-cyan-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
-                 <UserCheck size={22} strokeWidth={2.5} />
+            <div onClick={() => setActiveTab('STAFF_PERFORMANCE')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'STAFF_PERFORMANCE' ? 'bg-cyan-100 text-cyan-600 border border-cyan-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                 <UserCheck size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Kinerja</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'STAFF_PERFORMANCE' ? 'text-cyan-700' : 'text-slate-500'}`}>Kinerja</span>
             </div>
 
-            <div onClick={() => setActiveTab('PROFIL')} className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'PROFIL' ? 'bg-purple-100 text-purple-600 border border-purple-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
-                 <UserIcon size={22} strokeWidth={2.5} />
+            <div onClick={() => setActiveTab('PROFIL')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'PROFIL' ? 'bg-purple-100 text-purple-600 border border-purple-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                 <UserIcon size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Profil</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'PROFIL' ? 'text-purple-700' : 'text-slate-500'}`}>Profil</span>
             </div>
 
-            <div onClick={logout} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center bg-slate-50 text-slate-600 border border-slate-100 transition-colors group-hover:bg-rose-100 group-hover:text-rose-600 group-hover:border-rose-200 shadow-sm">
-                 <LogOut size={22} strokeWidth={2.5} />
+            <div onClick={logout} className="flex flex-col items-center gap-2.5 cursor-pointer group active:scale-95 transition-all hover:scale-105">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-slate-50 text-slate-500 border border-slate-100 transition-colors group-hover:bg-rose-100 group-hover:text-rose-600 group-hover:border-rose-200 shadow-sm">
+                 <LogOut size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider group-hover:text-rose-600 transition-colors">Keluar</span>
+              <span className="text-[9px] font-extrabold text-slate-500 text-center uppercase tracking-wider group-hover:text-rose-600 transition-colors">Keluar</span>
             </div>
             
-            <div onClick={loadDashboardData} className="flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-transform">
-              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center bg-slate-50 text-slate-600 border border-slate-100 shadow-sm hover:bg-slate-100">
-                 <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            <div onClick={loadDashboardData} className="flex flex-col items-center gap-2.5 cursor-pointer active:scale-95 transition-all hover:scale-105 group">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-slate-50 text-slate-500 border border-slate-100 shadow-sm group-hover:bg-slate-200 transition-colors">
+                 <svg className="w-6 h-6 text-slate-500 group-hover:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </div>
-              <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Refresh</span>
+              <span className="text-[9px] font-extrabold text-slate-500 text-center uppercase tracking-wider group-hover:text-slate-700">Refresh</span>
             </div>
             
           </div>
