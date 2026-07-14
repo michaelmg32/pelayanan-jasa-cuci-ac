@@ -1762,7 +1762,7 @@ export default function KaryawanDashboard() {
 
         {/* WORK PANEL MODAL (PENGERJAAN STAGE) */}
         {activeWorkingTask && (
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex flex-col justify-end z-45 animate-in slide-in-from-bottom duration-300 pt-10">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex flex-col justify-end z-50 animate-in slide-in-from-bottom duration-300 pt-10">
             <div className="bg-white rounded-t-[24px] flex flex-col max-h-[calc(100%-2.5rem)] overflow-hidden shadow-2xl">
 
               <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
