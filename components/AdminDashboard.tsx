@@ -524,23 +524,7 @@ export default function AdminDashboard() {
   const [adminCartServices, setAdminCartServices] = useState<any[]>([]);
   const [showAdminMapPicker, setShowAdminMapPicker] = useState(false);
 
-  // AC selection states for Admin order wizard
-  const [adminSelectedAcSource, setAdminSelectedAcSource] = useState('new');
-  const [adminCustomerACs, setAdminCustomerACs] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (adminOrderSelectedUser?.id) {
-      api.fetchCustomerACs(adminOrderSelectedUser.id).then(data => {
-        setAdminCustomerACs(data);
-      }).catch(err => {
-        console.error('Error fetching customer ACs in admin booking:', err);
-        setAdminCustomerACs([]);
-      });
-    } else {
-      setAdminCustomerACs([]);
-    }
-    setAdminSelectedAcSource('new');
-  }, [adminOrderSelectedUser]);
 
   // Add User State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -601,46 +585,8 @@ export default function AdminDashboard() {
   const [expandedPerformanceStaffId, setExpandedPerformanceStaffId] = useState<string | null>(null);
 
   // Master Data Editing State
-  const [activeMasterSubTab, setActiveMasterSubTab] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS' | 'CUSTOMER_ACS'>('MODELS');
+  const [activeMasterSubTab, setActiveMasterSubTab] = useState<'MODELS' | 'CATEGORIES' | 'SERVICES' | 'ADDONS'>('MODELS');
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
-
-  // Customer AC list states
-  const [customerACs, setCustomerACs] = useState<any[]>([]);
-  const [acSearchQuery, setAcSearchQuery] = useState('');
-  const [showACHistoryModal, setShowACHistoryModal] = useState(false);
-  const [selectedACForHistory, setSelectedACForHistory] = useState<any | null>(null);
-  const [acHistoryLogs, setAcHistoryLogs] = useState<any[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  const loadAllCustomerACs = async () => {
-    try {
-      const data = await api.fetchCustomerACs();
-      setCustomerACs(data);
-    } catch (err) {
-      console.error('Error fetching customer ACs:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'MASTER_DATA' && activeMasterSubTab === 'CUSTOMER_ACS') {
-      loadAllCustomerACs();
-    }
-  }, [activeTab, activeMasterSubTab]);
-
-  const handleViewACHistory = async (ac: any) => {
-    setSelectedACForHistory(ac);
-    setShowACHistoryModal(true);
-    setLoadingHistory(true);
-    setAcHistoryLogs([]);
-    try {
-      const logs = await api.fetchCustomerACHistory(ac.id);
-      setAcHistoryLogs(logs);
-    } catch (err) {
-      console.error('Error fetching AC history:', err);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
 
   // Form add-new states for master data
   const [newModelName, setNewModelName] = useState('');
@@ -4403,31 +4349,18 @@ return (
 
                               let linkedAcId = undefined;
                               let linkedAcName = undefined;
-                              if (adminSelectedAcSource !== 'new') {
-                                const matchAc = adminCustomerACs.find(ac => ac.id === adminSelectedAcSource);
-                                if (matchAc) {
-                                  linkedAcId = matchAc.id;
-                                  linkedAcName = matchAc.name;
-                                }
-                              }
-
-                              if (linkedAcId && adminCartServices.some(item => item.acId === linkedAcId)) {
-                                alert('❌ AC ini sudah ada di dalam daftar layanan pesanan.');
-                                return;
-                              }
 
                               setAdminCartServices(prev => [...prev, {
                                 acType: adminSelectedModel,
                                 category: adminSelectedCategory,
                                 categoryId: cat.id,
                                 serviceType: svc.name,
-                                quantity: adminSelectedAcSource !== 'new' ? 1 : adminQuantity,
+                                quantity: adminQuantity,
                                 price: resolvedPrice,
                                 acId: linkedAcId || 'manual',
                                 acName: linkedAcName || 'AC Umum'
                               }]);
                               setAdminSelectedService('');
-                              setAdminSelectedAcSource('new');
                             }
                           }}
                           className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold text-xs py-2.5 px-4 rounded-xl transition flex-1 border border-indigo-200"
@@ -4630,110 +4563,6 @@ return (
           </div>
         </div>
       )}
-
-        {/* AC SERVICE HISTORY LOGS MODAL */}
-        {showACHistoryModal && selectedACForHistory && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white rounded-3xl flex flex-col w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl animate-scale-up text-left">
-              {/* Modal Header */}
-              <div className="px-5 py-4 border-b flex justify-between items-center bg-slate-900 text-white shrink-0">
-                <div>
-                  <span className="text-[8px] bg-indigo-650 px-2 py-0.5 rounded font-black uppercase text-white">Riwayat Servis</span>
-                  <h4 className="text-sm font-extrabold text-white mt-1 truncate">Riwayat AC: {selectedACForHistory.name || 'AC'} ({selectedACForHistory.id})</h4>
-                </div>
-                <button
-                  onClick={() => setShowACHistoryModal(false)}
-                  className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-
-              {/* Modal Content */}
-              <div className="p-5 overflow-y-auto space-y-4 pb-12 bg-slate-50 text-left">
-                {loadingHistory ? (
-                  <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                    <Loader className="animate-spin text-indigo-600" size={24} />
-                    <span className="text-xs text-slate-500 font-bold">Memuat riwayat servis...</span>
-                  </div>
-                ) : acHistoryLogs.length === 0 ? (
-                  <div className="text-center py-10 space-y-2">
-                    <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
-                      <Clock size={20} />
-                    </div>
-                    <p className="text-xs font-bold text-slate-700">Belum Ada Riwayat Cuci/Servis</p>
-                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs mx-auto">
-                      Riwayat cuci/servis AC ini belum tersedia.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-5">
-                    {acHistoryLogs.map((log) => (
-                      <div key={log.id} className="relative text-xs">
-                        {/* Dot indicator */}
-                        <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-indigo-600 border border-white"></div>
-                        
-                        <div className="bg-white border border-slate-150 p-3.5 rounded-xl shadow-xs space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <strong className="text-slate-800 text-xs">{log.serviceName}</strong>
-                              <span className="text-[9.5px] text-slate-450 block mt-0.5">
-                                📅 {log.scheduledDate} {log.scheduledTime ? `| Pukul ${log.scheduledTime}` : ''}
-                              </span>
-                            </div>
-                            <span className="text-[9.5px] bg-slate-150 px-2 py-0.5 rounded font-medium text-slate-600">
-                              Oleh: {log.workerName || 'Teknisi'}
-                            </span>
-                          </div>
-
-                          {log.notes && (
-                            <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-slate-650 text-[10.5px] italic">
-                              "{log.notes}"
-                            </div>
-                          )}
-
-                          {/* Photos before/after */}
-                          {(log.photoBefore || log.photoAfter) && (
-                            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100">
-                              <div>
-                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sebelum</span>
-                                {log.photoBefore ? (
-                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                                    <img src={log.photoBefore} alt="Before" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoBefore)} />
-                                  </div>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
-                                )}
-                              </div>
-                              <div>
-                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Sesudah</span>
-                                {log.photoAfter ? (
-                                  <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                                    <img src={log.photoAfter} alt="After" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setInspectedPhoto(log.photoAfter)} />
-                                  </div>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">Tidak ada foto</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
-                <button
-                  onClick={() => setShowACHistoryModal(false)}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider transition cursor-pointer text-center"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
       {/* MODAL: Tambah Pengguna */}
       {showAddUserModal && (
