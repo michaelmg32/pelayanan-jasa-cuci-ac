@@ -269,7 +269,7 @@ export default function KeuanganDashboard() {
   };
 
   // Stock-in / Purchase Modal
-  const [activeDetailModal, setActiveDetailModal] = useState<'BERGERAK' | 'TETAP' | 'PENDAPATAN' | 'LABA' | 'KINERJA' | null>(null);
+  const [activeDetailModal, setActiveDetailModal] = useState<'BERGERAK' | 'TETAP' | 'PENDAPATAN' | 'LABA' | 'KINERJA' | 'GAJI' | null>(null);
   const [purchaseModalAddon, setPurchaseModalAddon] = useState<any | null>(null);
   const [purchaseQty, setPurchaseQty] = useState(1);
   const [purchasePrice, setPurchasePrice] = useState(0);
@@ -628,13 +628,13 @@ export default function KeuanganDashboard() {
                     </div>
 
                     <div 
-                      onClick={() => setActiveTab('STAFF_PERFORMANCE')}
+                      onClick={() => setActiveDetailModal('GAJI')}
                       className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
                     >
                       <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
                       <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Pengeluaran Gaji Karyawan</p>
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalStaffSalaryExpense.toLocaleString('id-ID')}</h2>
-                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Total klaim gaji & poin yang sudah dibayarkan. <span className="underline opacity-90 block mt-1">Kelola Kinerja Staff →</span></p>
+                      <p className="text-[9.5px] text-white/70 mt-2 font-medium">Total klaim gaji & poin yang sudah dibayarkan. <span className="underline opacity-90 block mt-1">Lihat Histori Klaim →</span></p>
                     </div>
 
                     <div 
@@ -1609,6 +1609,7 @@ export default function KeuanganDashboard() {
                   {activeDetailModal === 'PENDAPATAN' && `Rincian Pendapatan Cabang — ${userRegionName}`}
                   {activeDetailModal === 'LABA' && `Rincian Laba Bersih & Margin Cabang — ${userRegionName}`}
                   {activeDetailModal === 'KINERJA' && `Ulasan Pelanggan & Kinerja Staff — ${userRegionName}`}
+                  {activeDetailModal === 'GAJI' && `Histori Pencairan Gaji & Poin — ${userRegionName}`}
                 </h3>
               </div>
               <button 
@@ -1936,6 +1937,48 @@ export default function KeuanganDashboard() {
                         ));
                       })()}
                     </div>
+                  </div>
+                </div>
+                </div>
+              )}
+
+              {/* 6. HISTORI KLAIM GAJI & POIN */}
+              {activeDetailModal === 'GAJI' && (
+                <div className="bg-white border border-slate-150 p-4 rounded-2xl space-y-3">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Histori Pencairan Gaji & Poin Karyawan</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-semibold text-slate-650">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                          <th className="py-2.5 px-3">Waktu Klaim</th>
+                          <th className="py-2.5 px-3">Karyawan</th>
+                          <th className="py-2.5 px-2">Jenis Klaim</th>
+                          <th className="py-2.5 px-3 text-right">Nominal Pencairan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {approvedClaims.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-4 text-center text-slate-400">Belum ada histori pencairan gaji.</td>
+                          </tr>
+                        ) : (
+                          approvedClaims.map(c => (
+                            <tr key={c.id} className="hover:bg-slate-50/50">
+                              <td className="py-2.5 px-3 font-mono text-[10px] text-slate-500">{new Date(c.created_at || new Date()).toLocaleString('id-ID')}</td>
+                              <td className="py-2.5 px-3 font-bold text-slate-800">{c.user_name || c.employeeName || 'Karyawan'}</td>
+                              <td className="py-2.5 px-2">
+                                <span className={`px-2 py-0.5 rounded-md font-mono text-[9px] font-black uppercase ${c.type === 'points' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {c.type === 'points' ? 'Klaim Poin' : 'Klaim Gaji'}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono text-emerald-600 font-extrabold">
+                                Rp {c.type === 'points' ? ((Number(c.amount) || Number(c.points_claimed) || 0) * 1000).toLocaleString('id-ID') : (Number(c.amount) || 0).toLocaleString('id-ID')}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
