@@ -918,113 +918,94 @@ export default function KaryawanDashboard() {
             <span className="text-xs font-black uppercase tracking-wider text-slate-350">| Portal Karyawan</span>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMoreMenu(prev => !prev);
-              }}
-              className="p-1.5 hover:bg-slate-800 rounded-lg transition cursor-pointer text-slate-300 hover:text-white"
-            >
-              <MoreVertical size={18} />
-            </button>
-
-            {showMoreMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
-                <button
-                  onClick={() => {
-                    setActiveTab('dashboard');
-                    setShowMoreMenu(false);
-                  }}
-                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'dashboard' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
-                >
-                  <Home size={14} className={activeTab === 'dashboard' ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>Penugasan</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('history');
-                    setShowMoreMenu(false);
-                  }}
-                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'history' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
-                >
-                  <Clock size={14} className={activeTab === 'history' ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>Histori</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('profile');
-                    setShowMoreMenu(false);
-                  }}
-                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'profile' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
-                >
-                  <UserIcon size={14} className={activeTab === 'profile' ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>Profil</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('gaji');
-                    setShowMoreMenu(false);
-                  }}
-                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'gaji' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
-                >
-                  <FileText size={14} className={activeTab === 'gaji' ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>Gaji & Poin</span>
-                </button>
-                {activeUser?.is_leader ? (
-                  <button
-                    onClick={() => {
-                      setActiveTab('team');
-                      setShowMoreMenu(false);
-                    }}
-                    className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer ${activeTab === 'team' ? 'text-emerald-600 bg-emerald-50/20' : ''}`}
-                  >
-                    <Users size={14} className={activeTab === 'team' ? 'text-emerald-600' : 'text-slate-400'} />
-                    <span>Kinerja Tim</span>
-                  </button>
-                ) : null}
-                <hr className="my-1 border-slate-100" />
-                <button
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    logout();
-                  }}
-                  className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer"
-                >
-                  <LogOut size={14} />
-                  <span>Keluar</span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
         {/* MAIN CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto pb-6 min-h-0">
+        <div className="flex-1 overflow-y-auto pb-6 min-h-0 bg-slate-50">
+
+        {/* UNIFIED HEADER & ICON GRID */}
+        <div className="bg-slate-900 text-white rounded-b-[32px] pt-4 pb-12 px-5 shrink-0 relative shadow-lg">
+          <span className="text-[8px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+             Departemen Teknisi Lapangan
+          </span>
+          <h2 className="text-xl font-extrabold text-white mt-2">Halo Sobat, {activeUser.name}!</h2>
+          <p className="text-[10.5px] text-slate-300 mt-1">Status: <strong className="text-emerald-400">SIAP BEKERJA</strong></p>
+        </div>
+
+        {/* ICON NAVIGATION GRID */}
+        <div className="px-5 -mt-8 relative z-10 shrink-0 mb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+              
+              <div onClick={() => setActiveTab('dashboard')} className="flex flex-col items-center gap-2 cursor-pointer">
+                <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                   <Home size={22} strokeWidth={2.5} />
+                </div>
+                <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Penugasan</span>
+              </div>
+              
+              <div onClick={() => setActiveTab('history')} className="flex flex-col items-center gap-2 cursor-pointer">
+                <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'history' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                   <Clock size={22} strokeWidth={2.5} />
+                </div>
+                <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Histori</span>
+              </div>
+              
+              <div onClick={() => setActiveTab('profile')} className="flex flex-col items-center gap-2 cursor-pointer">
+                <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'profile' ? 'bg-purple-100 text-purple-600 border border-purple-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                   <UserIcon size={22} strokeWidth={2.5} />
+                </div>
+                <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Profil</span>
+              </div>
+              
+              <div onClick={() => setActiveTab('gaji')} className="flex flex-col items-center gap-2 cursor-pointer">
+                <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'gaji' ? 'bg-amber-100 text-amber-600 border border-amber-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                   <FileText size={22} strokeWidth={2.5} />
+                </div>
+                <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Gaji & Poin</span>
+              </div>
+
+              {activeUser?.is_leader && (
+                <div onClick={() => setActiveTab('team')} className="flex flex-col items-center gap-2 cursor-pointer">
+                  <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'team' ? 'bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                     <Users size={22} strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Kinerja Tim</span>
+                </div>
+              )}
+
+              <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2 cursor-pointer">
+                <div className="w-12 h-12 rounded-[14px] flex items-center justify-center bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-100">
+                   <LogOut size={22} strokeWidth={2.5} />
+                </div>
+                <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Keluar</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
 
           {/* ==================== TAB 1: DASHBOARD ==================== */}
           {activeTab === 'dashboard' && (
-            <div>
-              <div className="bg-slate-900 px-5 pt-5 pb-5 text-left text-white rounded-b-[24px] shadow-lg shrink-0">
-                <span className="text-[8px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Departemen Teknisi Lapangan
-                </span>
-                <h2 className="text-base font-extrabold mt-1.5 leading-none text-white">Halo Sobat, {activeUser.name}!</h2>
-                <p className="text-[10.5px] text-slate-400 mt-1">Status: <strong className="text-emerald-400">SIAP BEKERJA</strong></p>
-
-                <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-slate-800">
-                  <div className="text-left">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Tugas Aktif</span>
-                    <span className="text-sm font-extrabold text-blue-400 font-mono mt-0.5 block">{activeTasks.length}</span>
+            <div className="animate-in fade-in duration-300">
+              <div className="px-5 mb-5 mt-2">
+                <div className="grid grid-cols-2 gap-3 p-4 bg-blue-600 text-white rounded-2xl shadow-md border border-blue-500 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 opacity-10">
+                     <Home size={80} className="-mt-4 -mr-4" />
                   </div>
-                  <div className="text-right">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Selesai</span>
-                    <span className="text-sm font-extrabold text-emerald-400 font-mono mt-0.5 block">{completedTasks.length}</span>
+                  <div className="text-left relative z-10">
+                    <span className="text-[9px] text-blue-100 font-bold uppercase tracking-wider block">Tugas Aktif</span>
+                    <span className="text-2xl font-black font-mono mt-0.5 block">{activeTasks.length}</span>
+                  </div>
+                  <div className="text-right relative z-10 border-l border-blue-400/50 pl-3">
+                    <span className="text-[9px] text-blue-100 font-bold uppercase tracking-wider block">Selesai</span>
+                    <span className="text-2xl font-black font-mono mt-0.5 block">{completedTasks.length}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="px-4 py-4 space-y-4">
+              <div className="px-5 space-y-4">
                 <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider text-left pl-1">Daftar Kunjungan Service</h3>
 
                 {activeTasks.length === 0 ? (
