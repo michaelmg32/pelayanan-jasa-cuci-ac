@@ -838,8 +838,8 @@ export default function OwnerDashboard() {
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
           <a href="/" className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20 cursor-pointer block">
-            {appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_logo ? (
-              <img src={appSettings[activeUser?.region_id || 'GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
+            {appSettings?.['GLOBAL']?.business_logo ? (
+              <img src={appSettings['GLOBAL'].business_logo} alt="Logo" className="w-full h-full object-cover" />
             ) : (
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -847,7 +847,7 @@ export default function OwnerDashboard() {
             )}
           </a>
           <div className="text-left">
-            <h1 className="text-sm font-black leading-none">{appSettings?.[activeUser?.region_id || 'GLOBAL']?.business_name || 'Sugar AC'}</h1>
+            <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'Sugar AC'}</h1>
             <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Owner</p>
           </div>
         </div>
@@ -887,11 +887,7 @@ export default function OwnerDashboard() {
             </div>
 
 
-            <div onClick={() => {
-              if (window.confirm('Apakah Anda yakin ingin keluar?')) {
-                logout();
-              }
-            }} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+            <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
               <div className="w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border bg-rose-50 border-rose-100 text-rose-500 shadow-rose-200/30 hover:bg-rose-100">
                  <LogOut size={24} strokeWidth={2.5} />
               </div>
@@ -1836,6 +1832,25 @@ export default function OwnerDashboard() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mb-2">
+              <LogOut size={32} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-800">Keluar dari Akun?</h3>
+              <p className="text-xs font-medium text-slate-500 mt-2">Anda harus login kembali untuk mengakses data.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button onClick={() => setShowLogoutConfirm(false)} className="py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+              <button onClick={() => { setShowLogoutConfirm(false); logout(); }} className="py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/30 transition">Ya, Keluar</button>
             </div>
           </div>
         </div>
