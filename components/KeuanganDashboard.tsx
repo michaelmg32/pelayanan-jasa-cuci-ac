@@ -1939,7 +1939,7 @@ export default function KeuanganDashboard() {
                     </div>
                   </div>
                 </div>
-                </div>
+
               )}
 
               {/* 6. HISTORI KLAIM GAJI & POIN */}

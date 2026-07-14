@@ -833,8 +833,8 @@ export default function KaryawanDashboard() {
 
         {/* ICON NAVIGATION GRID */}
         <div className="px-5 -mt-8 relative z-10 shrink-0 mb-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+          <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/40 border border-slate-100/60 p-4 md:p-5">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-y-5 gap-x-2">
               
               <div onClick={() => setActiveTab('dashboard')} className="flex flex-col items-center gap-2 cursor-pointer">
                 <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
