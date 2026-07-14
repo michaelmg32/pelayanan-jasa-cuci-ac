@@ -908,7 +908,11 @@ export default function OwnerDashboard() {
               </div>
             )}
 
-            <div onClick={logout} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+            <div onClick={() => {
+              if (window.confirm('Apakah Anda yakin ingin keluar?')) {
+                logout();
+              }
+            }} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
               <div className="w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border bg-rose-50 border-rose-100 text-rose-500 shadow-rose-200/30 hover:bg-rose-100">
                  <LogOut size={24} strokeWidth={2.5} />
               </div>
