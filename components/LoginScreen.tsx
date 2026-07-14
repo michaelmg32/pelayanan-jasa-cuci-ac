@@ -34,6 +34,10 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
   const [ktpPhoto, setKtpPhoto] = useState<string | null>(null);
   const [selfiePhoto, setSelfiePhoto] = useState<string | null>(null);
 
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
   // Google Sign-In Step-2 states
   const [showGoogleStep2, setShowGoogleStep2] = useState(false);
   const [googleEmail, setGoogleEmail] = useState('');
@@ -225,6 +229,10 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
     } else {
       if (!regName.trim() || !regEmail.trim() || !regPhone.trim() || !password.trim()) {
         setErrorMsg('Semua data wajib diisi.');
+        return;
+      }
+      if (!agreeTerms) {
+        setErrorMsg('Anda harus menyetujui Syarat & Ketentuan serta Kebijakan Privasi.');
         return;
       }
     }
@@ -435,7 +443,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
           <div className="flex border-b border-slate-100 mb-5 relative">
             <button
               type="button"
-              onClick={() => { setFormMode('login'); setErrorMsg(''); }}
+              onClick={() => { setFormMode('login'); setErrorMsg(''); setAgreeTerms(false); }}
               className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'login' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
               Masuk
@@ -445,7 +453,7 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
             </button>
             <button
               type="button"
-              onClick={() => { setFormMode('register_pelanggan'); setErrorMsg(''); }}
+              onClick={() => { setFormMode('register_pelanggan'); setErrorMsg(''); setAgreeTerms(false); }}
               className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'register_pelanggan' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
               Pelanggan
@@ -622,6 +630,20 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 </div>
               </div>
 
+              <div className="flex items-start gap-2.5 pt-1.5 pb-1 text-left">
+                <input
+                  type="checkbox"
+                  id="agree-terms"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="mt-1 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer shrink-0"
+                  required
+                />
+                <label htmlFor="agree-terms" className="text-[10.5px] text-slate-550 leading-relaxed font-semibold cursor-pointer select-none">
+                  Saya menyetujui <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-600 hover:underline font-bold focus:outline-none cursor-pointer">Syarat & Ketentuan</button> dan <button type="button" onClick={() => setShowPrivacyModal(true)} className="text-blue-600 hover:underline font-bold focus:outline-none cursor-pointer">Kebijakan Privasi</button> yang berlaku.
+                </label>
+              </div>
+
               <button
                 type="submit"
                 disabled={isLoading}
@@ -760,6 +782,111 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== MODAL: SYARAT & KETENTUAN ===================== */}
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-[550px] bg-white border border-slate-200 rounded-3xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden text-left">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <h3 className="font-extrabold text-white text-xs uppercase tracking-wider">Syarat & Ketentuan Layanan</h3>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(false)}
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-600 leading-relaxed bg-slate-50 flex-grow font-semibold">
+              <p>Selamat datang di Sugar AC. Dengan mendaftar atau menggunakan layanan kami, Anda menyetujui syarat dan ketentuan berikut:</p>
+              
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">1. Cakupan Jasa & Alamat</h4>
+                <p className="text-slate-600 font-medium">Pelanggan wajib memberikan alamat yang lengkap, benar, dan memilih koordinat titik GPS secara akurat melalui peta agar memudahkan perjalanan teknisi.</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">2. Kebijakan Jadwal & Pembatalan</h4>
+                <p className="text-slate-600 font-medium">Pemesanan jasa harus dikonfirmasi oleh Admin. Jika terjadi kendala operasional, kami berhak mengajukan usulan jadwal alternatif (reschedule). Pelanggan berhak menolak atau menyetujui usulan tersebut.</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">3. Garansi Layanan</h4>
+                <p className="text-slate-600 font-medium">Kami menyediakan garansi pekerjaan cuci atau perbaikan AC selama 30 hari kalender terhitung sejak status order ditandai selesai. Garansi hanya berlaku untuk bagian pekerjaan yang sama.</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">4. Keamanan di Lokasi</h4>
+                <p className="text-slate-600 font-medium">Pelanggan atau perwakilan dewasa wajib berada di lokasi untuk mendampingi dan mengawasi teknisi selama proses pemeriksaan dan pengerjaan fisik berlangsung.</p>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-white border-t border-slate-100 text-right shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setAgreeTerms(true);
+                  setShowTermsModal(false);
+                }}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] px-5 py-2.5 rounded-xl uppercase tracking-wider transition cursor-pointer shadow-md"
+              >
+                Setuju & Lanjutkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== MODAL: KEBIJAKAN PRIVASI ===================== */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-[550px] bg-white border border-slate-200 rounded-3xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden text-left">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white shrink-0">
+              <h3 className="font-extrabold text-white text-xs uppercase tracking-wider">Kebijakan Privasi Sugar AC</h3>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="p-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-600 leading-relaxed bg-slate-50 flex-grow font-semibold">
+              <p>Kami sangat menghargai privasi informasi pribadi Anda. Kebijakan ini menjelaskan bagaimana data Anda dikumpulkan dan dilindungi:</p>
+              
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">1. Informasi Yang Kami Kumpulkan</h4>
+                <p className="text-slate-600 font-medium">Kami mengumpulkan nama, alamat email, nomor telepon/WhatsApp, alamat pengerjaan, serta koordinat peta yang Anda tentukan secara sukarela saat pendaftaran atau pemesanan.</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">2. Penggunaan Data Koordinat GPS</h4>
+                <p className="text-slate-600 font-medium">Informasi peta dan koordinat GPS hanya digunakan untuk membantu memetakan lokasi penugasan serta navigasi bagi teknisi Sugar AC menuju rumah/kantor Anda.</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wide">3. Kerahasiaan Data & Pihak Ketiga</h4>
+                <p className="text-slate-600 font-medium">Seluruh data yang tersimpan tidak akan pernah dijual, disewakan, atau dibagikan kepada pihak ketiga di luar Sugar AC tanpa persetujuan tertulis dari Anda.</p>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-white border-t border-slate-100 text-right shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setAgreeTerms(true);
+                  setShowPrivacyModal(false);
+                }}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] px-5 py-2.5 rounded-xl uppercase tracking-wider transition cursor-pointer shadow-md"
+              >
+                Setuju & Lanjutkan
+              </button>
+            </div>
           </div>
         </div>
       )}
