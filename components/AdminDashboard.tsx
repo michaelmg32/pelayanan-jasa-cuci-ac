@@ -3357,8 +3357,8 @@ return (
 
       {/* ===================== ALLOCATION MODAL ===================== */}
       {selectedOrderForAssign && (
-        <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left">
+        <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl text-left animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
               <div>
                 <h4 className="font-black text-xs uppercase tracking-wide">Delegasi Kerja Staff</h4>
@@ -3385,20 +3385,62 @@ return (
               </div>
 
               <div>
-                <label className="text-[9.5px] text-slate-400 font-bold uppercase block mb-1">Pilih Teknisi</label>
-                <select
-                  value={selectedStaffId}
-                  onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:border-indigo-500 font-extrabold"
-                  disabled={isLoading}
-                >
-                  <option value="">-- Pilih Staff --</option>
-                  {sortedStaffList.map(staff => (
-                    <option key={staff.id} value={staff.id}>
-                      {staff.name} (⭐ {staff.avgRating.toFixed(1)} | 🛠️ {staff.jobsDone} Selesai)
-                    </option>
-                  ))}
-                </select>
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Pilih Teknisi Cabang</label>
+                <div className="max-h-64 overflow-y-auto space-y-2 pr-1.5 scrollbar-thin scrollbar-thumb-slate-200">
+                  {sortedStaffList.length === 0 ? (
+                    <div className="text-center py-6 text-slate-400 text-xs font-medium bg-slate-50 rounded-2xl border border-dashed">
+                      Tidak ada staf teknisi aktif di wilayah ini.
+                    </div>
+                  ) : (
+                    sortedStaffList.map(staff => {
+                      const isSelected = selectedStaffId === staff.id;
+                      return (
+                        <div
+                          key={staff.id}
+                          onClick={() => !isLoading && setSelectedStaffId(staff.id)}
+                          className={`flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200 cursor-pointer ${
+                            isSelected 
+                              ? 'bg-blue-50/50 border-blue-500 ring-2 ring-blue-500/10 shadow-sm' 
+                              : 'bg-white border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 shadow-xs'
+                          } ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          {/* Face Avatar */}
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                            {staff.photo ? (
+                              <img src={staff.photo} alt={staff.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-xs font-black text-slate-500 uppercase">{staff.name.charAt(0)}</span>
+                            )}
+                          </div>
+
+                          {/* Staff Info */}
+                          <div className="flex-grow min-w-0 text-left">
+                            <span className="font-extrabold text-xs text-slate-800 block truncate">{staff.name}</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold text-amber-600 bg-amber-50 border border-amber-105 px-1.5 py-0.5 rounded-md">
+                                ⭐ {staff.avgRating > 0 ? staff.avgRating.toFixed(1) : '-'}
+                              </span>
+                              <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-105 px-1.5 py-0.5 rounded-md">
+                                🛠️ {staff.jobsDone} Selesai
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Selected Checkbox Indicator */}
+                          <div className="shrink-0">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-200 ${
+                              isSelected 
+                                ? 'bg-blue-600 border-blue-600 text-white scale-110 shadow-sm' 
+                                : 'border-slate-300 bg-white'
+                            }`}>
+                              {isSelected && <Check size={11} strokeWidth={3} />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
