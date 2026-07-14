@@ -78,6 +78,10 @@ export default function OwnerDashboard() {
   const todayDateStr = getLocalDateString();
   const [filterStartDate, setFilterStartDate] = useState(todayDateStr);
   const [filterEndDate, setFilterEndDate] = useState(todayDateStr);
+  const [showCashFlowModal, setShowCashFlowModal] = useState(false);
+  const [showMovingAssetModal, setShowMovingAssetModal] = useState(false);
+  const [showFixedAssetModal, setShowFixedAssetModal] = useState(false);
+  const [showPayrollModal, setShowPayrollModal] = useState(false);
 
   // Owner Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
@@ -529,28 +533,28 @@ export default function OwnerDashboard() {
       <>
         {/* 4 Cards Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-4">
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div onClick={() => setShowMovingAssetModal(true)} className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer">
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
             <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
             <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
             <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl border border-emerald-400/30 shadow-lg shadow-emerald-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div onClick={() => setShowFixedAssetModal(true)} className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl border border-emerald-400/30 shadow-lg shadow-emerald-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer">
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
             <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
             <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
             <p className="text-[9.5px] text-white/70 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
           </div>
 
-          <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div onClick={() => setShowPayrollModal(true)} className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer">
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
             <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Pengeluaran Gaji Karyawan</p>
             <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalStaffSalaryExpense.toLocaleString('id-ID')}</h2>
             <p className="text-[9.5px] text-white/70 mt-2 font-medium">Total klaim gaji & poin yang sudah dibayarkan.</p>
           </div>
 
-          <div className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div onClick={() => setShowCashFlowModal(true)} className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer">
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
             <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pendapatan Cabang</p>
             <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalRevenue.toLocaleString('id-ID')}</h2>
@@ -558,62 +562,216 @@ export default function OwnerDashboard() {
           </div>
         </div>
 
-        {/* Aliran Kas */}
-        <div className="bg-white border rounded-2xl p-4 shadow-xs mb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
-            <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
-              <input
-                type="date"
-                value={filterStartDate}
-                onChange={(e) => setFilterStartDate(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-              />
-              <span>s/d</span>
-              <input
-                type="date"
-                value={filterEndDate}
-                onChange={(e) => setFilterEndDate(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-              />
+                    {/* Modal Aset Bergerak */}
+      {showMovingAssetModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300 relative">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+              <h3 className="font-black text-sm uppercase tracking-wider text-slate-800">Rincian Aset Bergerak</h3>
+              <button onClick={() => setShowMovingAssetModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 hover:bg-rose-100 hover:text-rose-600 transition-colors">
+                 <X size={18} strokeWidth={3} />
+              </button>
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
-              <div>
-                <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
-                <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
+            <div className="p-4 overflow-y-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead className="bg-slate-100/50 text-slate-500 uppercase tracking-widest text-[9px] font-black border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Nama Barang</th>
+                      <th className="py-2.5 px-2 text-center">Stok</th>
+                      <th className="py-2.5 px-2">HPP (Modal)</th>
+                      <th className="py-2.5 px-3 text-right">Total Nilai</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {addons.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-4 text-center text-slate-400 font-medium">Belum ada aset terdaftar.</td>
+                      </tr>
+                    ) : addons.map(a => (
+                      <tr key={a.id} className="hover:bg-slate-50/50 transition">
+                        <td className="py-2.5 px-3 font-bold text-slate-800">{a.name}</td>
+                        <td className="py-2.5 px-2 text-center">
+                           <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-black ${(a.stock || 0) < 20 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-600'}`}>
+                             {a.stock || 0}
+                           </span>
+                        </td>
+                        <td className="py-2.5 px-2 font-mono text-slate-500">Rp {Number(a.hpp || 0).toLocaleString('id-ID')}</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-indigo-600 font-black">Rp {((a.stock || 0) * (a.hpp || 0)).toLocaleString('id-ID')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
-              <div>
-                <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
-                <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
-              </div>
-              <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
-              <div>
-                <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
-                <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
-              </div>
-              <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
-              <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
-              <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
-              <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
-              <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Aset Tetap */}
+      {showFixedAssetModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300 relative">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+              <h3 className="font-black text-sm uppercase tracking-wider text-slate-800">Rincian Aset Tetap</h3>
+              <button onClick={() => setShowFixedAssetModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 hover:bg-rose-100 hover:text-rose-600 transition-colors">
+                 <X size={18} strokeWidth={3} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead className="bg-slate-100/50 text-slate-500 uppercase tracking-widest text-[9px] font-black border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Tanggal</th>
+                      <th className="py-2.5 px-3">Nama Aset</th>
+                      <th className="py-2.5 px-3 text-right">Harga Beli</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {fixedAssets.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-4 text-center text-slate-400 font-medium">Belum ada aset tetap.</td>
+                      </tr>
+                    ) : fixedAssets.map(fa => (
+                      <tr key={fa.id} className="hover:bg-slate-50/50 transition">
+                        <td className="py-2.5 px-3 text-slate-500 font-mono">{fa.purchase_date ? new Date(fa.purchase_date).toLocaleDateString('id-ID') : '-'}</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-800">{fa.name}</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-emerald-600 font-black">Rp {Number(fa.purchase_price || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Gaji Karyawan */}
+      {showPayrollModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300 relative">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+              <h3 className="font-black text-sm uppercase tracking-wider text-slate-800">Rincian Pengeluaran Gaji</h3>
+              <button onClick={() => setShowPayrollModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 hover:bg-rose-100 hover:text-rose-600 transition-colors">
+                 <X size={18} strokeWidth={3} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead className="bg-slate-100/50 text-slate-500 uppercase tracking-widest text-[9px] font-black border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Tanggal</th>
+                      <th className="py-2.5 px-3">Nama Karyawan</th>
+                      <th className="py-2.5 px-2">Jenis Klaim</th>
+                      <th className="py-2.5 px-3 text-right">Nominal (Rp)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {approvedClaims.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-4 text-center text-slate-400 font-medium">Belum ada pengeluaran gaji.</td>
+                      </tr>
+                    ) : approvedClaims.map(c => {
+                        const isPoints = c.type === 'points';
+                        const amount = isPoints ? (Number(c.amount || c.points_claimed || 0) * 1000) : Number(c.amount || 0);
+                        return (
+                          <tr key={c.id} className="hover:bg-slate-50/50 transition">
+                            <td className="py-2.5 px-3 text-slate-500 font-mono">{new Date(c.created_at).toLocaleDateString('id-ID')}</td>
+                            <td className="py-2.5 px-3 font-bold text-slate-800">{c.employee_name || 'Tanpa Nama'}</td>
+                            <td className="py-2.5 px-2">
+                               <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${isPoints ? 'bg-cyan-50 text-cyan-600 border border-cyan-200' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'}`}>
+                                 {isPoints ? 'Poin' : 'Gaji'}
+                               </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono text-slate-700 font-black">Rp {amount.toLocaleString('id-ID')}</td>
+                          </tr>
+                        );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+{showCashFlowModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300 relative">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+              <h3 className="font-black text-sm uppercase tracking-wider text-slate-800">Rincian Aliran Kas</h3>
+              <button onClick={() => setShowCashFlowModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 hover:bg-rose-100 hover:text-rose-600 transition-colors">
+                 <X size={18} strokeWidth={3} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto">
+              {/* Date Filters inside Modal */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
+                <span className="text-xs font-bold text-slate-500">Filter Periode</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+                  />
+                  <span>s/d</span>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+                  <div>
+                    <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
+                    <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
+                  </div>
+                  <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
+                  <div>
+                    <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
+                    <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
+                  </div>
+                  <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <div>
+                    <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
+                    <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
+                  </div>
+                  <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
+                  <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
+                  <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
+                  <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
+                  <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Umpan Balik & Ulasan Pelanggan */}
       <div className="bg-white border rounded-2xl p-4 shadow-xs">
         <div className="border-b border-slate-100 pb-3 mb-4">
