@@ -39,7 +39,7 @@ export default function OwnerDashboard() {
 
   const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null);
   const [expandedDashboardRegionId, setExpandedDashboardRegionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions' | 'settings'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
 
@@ -367,7 +367,7 @@ export default function OwnerDashboard() {
     setEditBankAccountHolder(appSettings?.[activeUser?.region_id || 'GLOBAL']?.bank_account_holder || '');
     setEditQrisImage(appSettings?.[activeUser?.region_id || 'GLOBAL']?.qris_image || '');
     setEditPhoneNumber(appSettings?.[activeUser?.region_id || 'GLOBAL']?.phone_number || '');
-    setIsSettingsOpen(true);
+    setActiveTab('settings');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -819,6 +819,194 @@ export default function OwnerDashboard() {
 
       {/* Body - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {/* ===================== TAB: SETTINGS ===================== */}
+        {activeTab === 'settings' && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-2xl mx-auto shadow-sm">
+            <div className="flex justify-between items-center px-1 border-b pb-3 border-slate-100">
+              <div>
+                <h3 className="font-extrabold text-sm uppercase text-slate-800">Pengaturan Profil Usaha</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Informasi & profil bisnis anda</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {!activeUser?.region_id ? (
+                <>
+                  {/* Nama Usaha */}
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
+                      placeholder="Masukkan nama usaha..."
+                    />
+                  </div>
+
+                  {/* Logo Usaha */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
+
+                    {/* Logo Preview */}
+                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
+                        {editLogo ? (
+                          <img src={editLogo} alt="Logo Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-bold">No Logo</span>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="text-[10px] text-slate-600 font-bold block">Pratinjau Logo</span>
+                        <span className="text-[8px] text-slate-400 block">Akan digunakan sebagai favicon dan logo aplikasi</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar (Base64)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: Menggunakan URL Gambar</span>
+                      <input
+                        type="text"
+                        value={editLogo}
+                        onChange={(e) => setEditLogo(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Kontak Usaha */}
+                  <div className="space-y-1 pb-3">
+                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nomor WhatsApp / Telepon</label>
+                    <input
+                      type="text"
+                      value={editPhoneNumber}
+                      onChange={(e) => setEditPhoneNumber(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
+                      placeholder="Contoh: 6281234567890"
+                    />
+                    <p className="text-[8px] text-slate-400">Gunakan format 62 (contoh: 62812...) untuk tautan WhatsApp yang valid.</p>
+                  </div>
+
+                  {/* Rekening Bank Manual & QRIS */}
+                  <div className="border-t border-slate-100 pt-3 space-y-3">
+                    <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
+                        <input
+                          type="text"
+                          value={editBankName}
+                          onChange={(e) => setEditBankName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="e.g. Bank BCA"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
+                        <input
+                          type="text"
+                          value={editBankAccountNumber}
+                          onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="e.g. 123456789"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
+                      <input
+                        type="text"
+                        value={editBankAccountHolder}
+                        onChange={(e) => setEditBankAccountHolder(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                        placeholder="e.g. Sugar AC PT"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
+
+                      {/* QRIS Preview */}
+                      <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
+                          {editQrisImage ? (
+                            <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold">No QRIS</span>
+                          )}
+                        </div>
+                        <div className="flex-grow text-left">
+                          <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
+                          <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleQrisFileChange}
+                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
+                        <input
+                          type="text"
+                          value={editQrisImage}
+                          onChange={(e) => setEditQrisImage(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
+                          placeholder="https://example.com/qris.png"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-black uppercase rounded-lg transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={async () => {
+                  if (!activeUser?.region_id) {
+                    await updateAppSettings(editName, editLogo, undefined, undefined, undefined, undefined, editPhoneNumber);
+                  } else {
+                    await updateAppSettings("", "", editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage, editPhoneNumber);
+                  }
+                  setActiveTab('dashboard');
+                }}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase rounded-lg shadow-sm transition cursor-pointer"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ===================== TAB: DASHBOARD ===================== */}
         {activeTab === 'dashboard' && (
@@ -1458,195 +1646,6 @@ export default function OwnerDashboard() {
         </div>
       )}
 
-      {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform scale-100 transition duration-300">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <Settings size={18} />
-              </div>
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-800">Pengaturan Profil Usaha</h3>
-            </div>
-
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-              {!activeUser?.region_id ? (
-                <>
-                  {/* Nama Usaha */}
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Usaha / Brand</label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
-                      placeholder="Masukkan nama usaha..."
-                    />
-                  </div>
-
-                  {/* Logo Usaha */}
-                  <div className="space-y-2">
-                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Logo Usaha & Icon</label>
-
-                    {/* Logo Preview */}
-                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
-                        {editLogo ? (
-                          <img src={editLogo} alt="Logo Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[10px] font-bold">No Logo</span>
-                        )}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <span className="text-[10px] text-slate-600 font-bold block">Pratinjau Logo</span>
-                        <span className="text-[8px] text-slate-400 block">Akan digunakan sebagai favicon dan logo aplikasi</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar (Base64)</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: Menggunakan URL Gambar</span>
-                      <input
-                        type="text"
-                        value={editLogo}
-                        onChange={(e) => setEditLogo(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                        placeholder="https://example.com/logo.png"
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Kontak Usaha */}
-                  <div className="space-y-1 pb-3">
-                    <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nomor WhatsApp / Telepon</label>
-                    <input
-                      type="text"
-                      value={editPhoneNumber}
-                      onChange={(e) => setEditPhoneNumber(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition duration-200"
-                      placeholder="Contoh: 6281234567890"
-                    />
-                    <p className="text-[8px] text-slate-400">Gunakan format 62 (contoh: 62812...) untuk tautan WhatsApp yang valid.</p>
-                  </div>
-
-                  {/* Rekening Bank Manual & QRIS */}
-                  <div className="border-t border-slate-100 pt-3 space-y-3">
-                    <span className="text-[10px] font-black uppercase text-indigo-600 block">Metode Transfer & QRIS</span>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Bank</label>
-                        <input
-                          type="text"
-                          value={editBankName}
-                          onChange={(e) => setEditBankName(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                          placeholder="e.g. Bank BCA"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">No. Rekening</label>
-                        <input
-                          type="text"
-                          value={editBankAccountNumber}
-                          onChange={(e) => setEditBankAccountNumber(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                          placeholder="e.g. 123456789"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Nama Pemilik Rekening</label>
-                      <input
-                        type="text"
-                        value={editBankAccountHolder}
-                        onChange={(e) => setEditBankAccountHolder(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                        placeholder="e.g. Sugar AC PT"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Barcode / Gambar QRIS</label>
-
-                      {/* QRIS Preview */}
-                      <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <div className="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden border">
-                          {editQrisImage ? (
-                            <img src={editQrisImage} alt="QRIS Preview" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-[10px] font-bold">No QRIS</span>
-                          )}
-                        </div>
-                        <div className="flex-grow text-left">
-                          <span className="text-[10px] text-slate-600 font-bold block">Pratinjau QRIS</span>
-                          <span className="text-[8px] text-slate-400 block">Barcode pembayaran transfer pelanggan</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Metode 1: Unggah Gambar QRIS (Base64)</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleQrisFileChange}
-                          className="w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1">Metode 2: URL Gambar QRIS</span>
-                        <input
-                          type="text"
-                          value={editQrisImage}
-                          onChange={(e) => setEditQrisImage(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[10px] px-3 py-2 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition duration-200"
-                          placeholder="https://example.com/qris.png"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
-              <button
-                onClick={() => setIsSettingsOpen(false)}
-                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-black uppercase rounded-lg transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={async () => {
-                  if (!activeUser?.region_id) {
-                    await updateAppSettings(editName, editLogo, undefined, undefined, undefined, undefined, editPhoneNumber);
-                  } else {
-                    await updateAppSettings("", "", editBankName, editBankAccountNumber, editBankAccountHolder, editQrisImage, editPhoneNumber);
-                  }
-                  setIsSettingsOpen(false);
-                }}
-                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase rounded-lg shadow-sm transition"
-              >
-                Simpan Perubahan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL: Tambah Pengguna */}
       {showAddUserModal && (
