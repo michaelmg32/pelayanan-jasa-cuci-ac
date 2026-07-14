@@ -41,6 +41,30 @@ export default function OwnerDashboard() {
   const [expandedDashboardRegionId, setExpandedDashboardRegionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'activity-logs' | 'users' | 'regions' | 'settings'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [addons, setAddons] = useState<any[]>([]);
+  const [fixedAssets, setFixedAssets] = useState<any[]>([]);
+  const [claimsList, setClaimsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      try {
+        const [fetchedAddons, fetchedAssets, claimsRes] = await Promise.all([
+          api.fetchAddons(),
+          api.fetchFixedAssets(),
+          fetch('/api/salary-claims')
+        ]);
+        setAddons(fetchedAddons);
+        setFixedAssets(fetchedAssets);
+        if (claimsRes.ok) {
+          const claims = await claimsRes.json();
+          setClaimsList(claims);
+        }
+      } catch (error) {
+        console.error("Failed to fetch financial data:", error);
+      }
+    };
+    fetchFinancialData();
+  }, []);
 
 
 
@@ -490,189 +514,106 @@ export default function OwnerDashboard() {
     [OrderStatus.DIBATALKAN]: orders.filter(o => o.status === OrderStatus.DIBATALKAN).length,
   };
 
-  const renderDashboardStats = () => (
-    <>
+  const renderDashboardStats = () => {
+    // Asset Totals
+    const totalMovingAssetValue = addons.reduce((sum, item) => sum + (Number(item.hpp) || 0) * (Number(item.stock) || 0), 0);
+    const totalFixedAssetValue = fixedAssets.reduce((sum, item) => sum + (Number(item.purchase_price) || 0), 0);
 
-      <div className="bg-white border rounded-2xl p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
-          <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
-            <input
-              type="date"
-              value={filterStartDate}
-              onChange={(e) => setFilterStartDate(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-            />
-            <span>s/d</span>
-            <input
-              type="date"
-              value={filterEndDate}
-              onChange={(e) => setFilterEndDate(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
-            />
+    // Claimed Salary Calculation
+    const approvedClaims = claimsList.filter(c => ['DISETUJUI', 'DIBAYAR', 'SELESAI', 'APPROVED'].includes(c.status?.toUpperCase()));
+    const totalClaimedPoints = approvedClaims.filter(c => c.type === 'points').reduce((sum, c) => sum + (Number(c.amount) || Number(c.points_claimed) || 0), 0);
+    const totalClaimedSalary = approvedClaims.filter(c => c.type === 'daily_salary' || c.type === 'salary').reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    const totalStaffSalaryExpense = (totalClaimedPoints * 1000) + totalClaimedSalary;
+
+    return (
+      <>
+        {/* 4 Cards Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-4">
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-6 rounded-3xl border border-indigo-400/30 shadow-lg shadow-indigo-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Nilai Aset Bergerak (Inventaris)</p>
+            <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalMovingAssetValue.toLocaleString('id-ID')}</h2>
+            <p className="text-[9.5px] text-white/70 mt-2 font-medium">Berdasarkan stok terdaftar dikali HPP per barang.</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl border border-emerald-400/30 shadow-lg shadow-emerald-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pembelian Aset Tetap</p>
+            <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalFixedAssetValue.toLocaleString('id-ID')}</h2>
+            <p className="text-[9.5px] text-white/70 mt-2 font-medium">Nilai akumulasi total pengeluaran belanja aset fisik.</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl border border-cyan-400/30 shadow-lg shadow-cyan-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Pengeluaran Gaji Karyawan</p>
+            <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalStaffSalaryExpense.toLocaleString('id-ID')}</h2>
+            <p className="text-[9.5px] text-white/70 mt-2 font-medium">Total klaim gaji & poin yang sudah dibayarkan.</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition duration-500"></div>
+            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Total Pendapatan Cabang</p>
+            <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalRevenue.toLocaleString('id-ID')}</h2>
+            <p className="text-[9.5px] text-white/70 mt-2 font-medium">Akumulasi omset kotor dari pendapatan.</p>
           </div>
         </div>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
-            <div>
-              <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
-              <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
+
+        {/* Aliran Kas */}
+        <div className="bg-white border rounded-2xl p-4 shadow-xs mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-105 pb-3">
+            <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Aliran Kas</h3>
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold w-full sm:w-auto">
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+              />
+              <span>s/d</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 text-[10px] font-semibold"
+              />
             </div>
-            <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
           </div>
-
-          <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
-            <div>
-              <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
-              <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
-            </div>
-            <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
-            <div>
-              <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
-              <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
-            </div>
-            <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
-            <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
-            <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
-            <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
-            <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Orders */}
-      <div className="bg-white border rounded-2xl p-4 shadow-xs">
-        <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Pesanan Terbaru</h3>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {filteredOrdersByRegion.slice(-10).reverse().map(order => (
-            <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 text-[10px]">
-              <div className="flex-1">
-                <div className="font-bold text-slate-800">{order.customerName}</div>
-                <div className="text-slate-500 mt-0.5 flex gap-1.5 items-center flex-wrap">
-                  <span>{order.scheduledDate}</span>
-                  <span>•</span>
-                  <span className={`text-[8.5px] font-black uppercase ${order.paymentMethod === 'TRANSFER' ? 'text-indigo-600' :
-                    order.paymentMethod === 'CASH' ? 'text-emerald-600' : 'text-slate-500'
-                    }`}>
-                    {order.paymentMethod === 'TRANSFER' ? '💳 TRANSFER (XENDIT)' :
-                      order.paymentMethod === 'CASH' ? '💵 TUNAI (CASH)' : '💵 TUNAI'}
-                  </span>
-                </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <div>
+                <span className="text-[9px] font-black text-blue-600 uppercase">Jasa Cuci</span>
+                <p className="text-[10px] text-blue-700 font-semibold mt-1">{cashFlowOrders.length} Pekerjaan Selesai</p>
               </div>
-              <div className="text-right">
-                <div className="font-mono font-bold text-slate-700">{formatRupiah(Math.max(0, Number(order.serviceCost || 0) + Number(order.addonsCost || 0) - Number(order.voucher_discount || 0)))}</div>
-                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded inline-block mt-1 ${order.status === OrderStatus.SELESAI ? 'bg-emerald-100 text-emerald-800' :
-                  order.status === OrderStatus.MENUNGGU ? 'bg-amber-100 text-amber-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
-                  {order.status.replace('_', ' ')}
-                </span>
+              <span className="text-sm font-mono font-black text-blue-800">{formatRupiah(totalBaseRevenue)}</span>
+            </div>
+
+            <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-200">
+              <div>
+                <span className="text-[9px] font-black text-green-600 uppercase">Sparepart/Addon (Harga Jual)</span>
+                <p className="text-[10px] text-green-700 font-semibold mt-1">Pendapatan Perlengkapan</p>
               </div>
+              <span className="text-sm font-mono font-black text-green-800">{formatRupiah(totalAddonsRevenue)}</span>
             </div>
-          ))}
-          {filteredOrdersByRegion.length === 0 && (
-            <div className="text-center py-8 text-slate-400 text-[10px]">
-              Belum ada pesanan
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Statistik Karyawan */}
-      <div className="bg-white border rounded-2xl p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-slate-100 pb-3 flex-wrap">
-          <div>
-            <h3 className="font-black text-xs uppercase tracking-wider text-slate-800">Statistik Kinerja Karyawan</h3>
-            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Analisis kontribusi dan rating teknisi</p>
-          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
-            <a
-              href="/dashboard/keuangan"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/15"
-            >
-              <DollarSign size={12} />
-              <span>Kelola & Catatan Gaji</span>
-            </a>
-            <div className="flex items-center gap-2">
-              <span className="text-[9.5px] font-bold text-slate-400 uppercase whitespace-nowrap">Urutkan:</span>
-              <select
-                value={staffSortKey}
-                onChange={(e) => setStaffSortKey(e.target.value as any)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-indigo-500 font-bold cursor-pointer w-full sm:w-auto"
-              >
-                <option value="rating">⭐️ Rata-Rata Bintang</option>
-                <option value="jobs">💼 Total Pekerjaan Selesai</option>
-                <option value="margin">💰 Kontribusi Margin Keuntungan</option>
-              </select>
+            <div className="flex justify-between items-center p-3 bg-amber-50 rounded-xl border border-amber-200">
+              <div>
+                <span className="text-[9px] font-black text-amber-600 uppercase">Modal Sparepart (HPP)</span>
+                <p className="text-[10px] text-amber-700 font-semibold mt-1">Biaya Perlengkapan</p>
+              </div>
+              <span className="text-sm font-mono font-black text-amber-800">-{formatRupiah(totalAddonsCost)}</span>
+            </div>
+
+            <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-xl border border-indigo-200 font-black">
+              <span className="text-[9px] uppercase text-indigo-600">Total Omzet (Kotor)</span>
+              <span className="text-sm font-mono text-indigo-800">{formatRupiah(totalRevenue)}</span>
+            </div>
+
+            <div className="flex justify-between items-center p-3 bg-emerald-600 text-white rounded-xl border border-emerald-700 font-black shadow-sm">
+              <span className="text-[9px] uppercase tracking-wider text-emerald-100">Keuntungan Bersih</span>
+              <span className="text-sm font-mono">{formatRupiah(totalMargin)}</span>
             </div>
           </div>
         </div>
-
-        <div className="border border-slate-100 rounded-xl overflow-x-auto">
-          <table className="w-full text-[10px] text-left min-w-[500px]">
-            <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[8px] border-b border-slate-100">
-              <tr>
-                <th className="p-3">Nama Teknisi</th>
-                <th className="p-3 text-center">Pekerjaan Selesai</th>
-                <th className="p-3 text-center">Rata-Rata Rating</th>
-                <th className="p-3 text-right">Kontribusi Margin</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {sortedStaffStats.map((staff) => (
-                <tr key={staff.id} className="hover:bg-slate-50/50">
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      {staff.photo ? (
-                        <img src={staff.photo} alt={staff.name} className="w-6 h-6 rounded-lg object-cover border" />
-                      ) : (
-                        <div className="w-6 h-6 rounded-lg bg-indigo-150 text-indigo-700 font-bold flex items-center justify-center text-[9px] uppercase">
-                          {staff.name.charAt(0)}
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-extrabold text-slate-800">{staff.name}</div>
-                        <div className="text-[8.5px] text-slate-400 font-medium mt-0.5">{staff.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3 text-center font-bold text-slate-700">{staff.jobsDone} Pekerjaan</td>
-                  <td className="p-3 text-center">
-                    {staff.jobsDone > 0 ? (
-                      <div className="flex items-center justify-center gap-1 font-bold text-amber-600">
-                        <span>{staff.avgRating}</span>
-                        <span className="text-[8px]">★</span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-350 font-bold">-</span>
-                    )}
-                  </td>
-                  <td className="p-3 text-right font-mono font-black text-emerald-700">
-                    {formatRupiah(staff.totalMarginContrib)}
-                  </td>
-                </tr>
-              ))}
-              {sortedStaffStats.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center py-8 text-slate-400 font-semibold">
-                    Tidak ada data karyawan
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* Umpan Balik & Ulasan Pelanggan */}
       <div className="bg-white border rounded-2xl p-4 shadow-xs">
         <div className="border-b border-slate-100 pb-3 mb-4">
@@ -738,6 +679,7 @@ export default function OwnerDashboard() {
       </div>
     </>
   );
+};
 
   if (!activeUser) return null;
 
@@ -822,7 +764,7 @@ export default function OwnerDashboard() {
 
         {/* ===================== TAB: SETTINGS ===================== */}
         {activeTab === 'settings' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-2xl mx-auto shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 w-full shadow-sm">
             <div className="flex justify-between items-center px-1 border-b pb-3 border-slate-100">
               <div>
                 <h3 className="font-extrabold text-sm uppercase text-slate-800">Pengaturan Profil Usaha</h3>
@@ -1127,7 +1069,7 @@ export default function OwnerDashboard() {
         )}
 
         {activeTab === 'profile' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-2xl mx-auto shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 w-full shadow-sm">
             <div className="flex justify-between items-center px-1 border-b pb-3 border-slate-100">
               <div>
                 <h3 className="font-extrabold text-sm uppercase text-slate-800">Profil Owner</h3>
@@ -1550,7 +1492,7 @@ export default function OwnerDashboard() {
       {/* ===================== EDIT USER MODAL ===================== */}
       {editingUserId && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-left animate-fadeIn">
+          <div className="bg-white border rounded-2xl w-full w-full overflow-hidden shadow-2xl text-left animate-fadeIn">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
               <div>
                 <h4 className="font-black text-xs uppercase tracking-wide">Edit Profil Pengguna</h4>
@@ -1650,7 +1592,7 @@ export default function OwnerDashboard() {
       {/* MODAL: Tambah Pengguna */}
       {showAddUserModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl w-full w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
