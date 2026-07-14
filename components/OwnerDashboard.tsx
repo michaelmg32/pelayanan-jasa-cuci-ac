@@ -66,8 +66,6 @@ export default function OwnerDashboard() {
     fetchFinancialData();
   }, []);
 
-
-
   const getLocalDateString = (d: Date = new Date()) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -76,13 +74,23 @@ export default function OwnerDashboard() {
   };
 
   const todayDateStr = getLocalDateString();
-  const [filterStartDate, setFilterStartDate] = useState(todayDateStr);
-  const [filterEndDate, setFilterEndDate] = useState(todayDateStr);
+  const getFirstDayOfMonth = () => {
+    const d = new Date();
+    d.setDate(1);
+    return getLocalDateString(d);
+  };
+  const getLastDayOfMonth = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(0);
+    return getLocalDateString(d);
+  };
+  const [filterStartDate, setFilterStartDate] = useState(getFirstDayOfMonth());
+  const [filterEndDate, setFilterEndDate] = useState(getLastDayOfMonth());
   const [showCashFlowModal, setShowCashFlowModal] = useState(false);
   const [showMovingAssetModal, setShowMovingAssetModal] = useState(false);
   const [showFixedAssetModal, setShowFixedAssetModal] = useState(false);
   const [showPayrollModal, setShowPayrollModal] = useState(false);
-
   // Owner Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
   const [staffSortKey, setStaffSortKey] = useState<'rating' | 'jobs' | 'margin'>('rating');
@@ -531,8 +539,8 @@ export default function OwnerDashboard() {
 
     return (
       <>
-        {/* Global Date Filter (Top Right) */}
-        <div className="flex justify-end mb-4">
+        {/* Global Date Filter (Top Left) */}
+        <div className="flex justify-start mb-4">
           <div className="bg-white/80 backdrop-blur border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Filter Tanggal:</span>
             <div className="flex items-center gap-1.5 text-[10px] text-slate-700 font-bold">

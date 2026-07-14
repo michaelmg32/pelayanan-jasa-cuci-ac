@@ -45,12 +45,25 @@ export default function KeuanganDashboard() {
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
-  const [filterStartDate, setFilterStartDate] = useState(() => {
+  const getFirstDayOfMonth = () => {
     const d = new Date();
     d.setDate(1);
-    return d.toISOString().split('T')[0];
-  });
-  const [filterEndDate, setFilterEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const getLastDayOfMonth = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(0);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [filterStartDate, setFilterStartDate] = useState(getFirstDayOfMonth());
+  const [filterEndDate, setFilterEndDate] = useState(getLastDayOfMonth());
   const [expandedPerformanceStaffId, setExpandedPerformanceStaffId] = useState<string | null>(null);
 
   // Helper functions
@@ -601,6 +614,28 @@ export default function KeuanganDashboard() {
           ) : (
             <>
               {/* ================= TAB 1: OVERVIEW ================= */}
+              {activeTab !== 'PROFIL' && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-white/80 backdrop-blur border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Filter Tanggal:</span>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-700 font-bold">
+                      <input
+                        type="date"
+                        value={filterStartDate}
+                        onChange={(e) => setFilterStartDate(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 font-mono"
+                      />
+                      <span className="text-slate-400">s/d</span>
+                      <input
+                        type="date"
+                        value={filterEndDate}
+                        onChange={(e) => setFilterEndDate(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg outline-none focus:border-indigo-500 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               {activeTab === 'OVERVIEW' && (
                 <div className="space-y-6 animate-fade-in text-left">
 
