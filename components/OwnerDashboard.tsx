@@ -81,7 +81,7 @@ export default function OwnerDashboard() {
   const [regKtp, setRegKtp] = useState('');
   const [regSelfie, setRegSelfie] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  
+
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<Role>(Role.USER);
   const [editRegionId, setEditRegionId] = useState('');
@@ -277,7 +277,7 @@ export default function OwnerDashboard() {
         selfiePhoto: regRole === Role.STAFF ? regSelfie : null,
       };
       await api.createUser(payload);
-      
+
       // Reset form and reload
       setRegName('');
       setRegEmail('');
@@ -744,7 +744,8 @@ export default function OwnerDashboard() {
   return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 min-h-0 h-full overflow-hidden">
       {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
-      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
+      {/* GLOBAL HEADER BAR */}
+      <div className="bg-slate-900 text-white px-5 py-4 pb-12 shrink-0 shadow-md flex justify-between items-start z-20 relative rounded-b-[2.5rem]">
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
           <a href="/" className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-md overflow-hidden border border-white/20 cursor-pointer block">
@@ -761,88 +762,58 @@ export default function OwnerDashboard() {
             <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Owner</p>
           </div>
         </div>
+      </div>
 
-        {/* Three-dots menu button */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMoreMenu(prev => !prev);
-            }}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase text-white tracking-wider flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <Settings size={12} /> Atur Akses
-          </button>
-
-          {showMoreMenu && (
-            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
-              <button
-                onClick={() => {
-                  setActiveTab('dashboard');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'dashboard' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <TrendingUp size={14} className={activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Dashboard Analisis</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  handleOpenSettings();
-                }}
-                className="w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700"
-              >
-                <Settings size={14} className="text-slate-400" />
-                <span>Pengaturan Bisnis</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('profile');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'profile' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <UserIcon size={14} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Profil Saya</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('users');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'users' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <UserCog size={14} className={activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Akses Pengguna</span>
-              </button>
-
-              {!activeUser?.region_id && (
-                <button
-                  onClick={() => {
-                    setActiveTab('activity-logs');
-                    setShowMoreMenu(false);
-                  }}
-                  className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'activity-logs' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-                >
-                  <ShieldCheck size={14} className={activeTab === 'activity-logs' ? 'text-indigo-600' : 'text-slate-400'} />
-                  <span>Log Aktivitas Admin</span>
-                </button>
-              )}
-              <hr className="my-1 border-slate-100" />
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  logout();
-                }}
-                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
-              >
-                <LogOut size={14} />
-                <span>Keluar</span>
-              </button>
+      {/* ===================== CONTROL TABS SYSTEM ===================== */}
+      <div className="px-5 -mt-8 relative z-40 shrink-0 mb-2">
+        <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/40 border border-slate-100/60 p-4 md:p-5">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-y-5 gap-x-2">
+            
+            <div onClick={() => setActiveTab('dashboard')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border ${activeTab === 'dashboard' ? 'bg-gradient-to-br from-indigo-50 to-blue-100/50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50'}`}>
+                 <TrendingUp size={24} strokeWidth={2.5} />
+              </div>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'dashboard' ? 'text-indigo-700' : 'text-slate-500'}`}>Ringkasan</span>
             </div>
-          )}
+
+            <div onClick={handleOpenSettings} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className="w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50">
+                 <Settings size={24} strokeWidth={2.5} />
+              </div>
+              <span className="text-[9px] font-extrabold text-center uppercase tracking-wider text-slate-500">Bisnis</span>
+            </div>
+
+            <div onClick={() => setActiveTab('profile')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border ${activeTab === 'profile' ? 'bg-gradient-to-br from-indigo-50 to-blue-100/50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50'}`}>
+                 <UserIcon size={24} strokeWidth={2.5} />
+              </div>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'profile' ? 'text-indigo-700' : 'text-slate-500'}`}>Profil</span>
+            </div>
+
+            <div onClick={() => setActiveTab('users')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border ${activeTab === 'users' ? 'bg-gradient-to-br from-indigo-50 to-blue-100/50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50'}`}>
+                 <UserCog size={24} strokeWidth={2.5} />
+              </div>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'users' ? 'text-indigo-700' : 'text-slate-500'}`}>Akses</span>
+            </div>
+
+            {!activeUser?.region_id && (
+              <div onClick={() => setActiveTab('activity-logs')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+                <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border ${activeTab === 'activity-logs' ? 'bg-gradient-to-br from-indigo-50 to-blue-100/50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50'}`}>
+                   <ShieldCheck size={24} strokeWidth={2.5} />
+                </div>
+                <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'activity-logs' ? 'text-indigo-700' : 'text-slate-500'}`}>Log</span>
+              </div>
+            )}
+
+            <div onClick={logout} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className="w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border bg-rose-50 border-rose-100 text-rose-500 shadow-rose-200/30 hover:bg-rose-100">
+                 <LogOut size={24} strokeWidth={2.5} />
+              </div>
+              <span className="text-[9px] font-extrabold text-center uppercase tracking-wider text-rose-600">Keluar</span>
+            </div>
+
+          </div>
         </div>
       </div>
 
@@ -1342,10 +1313,10 @@ export default function OwnerDashboard() {
                                     <div className="flex items-center gap-2">
                                       <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
                                       <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded border ${u.role === Role.ADMIN ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                                          u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
-                                            u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                                              u.role === Role.KEUANGAN ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                'bg-slate-100 text-slate-600 border-slate-200'
+                                        u.role === Role.OWNER ? 'bg-indigo-50 text-indigo-750 border-indigo-200' :
+                                          u.role === Role.STAFF ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                            u.role === Role.KEUANGAN ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                              'bg-slate-100 text-slate-600 border-slate-200'
                                         }`}>
                                         {u.role}
                                       </span>
@@ -1357,8 +1328,8 @@ export default function OwnerDashboard() {
                                 <div className="flex items-center gap-2">
                                   {u.role === Role.STAFF && (
                                     <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border ${u.status === 'inactive' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                        u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                                          'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      u.status === 'archived' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                        'bg-emerald-50 text-emerald-800 border-emerald-200'
                                       }`}>
                                       {u.status === 'inactive' ? 'Menunggu' : u.status === 'archived' ? 'Nonaktif' : 'Aktif'}
                                     </span>
@@ -1780,7 +1751,7 @@ export default function OwnerDashboard() {
                   </select>
                 </div>
               </div>
-              
+
               {regRole === Role.STAFF && (
                 <div className="space-y-4 pt-2 border-t border-slate-100 mt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1800,7 +1771,7 @@ export default function OwnerDashboard() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block ml-1">Foto Selfie Karyawan</label>
                       <div className="flex flex-col gap-2">
