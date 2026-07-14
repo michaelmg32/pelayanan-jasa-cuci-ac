@@ -43,8 +43,7 @@ type FinanceTab = 'OVERVIEW' | 'BERGERAK' | 'TETAP' | 'RIWAYAT' | 'STAFF_PERFORM
 export default function KeuanganDashboard() {
   const { activeUser, logout, regions, showAlert, appSettings, users, orders, setActiveUser } = useApp();
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
-
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
   const [performanceDate, setPerformanceDate] = useState(() => {
     const d = new Date();
@@ -528,9 +527,9 @@ export default function KeuanganDashboard() {
       </div>
 
       {/* ===================== NEW CONTROL TABS SYSTEM ===================== */}
-      <div className="px-5 -mt-8 relative z-20 shrink-0 mb-2 max-w-5xl mx-auto w-full">
+      <div className="px-5 -mt-8 relative z-40 shrink-0 mb-2">
         <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/40 border border-slate-100/60 p-4 md:p-5">
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-y-5 gap-x-2">
+          <div className="grid grid-cols-4 md:grid-cols-7 gap-y-5 gap-x-2">
             
             <div onClick={() => setActiveTab('OVERVIEW')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
               <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'OVERVIEW' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
@@ -574,18 +573,11 @@ export default function KeuanganDashboard() {
               <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'PROFIL' ? 'text-purple-700' : 'text-slate-500'}`}>Profil</span>
             </div>
 
-            <div onClick={logout} className="flex flex-col items-center gap-2.5 cursor-pointer group active:scale-95 transition-all hover:scale-105">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-slate-50 text-slate-500 border border-slate-100 transition-colors group-hover:bg-rose-100 group-hover:text-rose-600 group-hover:border-rose-200 shadow-sm">
+            <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2.5 cursor-pointer group active:scale-95 transition-all hover:scale-105">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-rose-50 text-rose-500 border border-rose-100 transition-colors group-hover:bg-rose-100 group-hover:text-rose-600 group-hover:border-rose-200 shadow-sm">
                  <LogOut size={24} strokeWidth={2.5} />
               </div>
               <span className="text-[9px] font-extrabold text-slate-500 text-center uppercase tracking-wider group-hover:text-rose-600 transition-colors">Keluar</span>
-            </div>
-            
-            <div onClick={loadDashboardData} className="flex flex-col items-center gap-2.5 cursor-pointer active:scale-95 transition-all hover:scale-105 group">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-slate-50 text-slate-500 border border-slate-100 shadow-sm group-hover:bg-slate-200 transition-colors">
-                 <svg className="w-6 h-6 text-slate-500 group-hover:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </div>
-              <span className="text-[9px] font-extrabold text-slate-500 text-center uppercase tracking-wider group-hover:text-slate-700">Refresh</span>
             </div>
             
           </div>
@@ -2075,6 +2067,25 @@ export default function KeuanganDashboard() {
           </div>
         </div>
       )}
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mb-2">
+              <LogOut size={32} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-800">Keluar dari Akun?</h3>
+              <p className="text-xs font-medium text-slate-500 mt-2">Anda harus login kembali untuk mengakses data keuangan Anda.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button onClick={() => setShowLogoutConfirm(false)} className="py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+              <button onClick={() => { setShowLogoutConfirm(false); logout(); }} className="py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/30 transition">Ya, Keluar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 
