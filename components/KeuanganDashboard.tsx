@@ -756,7 +756,7 @@ export default function KeuanganDashboard() {
                       </h2>
                       <p className="text-[9.5px] text-white/70 mt-2 font-medium">Jenis aset yang aktif tercatat di Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk detail →</span></p>
                     </div>
-                  </div>
+
                     <div 
                       onClick={() => setActiveDetailModal('PENDAPATAN')}
                       className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-3xl border border-rose-400/30 shadow-lg shadow-rose-200/50 relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer"
@@ -766,7 +766,6 @@ export default function KeuanganDashboard() {
                       <h2 className="text-2xl font-black text-white mt-1 relative z-10">Rp {totalRevenue.toLocaleString('id-ID')}</h2>
                       <p className="text-[9.5px] text-white/70 mt-2 font-medium">Akumulasi omset lunas dari order Cabang {userRegionName}. <span className="underline opacity-90 block mt-1">Klik untuk rincian order →</span></p>
                     </div>
-
                   </div>
 
                   {/* Overview Lists / Activity info */}
