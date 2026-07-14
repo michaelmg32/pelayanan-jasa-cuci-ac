@@ -669,59 +669,7 @@ export default function KeuanganDashboard() {
               {/* ================= TAB 1: OVERVIEW ================= */}
               {activeTab === 'OVERVIEW' && (
                 <div className="space-y-6 animate-fade-in text-left">
-                  {/* Premium Regional Info Banner */}
-                  <div className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[80px] -mr-40 -mt-40 pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[60px] -ml-20 -mb-20 pointer-events-none"></div>
-                    
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-indigo-500/25 border border-indigo-400/30 text-indigo-300 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">
-                            Cabang Keuangan Aktif
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-bold">Region ID: {activeUser?.region_id || 'GLOBAL'}</span>
-                        </div>
-                        <h2 className="text-xl md:text-2xl font-black text-white mt-2 tracking-tight">
-                          Sugar AC Cabang {userRegionName}
-                        </h2>
-                        <p className="text-xs text-slate-400 mt-1 max-w-xl font-medium leading-relaxed">
-                          Selamat bekerja. Panel ini dikonfigurasi khusus untuk mengelola kas, stok barang (aset berjalan), dan kepemilikan alat operasional (aset tetap) di wilayah {userRegionName}.
-                        </p>
-                      </div>
-                      
-                      {/* Premium Asset Distribution Gauge */}
-                      <div className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full md:w-80 backdrop-blur-md space-y-3">
-                        <div className="flex justify-between items-center text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
-                          <span>Distribusi Aset Wilayah</span>
-                          <span className="text-white">Rp {(totalMovingAssetValue + totalFixedAssetValue).toLocaleString('id-ID')}</span>
-                        </div>
-                        
-                        {/* Custom visual progress bar */}
-                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
-                          <div 
-                            style={{ width: `${(totalFixedAssetValue / (totalMovingAssetValue + totalFixedAssetValue || 1)) * 100}%` }} 
-                            className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-l-full"
-                          />
-                          <div 
-                            style={{ width: `${(totalMovingAssetValue / (totalMovingAssetValue + totalFixedAssetValue || 1)) * 100}%` }} 
-                            className="bg-gradient-to-r from-indigo-400 to-indigo-500 h-full rounded-r-full"
-                          />
-                        </div>
-                        
-                        <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 
-                            Aset Tetap ({Math.round((totalFixedAssetValue / (totalMovingAssetValue + totalFixedAssetValue || 1)) * 100)}%)
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> 
-                            Aset Bergerak ({Math.round((totalMovingAssetValue / (totalMovingAssetValue + totalFixedAssetValue || 1)) * 100)}%)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+
 
                   {/* Financial Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
