@@ -42,14 +42,14 @@ import {
 } from 'lucide-react';
 
 export default function PelangganDashboard() {
-  const {  activeUser, setActiveUser, orders, setOrders, models: allModels, categories: allCategories, services: allServices, servicePrices, addons: allAddons, logout, showAlert, users, appSettings, regions } = useApp();
+  const { activeUser, setActiveUser, orders, setOrders, models: allModels, categories: allCategories, services: allServices, servicePrices, addons: allAddons, logout, showAlert, users, appSettings, regions } = useApp();
   const alert = showAlert;
 
   // Navigation tabs
-  
+
   const [selectedRegionId, setSelectedRegionId] = useState('');
   const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
-  
+
   useEffect(() => {
     if (regions && regions.length > 0 && !selectedRegionId) {
       if (activeUser?.region_id) {
@@ -65,19 +65,19 @@ export default function PelangganDashboard() {
     }
   }, [regions, selectedRegionId, activeUser]);
 
-  const models = useMemo(() => 
+  const models = useMemo(() =>
     (allModels || []).filter((m: any) => m.region_id === selectedRegionId || !m.region_id),
     [allModels, selectedRegionId]
   );
-  const categories = useMemo(() => 
+  const categories = useMemo(() =>
     (allCategories || []).filter((c: any) => c.region_id === selectedRegionId || !c.region_id),
     [allCategories, selectedRegionId]
   );
-  const services = useMemo(() => 
+  const services = useMemo(() =>
     (allServices || []).filter((s: any) => s.region_id === selectedRegionId || !s.region_id),
     [allServices, selectedRegionId]
   );
-  const addons = useMemo(() => 
+  const addons = useMemo(() =>
     (allAddons || []).filter((a: any) => a.region_id === selectedRegionId || !a.region_id),
     [allAddons, selectedRegionId]
   );
@@ -370,7 +370,7 @@ export default function PelangganDashboard() {
     }
     const catObj = categories.find(c => c.id === selectedCategory);
     const categoryName = catObj ? catObj.name : '';
-    
+
     setCartServices([...cartServices, {
       acType: selectedModel,
       category: categoryName,
@@ -676,9 +676,9 @@ export default function PelangganDashboard() {
         cancelReason: `Dibatalkan Pelanggan (Kendala Teknisi: ${reason})`,
         workerCancelReason: null
       };
-      
+
       await api.updateOrder(orderId, updatedOrder as any);
-      
+
       const updatedOrders = await api.fetchOrders();
       setOrders(updatedOrders);
       setIsLoading(false);
@@ -835,11 +835,11 @@ export default function PelangganDashboard() {
                     <h2 className="text-base font-extrabold text-white mt-1.5 truncate">Halo Kak, {activeUser.name}!</h2>
                     <p className="text-[10px] text-blue-105/85 truncate max-w-[200px] mt-0.5">{activeUser.email}</p>
                   </div>
-                  
+
                   {/* Pilihan Wilayah (Region Selector Custom Dropdown) */}
                   {regions && regions.length > 0 && (
                     <div className="relative">
-                      <div 
+                      <div
                         onClick={() => setIsRegionDropdownOpen(!isRegionDropdownOpen)}
                         className="bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-3 py-1.5 flex items-center gap-2 border border-white/20 cursor-pointer"
                       >
@@ -849,18 +849,18 @@ export default function PelangganDashboard() {
                         </span>
                         <ChevronDown size={14} className={`text-white/70 transition-transform ${isRegionDropdownOpen ? 'rotate-180' : ''}`} />
                       </div>
-                      
+
                       {isRegionDropdownOpen && (
                         <>
                           {/* Invisible overlay to close dropdown when clicking outside */}
-                          <div 
-                            className="fixed inset-0 z-40" 
+                          <div
+                            className="fixed inset-0 z-40"
                             onClick={() => setIsRegionDropdownOpen(false)}
                           />
                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in origin-top-right">
                             {regions.map((r: any) => (
-                              <div 
-                                key={r.id} 
+                              <div
+                                key={r.id}
                                 onClick={() => {
                                   setSelectedRegionId(r.id);
                                   setIsRegionDropdownOpen(false);
@@ -899,7 +899,7 @@ export default function PelangganDashboard() {
                         'bg-amber-100',
                         'bg-rose-100'
                       ];
-                      
+
                       const renderIcon = () => {
                         if (cat.icon) {
                           return <img src={cat.icon} alt={cat.name} className="absolute inset-0 w-full h-full object-cover" />;
@@ -915,8 +915,8 @@ export default function PelangganDashboard() {
                       const bgColorClass = backgroundColors[idx % backgroundColors.length];
 
                       return (
-                        <div 
-                          key={cat.id} 
+                        <div
+                          key={cat.id}
                           onClick={() => {
                             handleCategoryChange(cat.id);
                             setShowNewOrderModal(true);
@@ -932,16 +932,16 @@ export default function PelangganDashboard() {
                         </div>
                       );
                     })}
-                    
+
                     {/* Extra button for New Order (Lainnya) */}
-                    <div 
+                    <div
                       onClick={() => setShowNewOrderModal(true)}
                       className="flex flex-col items-center justify-start cursor-pointer group"
                     >
-                       <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-slate-200 transition-colors">
-                         <Plus size={26} className="text-slate-600" />
-                       </div>
-                       <span className="text-[10px] font-bold text-center text-slate-700">Lainnya</span>
+                      <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-slate-200 transition-colors">
+                        <Plus size={26} className="text-slate-600" />
+                      </div>
+                      <span className="text-[10px] font-bold text-center text-slate-700">Lainnya</span>
                     </div>
                   </div>
                 </div>
@@ -951,10 +951,6 @@ export default function PelangganDashboard() {
               <div className="px-4 md:px-8 lg:px-12 py-6 space-y-4">
                 <div className="flex justify-between items-center px-1">
                   <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Status Pesanan Aktif</h3>
-                  <span className="flex items-center gap-1 text-[8px] text-emerald-600 font-black uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Dipantau 3 Role
-                  </span>
                 </div>
 
                 {activeOrders.length === 0 ? (
@@ -1096,7 +1092,7 @@ export default function PelangganDashboard() {
                           {/* Staff Assignment */}
                           {order.assignedEmployeeName ? (
                             <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-3 py-2 rounded-xl text-left">
-                              <div 
+                              <div
                                 className="w-8 h-8 bg-emerald-600 text-white font-bold flex items-center justify-center rounded-lg text-xs shrink-0 overflow-hidden border cursor-pointer hover:opacity-80 transition"
                                 onClick={() => {
                                   const photo = users?.find(u => u.id === order.assignedTo)?.photo;
@@ -1513,8 +1509,8 @@ export default function PelangganDashboard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                     {completedOrders.map(order => (
-                      <div 
-                        key={order.id} 
+                      <div
+                        key={order.id}
                         className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3 cursor-pointer hover:shadow-md transition"
                         onClick={() => setSelectedHistoryOrder(order)}
                       >
@@ -1535,10 +1531,10 @@ export default function PelangganDashboard() {
 
                         <div className="text-[10px] text-slate-500 font-medium space-y-0.5">
                           <div>
-                            🔧 Jasa: {Array.isArray(order.acDetail) ? 
-                              order.acDetail.map(s => `${s.quantity} Unit x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ') 
-                              : order.acDetail ? `${(order.acDetail as any).quantity} Unit x ${(order.acDetail as any).serviceType === 'none' ? (order.acDetail as any).category : (order.acDetail as any).serviceType}` 
-                              : ''}
+                            🔧 Jasa: {Array.isArray(order.acDetail) ?
+                              order.acDetail.map(s => `${s.quantity} Unit x ${s.serviceType === 'none' ? s.category : s.serviceType}`).join(', ')
+                              : order.acDetail ? `${(order.acDetail as any).quantity} Unit x ${(order.acDetail as any).serviceType === 'none' ? (order.acDetail as any).category : (order.acDetail as any).serviceType}`
+                                : ''}
                           </div>
                           <div>📅 Selesai: {order.scheduledDate}</div>
                           {order.status !== OrderStatus.DIBATALKAN && (
@@ -1971,23 +1967,23 @@ export default function PelangganDashboard() {
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                       5. Jumlah Unit
                     </label>
-                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-10">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <span className="text-xs font-mono font-black w-6 text-center">{quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(quantity + 1)}
-                          className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-10">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <span className="text-xs font-mono font-black w-6 text-center">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="text-slate-500 hover:text-slate-800 font-extrabold text-[14px] px-1.5 cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -2452,7 +2448,7 @@ export default function PelangganDashboard() {
                 </button>
               </div>
               <div className="p-5 overflow-y-auto space-y-4 text-slate-700 text-xs">
-                
+
                 {/* Header Status */}
                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <div>
@@ -2570,14 +2566,14 @@ export default function PelangganDashboard() {
 
         {/* PHOTO INSPECTION MODAL */}
         {inspectedPhoto && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out"
             onClick={() => setInspectedPhoto(null)}
           >
             <div className="max-w-full max-h-full flex items-center justify-center">
               <img src={inspectedPhoto} alt="Zoomed" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-fade-in" />
             </div>
-            <button 
+            <button
               className="absolute top-4 right-4 text-white hover:text-slate-300 p-2"
               onClick={() => setInspectedPhoto(null)}
             >
