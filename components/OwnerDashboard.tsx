@@ -91,6 +91,7 @@ export default function OwnerDashboard() {
   const [showMovingAssetModal, setShowMovingAssetModal] = useState(false);
   const [showFixedAssetModal, setShowFixedAssetModal] = useState(false);
   const [showPayrollModal, setShowPayrollModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   // Owner Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
   const [staffSortKey, setStaffSortKey] = useState<'rating' | 'jobs' | 'margin'>('rating');

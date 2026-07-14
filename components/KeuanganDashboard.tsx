@@ -614,7 +614,7 @@ export default function KeuanganDashboard() {
           ) : (
             <>
               {/* ================= TAB 1: OVERVIEW ================= */}
-              {activeTab !== 'PROFIL' && (
+              {activeTab === 'OVERVIEW' && (
                 <div className="flex justify-start mb-4">
                   <div className="bg-white/80 backdrop-blur border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Filter Tanggal:</span>
