@@ -987,23 +987,7 @@ export default function KaryawanDashboard() {
           {/* ==================== TAB 1: DASHBOARD ==================== */}
           {activeTab === 'dashboard' && (
             <div className="animate-in fade-in duration-300">
-              <div className="px-5 mb-5 mt-2">
-                <div className="grid grid-cols-2 gap-3 p-4 bg-blue-600 text-white rounded-2xl shadow-md border border-blue-500 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 opacity-10">
-                     <Home size={80} className="-mt-4 -mr-4" />
-                  </div>
-                  <div className="text-left relative z-10">
-                    <span className="text-[9px] text-blue-100 font-bold uppercase tracking-wider block">Tugas Aktif</span>
-                    <span className="text-2xl font-black font-mono mt-0.5 block">{activeTasks.length}</span>
-                  </div>
-                  <div className="text-right relative z-10 border-l border-blue-400/50 pl-3">
-                    <span className="text-[9px] text-blue-100 font-bold uppercase tracking-wider block">Selesai</span>
-                    <span className="text-2xl font-black font-mono mt-0.5 block">{completedTasks.length}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-5 space-y-4">
+              <div className="px-5 space-y-4 pt-2">
                 <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider text-left pl-1">Daftar Kunjungan Service</h3>
 
                 {activeTasks.length === 0 ? (
