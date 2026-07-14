@@ -917,8 +917,6 @@ export default function KaryawanDashboard() {
             </a>
             <span className="text-xs font-black uppercase tracking-wider text-slate-350">| Portal Karyawan</span>
           </div>
-
-          </div>
         </div>
 
         {/* MAIN CONTENT AREA */}
@@ -1566,14 +1564,7 @@ export default function KaryawanDashboard() {
           {/* ==================== TAB 2: HISTORY ==================== */}
           {activeTab === 'history' && (
             <div>
-              <div className="bg-slate-900 px-5 pt-5 pb-5 text-white text-left rounded-b-[24px]">
-                <span className="text-[8px] text-blue-300 bg-white/5 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
-                  Arsip
-                </span>
-                <h2 className="text-base font-black mt-1.5">Histori Pekerjaan Selesai</h2>
-              </div>
-
-              <div className="px-4 py-4 space-y-4">
+              <div className="px-5 py-2 space-y-4 animate-in fade-in duration-300">
                 <h3 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider text-left pl-1">Data Pekerjaan Masa Lalu</h3>
 
                 {completedTasks.length === 0 ? (
@@ -1664,28 +1655,8 @@ export default function KaryawanDashboard() {
           {/* ==================== TAB 3: PROFILE ==================== */}
           {activeTab === 'profile' && (
             <div>
-              <div className="bg-gradient-to-r from-teal-700 to-emerald-900 px-5 md:px-8 lg:px-12 py-5 text-white text-left rounded-b-[24px] md:rounded-b-[40px] shrink-0">
-                <div className="flex justify-between items-start">
-                  <span className="text-[8px] text-teal-200 bg-white/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-widest">
-                    Informasi Personel
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 mt-4">
-                  <div className="w-12 h-12 bg-white text-emerald-700 font-black text-sm flex items-center justify-center rounded-xl shadow-lg overflow-hidden border">
-                    {activeUser.photo ? (
-                      <img src={activeUser.photo} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      activeUser.name.charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold">{activeUser.name}</h3>
-                    <p className="text-[10px] text-emerald-200 mt-1 uppercase font-bold tracking-wider">{activeUser.role}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-4 md:px-8 lg:px-12 py-6 space-y-4 max-w-2xl mx-auto">
+              <div className="px-5 py-5 space-y-5 animate-in fade-in duration-300 max-w-2xl mx-auto">
+                <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider pl-1 mb-2">Profil Karyawan</h3>
                 {saveSuccess && (
                   <div className="bg-emerald-100 border border-emerald-250 p-2.5 rounded-xl text-[11px] text-emerald-800 font-bold flex items-center gap-2">
                     <Check size={14} /> Profil berhasil diperbarui!
@@ -2153,6 +2124,25 @@ export default function KaryawanDashboard() {
             }}
             onCancel={() => setShowProfileMapPicker(false)}
           />
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mb-2">
+              <LogOut size={32} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-800">Keluar dari Akun?</h3>
+              <p className="text-xs font-medium text-slate-500 mt-2">Anda harus login kembali untuk mengakses pekerjaan Anda.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button onClick={() => setShowLogoutConfirm(false)} className="py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+              <button onClick={() => { setShowLogoutConfirm(false); logout(); }} className="py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/30 transition">Ya, Keluar</button>
+            </div>
+          </div>
         </div>
       )}
 
