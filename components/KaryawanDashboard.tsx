@@ -43,6 +43,7 @@ export default function KaryawanDashboard() {
   const [mySalary, setMySalary] = useState<any>(null);
   const [myTeam, setMyTeam] = useState<any[] | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const fetchInfo = async () => {
