@@ -1328,21 +1328,26 @@ export default function KaryawanDashboard() {
                         <span className="text-xl font-black">{mySalary.points_balance || 0}</span>
                       </div>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-emerald-500/50 flex gap-3">
-                      <button 
-                        onClick={() => handleClaim('daily_salary', Number(mySalary.salary_balance))}
-                        disabled={mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'daily_salary') || !mySalary.salary_balance || Number(mySalary.salary_balance) <= 0}
-                        className="flex-1 bg-white text-emerald-700 py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'daily_salary') ? 'Menunggu...' : 'Klaim Gaji'}
-                      </button>
-                      <button 
-                        onClick={() => handleClaim('points', Number(mySalary.points_balance))}
-                        disabled={mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') || !mySalary.points_balance || Number(mySalary.points_balance) < 100}
-                        className="flex-1 bg-teal-800 text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') ? 'Menunggu...' : 'Klaim Poin'}
-                      </button>
+                    <div className="mt-4 pt-4 border-t border-emerald-500/50 flex flex-col gap-2">
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => handleClaim('daily_salary', Number(mySalary.salary_balance))}
+                          disabled={mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'daily_salary') || !mySalary.salary_balance || Number(mySalary.salary_balance) <= 0}
+                          className="flex-1 bg-white text-emerald-700 py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'daily_salary') ? 'Menunggu...' : 'Klaim Gaji'}
+                        </button>
+                        <button 
+                          onClick={() => handleClaim('points', Number(mySalary.points_balance))}
+                          disabled={mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') || !mySalary.points_balance || Number(mySalary.points_balance) < 100}
+                          className="flex-1 bg-teal-800 text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') ? 'Menunggu...' : 'Klaim Poin'}
+                        </button>
+                      </div>
+                      {(!mySalary.points_balance || Number(mySalary.points_balance) < 100) && (
+                        <p className="text-[9px] text-emerald-100/70 text-right italic">*Klaim poin membutuhkan minimal saldo 100 poin</p>
+                      )}
                     </div>
                   </div>
 
