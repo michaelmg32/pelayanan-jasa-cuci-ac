@@ -86,7 +86,7 @@ export default function SugarACCompanyProfile() {
             </div>
             <div>
               <span className="text-base font-black tracking-wider text-slate-900 block group-hover:text-blue-600 transition-colors duration-300">{businessName.toUpperCase()}</span>
-              <span className="text-[9px] font-bold text-blue-600 block uppercase tracking-widest -mt-1">Sejuk Segar AC</span>
+              <span className="text-[9px] font-bold text-blue-600 block uppercase tracking-widest -mt-0.5">Sejuk Segar AC</span>
             </div>
           </a>
 
@@ -590,8 +590,8 @@ export default function SugarACCompanyProfile() {
           <p className="text-sm text-blue-100 font-medium max-w-2xl mx-auto">
             Dapatkan tips perawatan AC harian, promo menarik, dan lihat hasil kerja teknisi kami secara langsung di Instagram.
           </p>
-          <a href="https://instagram.com/sugarac" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-white text-blue-600 font-extrabold text-sm px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-            <Instagram size={18} /> @sugarac
+          <a href="https://instagram.com/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-white text-blue-600 font-extrabold text-sm px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+            <Instagram size={18} />
           </a>
         </div>
       </section>
