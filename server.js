@@ -112,6 +112,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'pelayanan_cuci_ac',
   dateStrings: true,
+  timezone: '+07:00',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -3823,10 +3824,14 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
     let processedCount = 0;
     try {
       connection = await pool.getConnection();
-      const wibStr = new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"});
-      const localDate = new Date(wibStr);
-      const dateNum = localDate.getDate();
-      const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      // Get current date string in WIB (Asia/Jakarta) for reliable string insertion
+      const wibDateObj = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+      const dateNum = wibDateObj.getDate();
+      const currentMonthStr = `${wibDateObj.getFullYear()}-${String(wibDateObj.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      
+      // Format exact datetime string for MySQL DATETIME column
+      const pad = (n) => String(n).padStart(2, '0');
+      const exactWibString = `${wibDateObj.getFullYear()}-${pad(wibDateObj.getMonth()+1)}-${pad(wibDateObj.getDate())} ${pad(wibDateObj.getHours())}:${pad(wibDateObj.getMinutes())}:${pad(wibDateObj.getSeconds())}`;
       
       const [eligibleUsers] = await connection.query(`
         SELECT u.id, u.name, u.is_leader, u.monthly_salary_date,
@@ -3846,16 +3851,16 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
         const total = base + travel;
         
         if (total > 0) {
-          // Add to balance and update last paid using MySQL's CURRENT_DATE() which respects SET time_zone
+          // Add to balance and update last paid using exact exactWibString
           await connection.query(
-            'UPDATE users SET salary_balance = salary_balance + ?, last_monthly_salary_paid = CURRENT_DATE() WHERE id = ?',
-            [total, st.id]
+            'UPDATE users SET salary_balance = salary_balance + ?, last_monthly_salary_paid = ? WHERE id = ?',
+            [total, exactWibString, st.id]
           );
           
-          // Insert into monthly_salary_history (created_at will default to CURRENT_TIMESTAMP which respects SET time_zone)
+          // Insert into monthly_salary_history using exactWibString for created_at
           await connection.query(
-            'INSERT INTO monthly_salary_history (user_id, amount, notes) VALUES (?, ?, ?)',
-            [st.id, total, `Gaji Pokok & Uang Jalan Bulanan (${currentMonthStr})`]
+            'INSERT INTO monthly_salary_history (user_id, amount, notes, created_at) VALUES (?, ?, ?, ?)',
+            [st.id, total, `Gaji Pokok & Uang Jalan Bulanan (${currentMonthStr})`, exactWibString]
           );
           
           processedCount++;
