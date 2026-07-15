@@ -296,7 +296,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                         </button>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="gaji-grade-details">
                       <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4f46e5', marginBottom: '0.5rem' }}>👨‍💼 LEADER</div>
                         <div style={{ fontSize: '0.85rem' }}>Gaji: <strong>{formatRupiah(g.leader_daily_base_salary)}</strong>/hari</div>

@@ -296,10 +296,19 @@
   gap: 2rem;
 }
 
+.gaji-grade-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 /* =========================================
    Responsive Mobile Adjustments
    ========================================= */
 @media (max-width: 768px) {
+  .gaji-grade-details {
+    grid-template-columns: 1fr;
+  }
   .gaji-nav {
     padding: 1rem;
     border-radius: 1.5rem;
@@ -317,7 +326,7 @@
     font-size: 0.55rem;
   }
   .gaji-content-card {
-    padding: 1.25rem;
+    padding: 1rem;
     border-radius: 1rem;
   }
   .gaji-assign-container {
@@ -334,6 +343,15 @@
   }
   .gaji-card-header h2 {
     font-size: 1.1rem;
+  }
+  th, td {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  .gaji-table-responsive-wrapper {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+    overflow-x: auto;
   }
 }
 
