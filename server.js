@@ -536,7 +536,31 @@ const initializeDatabaseSettings = async () => {
       console.log("✅ Added 'grade_id' column to 'users' table");
     }
 
-    // Auto-migration: Create fixed_assets table
+          // Auto-migration: Add monthly salary columns to staff_grades
+      const monthlyCols = ['leader_monthly_base_salary', 'leader_monthly_travel_allowance', 'member_monthly_base_salary', 'member_monthly_travel_allowance'];
+      for (const col of monthlyCols) {
+        const [colCheck] = await connection.query(`SHOW COLUMNS FROM staff_grades LIKE '${col}'`);
+        if (colCheck.length === 0) {
+          await connection.query(`ALTER TABLE staff_grades ADD COLUMN ${col} DECIMAL(10,2) DEFAULT 0`);
+          console.log(`✅ Added '${col}' column to 'staff_grades' table`);
+        }
+      }
+
+      // Auto-migration: Add salary_type, monthly_salary_date, last_monthly_salary_paid to users
+      const userMonthlyCols = [
+        { name: 'salary_type', def: "VARCHAR(20) DEFAULT 'daily'" },
+        { name: 'monthly_salary_date', def: "INT NULL" },
+        { name: 'last_monthly_salary_paid', def: "DATE NULL" }
+      ];
+      for (const col of userMonthlyCols) {
+        const [colCheck] = await connection.query(`SHOW COLUMNS FROM users LIKE '${col.name}'`);
+        if (colCheck.length === 0) {
+          await connection.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.def}`);
+          console.log(`✅ Added '${col.name}' column to 'users' table`);
+        }
+      }
+
+      // Auto-migration: Create fixed_assets table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS fixed_assets (
         id INT AUTO_INCREMENT PRIMARY KEY,
