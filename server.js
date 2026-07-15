@@ -3462,14 +3462,28 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
     const history = [];
 
     claims.forEach(c => {
+      let hType = 'klaim_gaji';
+      let hTitle = 'Pencairan Saldo Gaji';
+      let hAmount = -c.amount;
+      
+      if (c.type === 'points') {
+        hType = 'klaim_poin';
+        hTitle = 'Penukaran Poin Bonus';
+        hAmount = -c.points_claimed;
+      } else if (c.type === 'gaji_bulanan') {
+        hType = 'tambah_gaji_bulanan';
+        hTitle = 'Gaji Pokok & Uang Jalan Bulanan';
+        hAmount = c.amount; // POSITIVE amount!
+      }
+      
       history.push({
         id: `claim-${c.id}`,
         date: c.created_at,
-        type: c.type === 'points' ? 'klaim_poin' : 'klaim_gaji',
-        title: c.type === 'points' ? 'Penukaran Poin Bonus' : 'Pencairan Saldo Gaji',
-        amount: c.type === 'points' ? -c.points_claimed : -c.amount,
+        type: hType,
+        title: hTitle,
+        amount: hAmount,
         status: c.status,
-        notes: c.notes || 'Pengajuan klaim'
+        notes: c.notes || (c.type === 'gaji_bulanan' ? 'Penerimaan otomatis' : 'Pengajuan klaim')
       });
     });
 
@@ -3699,6 +3713,100 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
     if (connection) connection.release();
   }
 });
+
+  app.put('/api/users/:id/salary-settings', verifyToken, async (req, res) => {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const user = req.user;
+      const roleLower = user.role?.toLowerCase();
+      if (roleLower !== 'admin' && roleLower !== 'owner' && roleLower !== 'keuangan') {
+        return res.status(403).json({ error: 'Akses ditolak.' });
+      }
+      const { id } = req.params;
+      const { salary_type, monthly_salary_date } = req.body;
+      
+      await connection.query(
+        'UPDATE users SET salary_type = ?, monthly_salary_date = ? WHERE id = ?',
+        [salary_type || 'daily', monthly_salary_date || null, id]
+      );
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    } finally {
+      if (connection) connection.release();
+    }
+  });
+
+  app.post('/api/salary/process-monthly', verifyToken, async (req, res) => {
+    try {
+      const processedCount = await processMonthlySalaries();
+      res.json({ success: true, processedCount });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Background job to process monthly salaries automatically
+  const processMonthlySalaries = async () => {
+    let connection;
+    let processedCount = 0;
+    try {
+      connection = await pool.getConnection();
+      const today = new Date();
+      // Adjust to UTC+7
+      const localDate = new Date(today.getTime() + 7 * 60 * 60 * 1000);
+      const dateNum = localDate.getDate();
+      const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      
+      const [eligibleUsers] = await connection.query(`
+        SELECT u.id, u.name, u.is_leader, u.monthly_salary_date,
+               sg.leader_monthly_base_salary, sg.leader_monthly_travel_allowance,
+               sg.member_monthly_base_salary, sg.member_monthly_travel_allowance
+        FROM users u
+        LEFT JOIN staff_grades sg ON u.grade_id = sg.id
+        WHERE u.salary_type = 'monthly' 
+          AND u.monthly_salary_date IS NOT NULL
+          AND u.monthly_salary_date <= ?
+          AND (u.last_monthly_salary_paid IS NULL OR DATE_FORMAT(u.last_monthly_salary_paid, '%Y-%m') != ?)
+      `, [dateNum, currentMonthStr]);
+
+      for (const st of eligibleUsers) {
+        const base = st.is_leader ? (Number(st.leader_monthly_base_salary) || 0) : (Number(st.member_monthly_base_salary) || 0);
+        const travel = st.is_leader ? (Number(st.leader_monthly_travel_allowance) || 0) : (Number(st.member_monthly_travel_allowance) || 0);
+        const total = base + travel;
+        
+        if (total > 0) {
+          // Add to balance and update last paid
+          await connection.query(
+            'UPDATE users SET salary_balance = salary_balance + ?, last_monthly_salary_paid = ? WHERE id = ?',
+            [total, localDate, st.id]
+          );
+          
+          // Insert into claims so it appears in history!
+          // We set status to 'approved' and type to 'daily_salary' (which is just 'salary' conceptually)
+          // Wait, the client KaryawanDashboard shows 'Pencairan Saldo Gaji' for claims.
+          // Let's use type 'gaji_bulanan' and status 'approved'.
+          await connection.query(
+            'INSERT INTO claims (user_id, amount, points_claimed, type, status, notes, created_at) VALUES (?, ?, 0, ?, ?, ?, ?)',
+            [st.id, total, 'gaji_bulanan', 'approved', `Gaji Pokok & Uang Jalan Bulanan (${currentMonthStr})`, localDate]
+          );
+          
+          processedCount++;
+        }
+      }
+    } catch (error) {
+      console.error('Error processing monthly salaries:', error);
+    } finally {
+      if (connection) connection.release();
+    }
+    return processedCount;
+  };
+
+  // Run the background job every hour automatically
+  setInterval(() => {
+    processMonthlySalaries();
+  }, 60 * 60 * 1000);
 
 nextApp.prepare().then(() => {
   // Semua request selain /api akan diserahkan ke Next.js
