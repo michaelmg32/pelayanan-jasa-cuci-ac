@@ -3402,7 +3402,7 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
     const user = req.user;
     let query = `
       SELECT u.id, u.name, u.email, u.phone, u.region_id, u.grade_id, u.is_leader, u.leader_id,
-             u.salary_balance, u.points_balance,
+             u.salary_balance, u.points_balance, u.salary_type, u.monthly_salary_date, u.last_monthly_salary_paid,
              sg.name as grade_name,
              sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
              sg.member_daily_base_salary, sg.member_daily_travel_allowance, sg.member_point_reward,
