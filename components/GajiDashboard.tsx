@@ -261,7 +261,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
       <div className="gaji-content">
         {/* ================= 1. KELOLA GRADE ================= */}
         {activeTab === 'grade' && (
-          <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)', padding: '2rem' }}>
+          <div className="gaji-content-card animate-fade-in">
             <div className="gaji-card-header" style={{ borderBottom: 'none', marginBottom: '1.5rem', paddingBottom: 0 }}>
               <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ backgroundColor: '#eef2ff', padding: '0.5rem', borderRadius: '50%', color: '#4f46e5', display: 'flex' }}><Award size={24} /></div>
@@ -317,11 +317,11 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
           </div>
         )}
 
-        {/* ================= 2. ASSIGN GRADE (BENTUK TIM) ================= */}
+        {/* ================= 2. ASSIGN GRADE & LEADER ================= */}
         {activeTab === 'assign' && (
-          <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-            {/* Kiri: Form Pembentukan Tim */}
-            <div style={{ backgroundColor: '#ffffff', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05)', display: 'flex', flexDirection: 'column' }}>
+          <div className="gaji-assign-container animate-fade-in">
+            {/* Form Assign */}
+            <div className="gaji-content-card">
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👥 Susunan Tim</h2>
               <div className="gaji-form-group">
                 <label>Pilih Grade (Tim)</label>
@@ -424,12 +424,12 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
           </div>
         )}
 
-        {/* ================= 3. PROSES GAJI (SALDO & KLAIM) ================= */}
+        {/* ================= 3. PROSES GAJI ================= */}
         {activeTab === 'proses' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="gaji-content-card animate-fade-in">
             {/* Info Pengajuan Klaim Pending */}
             {claims.length > 0 && (
-              <div className="animate-fade-in" style={{ borderLeft: '4px solid #f59e0b', backgroundColor: '#fffbeb', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+              <div className="animate-fade-in" style={{ borderLeft: '4px solid #f59e0b', backgroundColor: '#fffbeb', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)', marginBottom: '2rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#b45309', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={18} /> Pengajuan Klaim Menunggu Persetujuan ({claims.length})</h3>
                 <div style={{ overflowX: 'auto', backgroundColor: '#ffffff', borderRadius: '0.75rem', border: '1px solid #fde68a' }}>
                   <table className="gaji-table" style={{ border: 'none', margin: 0 }}>
@@ -470,7 +470,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
               </div>
             )}
             
-            <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }}>
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
                     <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>💰 Saldo Gaji & Poin Karyawan</h2>
                 </div>
@@ -577,8 +577,8 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
 
         {/* ================= 4. RIWAYAT SLIP ================= */}
         {activeTab === 'riwayat' && (
-          <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+          <div className="gaji-content-card animate-fade-in">
+            <div style={{ padding: '0', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>🧾 Riwayat Pencairan (Slip)</h2>
             </div>
             <div style={{ overflowX: 'auto', padding: '0.5rem' }}>

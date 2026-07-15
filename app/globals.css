@@ -274,6 +274,69 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
+.gaji-textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.gaji-content-card {
+  background-color: #ffffff;
+  border-radius: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  padding: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.gaji-assign-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+/* =========================================
+   Responsive Mobile Adjustments
+   ========================================= */
+@media (max-width: 768px) {
+  .gaji-nav {
+    padding: 1rem;
+    border-radius: 1.5rem;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+  .gaji-tab {
+    padding: 0 0.25rem;
+  }
+  .gaji-tab-icon-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+  .gaji-tab-text strong {
+    font-size: 0.55rem;
+  }
+  .gaji-content-card {
+    padding: 1.25rem;
+    border-radius: 1rem;
+  }
+  .gaji-assign-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .gaji-grid {
+    grid-template-columns: 1fr;
+  }
+  .gaji-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .gaji-card-header h2 {
+    font-size: 1.1rem;
+  }
+}
+
 .gaji-textarea {
   min-height: 80px;
   resize: vertical;
