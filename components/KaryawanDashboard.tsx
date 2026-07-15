@@ -1338,7 +1338,7 @@ export default function KaryawanDashboard() {
                       </button>
                       <button 
                         onClick={() => handleClaim('points', Number(mySalary.points_balance))}
-                        disabled={mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') || !mySalary.points_balance || Number(mySalary.points_balance) <= 0}
+                        disabled={mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') || !mySalary.points_balance || Number(mySalary.points_balance) < 100}
                         className="flex-1 bg-teal-800 text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {mySalary?.claims?.some((c: any) => c.status === 'pending' && c.type === 'points') ? 'Menunggu...' : 'Klaim Poin'}
