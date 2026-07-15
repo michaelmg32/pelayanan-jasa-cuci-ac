@@ -311,10 +311,10 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
 
         {/* ================= 2. ASSIGN GRADE (BENTUK TIM) ================= */}
         {activeTab === 'assign' && (
-          <div className="gaji-card animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+          <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
             {/* Kiri: Form Pembentukan Tim */}
-            <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#1e293b' }}>👥 Susunan Tim</h2>
+            <div style={{ backgroundColor: '#ffffff', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05)', display: 'flex', flexDirection: 'column' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👥 Susunan Tim</h2>
               <div className="gaji-form-group">
                 <label>Pilih Grade (Tim)</label>
                 <select className="gaji-input" value={assignGradeId} onChange={e => setAssignGradeId(e.target.value)}>
@@ -337,16 +337,19 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                   <span>Anggota Tim Terpilih</span>
                   <span style={{ color: '#4f46e5', fontWeight: 700 }}>{assignMemberIds.length} Orang</span>
                 </label>
-                {assignMemberIds.length === 0 ? (
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '0.5rem 0' }}>Belum ada anggota yang dipilih dari daftar di samping.</div>
+                  {assignMemberIds.length === 0 ? (
+                  <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', textAlign: 'center', border: '1px dashed #cbd5e1' }}>Belum ada anggota yang dipilih dari daftar.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {assignMemberIds.map(id => {
                       const st = staffList.find(s => s.id === id);
                       return (
-                        <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{st?.name}</span>
-                          <button type="button" onClick={() => toggleMember(id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14}/></button>
+                        <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '0.6rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', transition: 'all 0.2s' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.6rem' }}>{st?.name.substring(0, 2).toUpperCase()}</div>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>{st?.name}</span>
+                          </div>
+                          <button type="button" onClick={() => toggleMember(id)} style={{ color: '#ef4444', background: '#fee2e2', border: 'none', cursor: 'pointer', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}><X size={14}/></button>
                         </div>
                       );
                     })}
@@ -357,14 +360,16 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
               {assignError && <div className="gaji-error" style={{ fontSize: '0.8rem', marginTop: '1rem' }}>{assignError}</div>}
               {assignSuccess && <div style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 600, marginTop: '1rem', padding: '0.75rem', backgroundColor: '#d1fae5', borderRadius: '0.5rem' }}>{assignSuccess}</div>}
 
-              <button 
-                className="gaji-btn gaji-btn-primary" 
-                style={{ width: '100%', marginTop: '1.5rem' }}
-                onClick={handleAssignTeam}
-                disabled={loading || !assignGradeId || !assignLeaderId}
-              >
-                {loading ? 'Menyimpan...' : '💾 Simpan Tim'}
-              </button>
+              <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+                <button 
+                  className="gaji-btn" 
+                  style={{ width: '100%', padding: '0.8rem', background: 'linear-gradient(to right, #4f46e5, #3b82f6)', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.3)', transition: 'all 0.2s' }}
+                  onClick={handleAssignTeam}
+                  disabled={loading || !assignGradeId || !assignLeaderId}
+                >
+                  {loading ? 'Menyimpan...' : '💾 Simpan Tim & Anggota'}
+                </button>
+              </div>
             </div>
 
             {/* Kanan: Daftar Karyawan (Pilih Member) */}
@@ -416,36 +421,36 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Info Pengajuan Klaim Pending */}
             {claims.length > 0 && (
-              <div className="gaji-card animate-fade-in" style={{ borderLeft: '4px solid #fbbf24', backgroundColor: '#fffbeb' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#b45309', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={18} /> Pengajuan Klaim Menunggu Persetujuan ({claims.length})</h3>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="gaji-table" style={{ background: '#fff', borderRadius: '0.5rem' }}>
-                    <thead>
+              <div className="animate-fade-in" style={{ borderLeft: '4px solid #f59e0b', backgroundColor: '#fffbeb', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#b45309', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={18} /> Pengajuan Klaim Menunggu Persetujuan ({claims.length})</h3>
+                <div style={{ overflowX: 'auto', backgroundColor: '#ffffff', borderRadius: '0.75rem', border: '1px solid #fde68a' }}>
+                  <table className="gaji-table" style={{ border: 'none', margin: 0 }}>
+                    <thead style={{ backgroundColor: '#fef3c7' }}>
                       <tr>
-                        <th>TANGGAL</th>
-                        <th>KARYAWAN</th>
-                        <th>JENIS KLAIM</th>
-                        <th>NOMINAL</th>
-                        <th>CATATAN</th>
-                        <th>AKSI</th>
+                        <th style={{ color: '#b45309', borderBottom: '1px solid #fde68a' }}>TANGGAL</th>
+                        <th style={{ color: '#b45309', borderBottom: '1px solid #fde68a' }}>KARYAWAN</th>
+                        <th style={{ color: '#b45309', borderBottom: '1px solid #fde68a' }}>JENIS KLAIM</th>
+                        <th style={{ color: '#b45309', borderBottom: '1px solid #fde68a' }}>NOMINAL</th>
+                        <th style={{ color: '#b45309', borderBottom: '1px solid #fde68a' }}>CATATAN</th>
+                        <th style={{ color: '#b45309', borderBottom: '1px solid #fde68a' }}>AKSI</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {claims.map(c => {
+                      {claims.map((c, idx) => {
                         const staff = staffList.find(s => s.id === c.user_id);
                         return (
-                          <tr key={c.id}>
-                            <td>{new Date(c.created_at).toLocaleDateString('id-ID')}</td>
-                            <td style={{ fontWeight: 600 }}>{staff?.name || c.user_id}</td>
-                            <td>{c.type === 'points' ? <span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>Tukar Poin</span> : <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>Tarik Saldo Gaji</span>}</td>
-                            <td style={{ fontWeight: 700, color: '#1e293b' }}>
+                          <tr key={c.id} style={{ borderBottom: idx === claims.length - 1 ? 'none' : '1px solid #fde68a' }}>
+                            <td style={{ color: '#92400e' }}>{new Date(c.created_at).toLocaleDateString('id-ID')}</td>
+                            <td style={{ fontWeight: 700, color: '#92400e' }}>{staff?.name || c.user_id}</td>
+                            <td>{c.type === 'points' ? <span style={{ backgroundColor: '#fef08a', color: '#854d0e', padding: '0.3rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 700 }}>Tukar Poin</span> : <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '0.3rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 700 }}>Tarik Saldo</span>}</td>
+                            <td style={{ fontWeight: 800, color: '#92400e', fontSize: '1.05rem' }}>
                               {c.type === 'points' ? `${c.points_claimed} Poin` : formatRupiah(c.amount)}
                             </td>
-                            <td style={{ fontSize: '0.8rem', color: '#64748b' }}>{c.notes || '-'}</td>
+                            <td style={{ fontSize: '0.85rem', color: '#b45309' }}>{c.notes || '-'}</td>
                             <td>
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => handleProcessClaim(c.id, 'approved')} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>✅ ACC</button>
-                                <button onClick={() => handleProcessClaim(c.id, 'rejected')} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>❌ Tolak</button>
+                                <button onClick={() => handleProcessClaim(c.id, 'approved')} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>✅ ACC</button>
+                                <button onClick={() => handleProcessClaim(c.id, 'rejected')} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>❌ Tolak</button>
                               </div>
                             </td>
                           </tr>
@@ -456,117 +461,129 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                 </div>
               </div>
             )}
-
-            <div className="gaji-card animate-fade-in">
-              <div className="gaji-card-header">
-                  <h2>💰 Saldo Gaji & Poin Karyawan</h2>
-              </div>
-              <div className="table-responsive">
-                <table className="gaji-table">
-                  <thead>
-                    <tr>
-                      <th>NAMA STAFF</th>
-                      <th>GRADE / TIM</th>
-                      <th>TIPE & TGL GAJI</th>
-                      <th>SALDO UANG (GAJI)</th>
-                      <th>SALDO POIN</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {staffList.length === 0 ? (
-                      <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem' }}>Belum ada data staff.</td></tr>
-                    ) : staffList.map(s => (
-                      <tr key={s.id}>
-                        <td>
-                          <div style={{ fontWeight: 700, color: '#1e293b' }}>{s.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.email}</div>
-                        </td>
-                        <td>
-                          {s.grade_name ? (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: s.is_leader ? '#eef2ff' : '#f8fafc', border: s.is_leader ? '1px solid #c7d2fe' : '1px solid #e2e8f0', padding: '0.3rem 0.6rem', borderRadius: '2rem' }}>
-                              {s.is_leader ? <span style={{ color: '#4f46e5', fontWeight: 800, fontSize: '0.75rem' }}>LEADER</span> : <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.75rem' }}>MEMBER</span>}
-                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>{s.grade_name}</span>
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>Belum ada grade</span>
-                          )}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <select 
-                              value={s.salary_type || 'daily'}
-                              onChange={(e) => handleSalarySettingsChange(s.id, e.target.value, s.monthly_salary_date || null)}
-                              style={{ padding: '0.25rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', outline: 'none' }}
-                            >
-                              <option value="daily">Harian</option>
-                              <option value="monthly">Bulanan</option>
-                            </select>
-                            {s.salary_type === 'monthly' && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}>
-                                <span>Tgl:</span>
-                                <input 
-                                  type="number" 
-                                  min="1" max="31" 
-                                  value={s.monthly_salary_date || ''}
-                                  onChange={(e) => handleSalarySettingsChange(s.id, 'monthly', Number(e.target.value) || null)}
-                                  style={{ width: '40px', padding: '0.25rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem', outline: 'none' }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <strong style={{ color: '#059669', fontSize: '1.1rem' }}>{formatRupiah(s.salary_balance || 0)}</strong>
-                        </td>
-                        <td>
-                          <strong style={{ color: '#d97706', fontSize: '1.1rem' }}>{s.points_balance || 0}</strong> <span style={{ fontSize: '0.75rem', color: '#64748b' }}>pts</span>
-                        </td>
+            
+            <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>💰 Saldo Gaji & Poin Karyawan</h2>
+                </div>
+                <div style={{ overflowX: 'auto', padding: '0.5rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>NAMA STAFF</th>
+                        <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>GRADE / TIM</th>
+                        <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TIPE & TGL GAJI</th>
+                        <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SALDO UANG</th>
+                        <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SALDO POIN</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {staffList.length === 0 ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Belum ada data staff.</td></tr>
+                      ) : staffList.map((s, idx) => (
+                        <tr key={s.id} style={{ borderBottom: idx === staffList.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{s.name}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>{s.email}</div>
+                          </td>
+                          <td style={{ padding: '1rem' }}>
+                            {s.grade_name ? (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: s.is_leader ? '#eef2ff' : '#f8fafc', border: s.is_leader ? '1px solid #c7d2fe' : '1px solid #e2e8f0', padding: '0.4rem 0.75rem', borderRadius: '2rem' }}>
+                                {s.is_leader ? <span style={{ color: '#4f46e5', fontWeight: 800, fontSize: '0.75rem' }}>LEADER</span> : <span style={{ color: '#64748b', fontWeight: 800, fontSize: '0.75rem' }}>MEMBER</span>}
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>{s.grade_name}</span>
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>Belum ada grade</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '140px' }}>
+                              <select 
+                                value={s.salary_type || 'daily'}
+                                onChange={(e) => handleSalarySettingsChange(s.id, e.target.value, s.monthly_salary_date || null)}
+                                style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 600, color: '#334155', transition: 'border-color 0.2s' }}
+                              >
+                                <option value="daily">Harian</option>
+                                <option value="monthly">Bulanan</option>
+                              </select>
+                              {s.salary_type === 'monthly' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '0.5rem', padding: '0 0.5rem' }}>
+                                  <span style={{ color: '#64748b', fontWeight: 600 }}>Tgl:</span>
+                                  <input 
+                                    type="number" 
+                                    min="1" max="31" 
+                                    value={s.monthly_salary_date || ''}
+                                    onChange={(e) => handleSalarySettingsChange(s.id, 'monthly', Number(e.target.value) || null)}
+                                    style={{ width: '100%', padding: '0.5rem 0', border: 'none', outline: 'none', backgroundColor: 'transparent', fontWeight: 700, color: '#0f172a' }}
+                                    placeholder="1-31"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ display: 'inline-block', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.5rem 1rem', borderRadius: '0.75rem' }}>
+                              <strong style={{ color: '#059669', fontSize: '1.15rem' }}>{formatRupiah(s.salary_balance || 0)}</strong>
+                            </div>
+                          </td>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ display: 'inline-block', backgroundColor: '#fffbeb', border: '1px solid #fde68a', padding: '0.5rem 1rem', borderRadius: '0.75rem' }}>
+                              <strong style={{ color: '#d97706', fontSize: '1.15rem' }}>{s.points_balance || 0}</strong> <span style={{ fontSize: '0.8rem', color: '#b45309', fontWeight: 600 }}>pts</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
             </div>
           </div>
         )}
 
         {/* ================= 4. RIWAYAT SLIP ================= */}
         {activeTab === 'riwayat' && (
-          <div className="gaji-card animate-fade-in">
-            <div className="gaji-card-header">
-              <h2>🧾 Riwayat Pencairan (Slip)</h2>
+          <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>🧾 Riwayat Pencairan (Slip)</h2>
             </div>
-            <div className="table-responsive">
-              <table className="gaji-table">
+            <div style={{ overflowX: 'auto', padding: '0.5rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr>
-                    <th>TANGGAL</th>
-                    <th>KARYAWAN</th>
-                    <th>JENIS</th>
-                    <th>NOMINAL</th>
-                    <th>STATUS</th>
-                    <th>CATATAN</th>
+                    <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TANGGAL</th>
+                    <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>KARYAWAN</th>
+                    <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>JENIS</th>
+                    <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>NOMINAL</th>
+                    <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>STATUS</th>
+                    <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CATATAN</th>
                   </tr>
                 </thead>
                 <tbody>
                   {historyClaims.length === 0 ? (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Belum ada riwayat pencairan.</td></tr>
-                  ) : historyClaims.map(c => {
+                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Belum ada riwayat pencairan.</td></tr>
+                  ) : historyClaims.map((c, idx) => {
                     const staff = staffList.find(s => s.id === c.user_id);
                     return (
-                      <tr key={c.id}>
-                        <td style={{ color: '#64748b', fontSize: '0.9rem' }}>{new Date(c.created_at).toLocaleString('id-ID')}</td>
-                        <td style={{ fontWeight: 600 }}>{staff?.name || c.user_id}</td>
-                        <td>{c.type === 'points' ? 'Tukar Poin' : 'Tarik Saldo'}</td>
-                        <td style={{ fontWeight: 700 }}>{c.type === 'points' ? `${c.points_claimed} Poin` : formatRupiah(c.amount)}</td>
-                        <td>
+                      <tr key={c.id} style={{ borderBottom: idx === historyClaims.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>{new Date(c.created_at).toLocaleString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'})}</td>
+                        <td style={{ padding: '1rem' }}>
+                           <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{staff?.name || c.user_id}</div>
+                           <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>{staff?.grade_name || ''}</div>
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                           {c.type === 'points' ? <span style={{ backgroundColor: '#fef3c7', color: '#b45309', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700 }}>Tukar Poin</span> : <span style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700 }}>Tarik Saldo</span>}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <strong style={{ color: '#0f172a', fontSize: '1.05rem' }}>{c.type === 'points' ? `${c.points_claimed} pts` : formatRupiah(c.amount)}</strong>
+                        </td>
+                        <td style={{ padding: '1rem' }}>
                           {c.status === 'approved' ? (
-                            <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '0.3rem 0.6rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>✅ Berhasil</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', backgroundColor: '#ecfdf5', color: '#059669', padding: '0.4rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #a7f3d0' }}>✅ Berhasil</span>
                           ) : (
-                            <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.3rem 0.6rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>❌ Ditolak</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', backgroundColor: '#fef2f2', color: '#dc2626', padding: '0.4rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #fecaca' }}>❌ Ditolak</span>
                           )}
                         </td>
-                        <td style={{ fontSize: '0.8rem', color: '#64748b' }}>{c.notes || '-'}</td>
+                        <td style={{ padding: '1rem', fontSize: '0.85rem', color: '#64748b', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.notes || '-'}</td>
                       </tr>
                     );
                   })}
