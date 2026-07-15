@@ -3473,8 +3473,8 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const userId = req.user.id;
-    const now = new Date();
-    const localDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const wibStr = new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"});
+    const localDate = new Date(wibStr);
     const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
     
     const [users] = await connection.query(`
@@ -3628,8 +3628,8 @@ app.get('/api/staff/team', verifyToken, async (req, res) => {
   try {
     connection = await pool.getConnection();
     const userId = req.user.id;
-    const now = new Date();
-    const localDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const wibStr = new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"});
+    const localDate = new Date(wibStr);
     const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
 
     const [leaderCheck] = await connection.query('SELECT is_leader FROM users WHERE id = ?', [userId]);
