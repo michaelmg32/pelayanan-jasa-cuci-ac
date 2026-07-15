@@ -25,9 +25,13 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
     leader_daily_base_salary: grade?.leader_daily_base_salary || 0,
     leader_daily_travel_allowance: grade?.leader_daily_travel_allowance || 0,
     leader_point_reward: grade?.leader_point_reward || 0,
+    leader_monthly_base_salary: grade?.leader_monthly_base_salary || 0,
+    leader_monthly_travel_allowance: grade?.leader_monthly_travel_allowance || 0,
     member_daily_base_salary: grade?.member_daily_base_salary || 0,
     member_daily_travel_allowance: grade?.member_daily_travel_allowance || 0,
     member_point_reward: grade?.member_point_reward || 0,
+    member_monthly_base_salary: grade?.member_monthly_base_salary || 0,
+    member_monthly_travel_allowance: grade?.member_monthly_travel_allowance || 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -71,6 +75,14 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
                 <label>Uang Jalan Harian (Rp)</label>
                 <input type="number" min="0" className="gaji-input" value={form.leader_daily_travel_allowance} onChange={e => setForm({ ...form, leader_daily_travel_allowance: Number(e.target.value) })} />
               </div>
+              <div className="gaji-form-group" style={{ marginTop: '0.5rem', borderTop: '1px dashed #cbd5e1', paddingTop: '0.5rem' }}>
+                <label style={{ color: '#4338ca' }}>Gaji Pokok Bulanan (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.leader_monthly_base_salary} onChange={e => setForm({ ...form, leader_monthly_base_salary: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group">
+                <label style={{ color: '#4338ca' }}>Uang Jalan Bulanan (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.leader_monthly_travel_allowance} onChange={e => setForm({ ...form, leader_monthly_travel_allowance: Number(e.target.value) })} />
+              </div>
               <div className="gaji-form-group">
                 <label>Poin per Order Selesai</label>
                 <input type="number" min="0" step="0.1" className="gaji-input" value={form.leader_point_reward} onChange={e => setForm({ ...form, leader_point_reward: Number(e.target.value) })} />
@@ -85,6 +97,14 @@ function GradeModal({ grade, onClose, onSave }: { grade: StaffGrade | null; onCl
               <div className="gaji-form-group">
                 <label>Uang Jalan Harian (Rp)</label>
                 <input type="number" min="0" className="gaji-input" value={form.member_daily_travel_allowance} onChange={e => setForm({ ...form, member_daily_travel_allowance: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group" style={{ marginTop: '0.5rem', borderTop: '1px dashed #cbd5e1', paddingTop: '0.5rem' }}>
+                <label style={{ color: '#0369a1' }}>Gaji Pokok Bulanan (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.member_monthly_base_salary} onChange={e => setForm({ ...form, member_monthly_base_salary: Number(e.target.value) })} />
+              </div>
+              <div className="gaji-form-group">
+                <label style={{ color: '#0369a1' }}>Uang Jalan Bulanan (Rp)</label>
+                <input type="number" min="0" className="gaji-input" value={form.member_monthly_travel_allowance} onChange={e => setForm({ ...form, member_monthly_travel_allowance: Number(e.target.value) })} />
               </div>
               <div className="gaji-form-group">
                 <label>Poin per Order Selesai</label>

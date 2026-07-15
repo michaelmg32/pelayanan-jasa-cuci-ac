@@ -940,3 +940,22 @@ export const fetchSalarySummary = async (year?: number) => {
   if (!response.ok) throw new Error('Gagal memuat ringkasan gaji.');
   return await response.json();
 };
+
+export const updateStaffSalarySettings = async (id: string, salary_type: string, monthly_salary_date: number | null) => {
+  const res = await fetch(`${API_BASE_URL}/users/${id}/salary-settings`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ salary_type, monthly_salary_date }),
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Gagal update pengaturan gaji');
+  return res.json();
+};
+
+export const triggerMonthlySalaryProcessing = async () => {
+  const res = await fetch(`${API_BASE_URL}/salary/process-monthly`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Gagal memproses gaji bulanan');
+  return res.json();
+};

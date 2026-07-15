@@ -40,6 +40,9 @@ export interface User {
   leader_id?: string;
   salary_balance?: number;
   points_balance?: number;
+  salary_type?: 'daily' | 'monthly';
+  monthly_salary_date?: number | null;
+  last_monthly_salary_paid?: string | null;
   grade_id?: string;
 }
 
@@ -176,6 +179,10 @@ export interface StaffGrade {
   member_daily_base_salary: number;
   member_daily_travel_allowance: number;
   member_point_reward: number;
+  leader_monthly_base_salary?: number;
+  leader_monthly_travel_allowance?: number;
+  member_monthly_base_salary?: number;
+  member_monthly_travel_allowance?: number;
   createdAt?: string;
   updatedAt?: string;
 }
