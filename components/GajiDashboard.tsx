@@ -6,7 +6,7 @@ import {
   assignTeam, fetchSalaryStaff, getAuthHeaders, updateStaffSalarySettings, triggerMonthlySalaryProcessing
 } from '@/lib/api';
 import type { StaffGrade, User } from '@/types';
-import { Users, UserCheck, CheckCircle, Clock, Search, X } from 'lucide-react';
+import { Users, UserCheck, CheckCircle, Clock, Search, X, Award, Wallet, ReceiptText } from 'lucide-react';
 
 const formatRupiah = (n: any) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(n) || 0);
@@ -242,13 +242,13 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
       {/* HEADER NAV */}
       <nav className="gaji-nav">
         {[
-          { id: 'grade', icon: '🏅', label: 'Kelola Grade', desc: 'Templat tim & gaji' },
-          { id: 'assign', icon: '👥', label: 'Assign Grade', desc: 'Bentuk tim & leader' },
-          { id: 'proses', icon: '💰', label: 'Proses Gaji', desc: 'Saldo & Klaim' },
-          { id: 'riwayat', icon: '🧾', label: 'Riwayat Slip', desc: 'Histori pencairan' }
+          { id: 'grade', icon: <Award size={24} strokeWidth={1.5} />, label: 'Kelola Grade', desc: 'Templat tim' },
+          { id: 'assign', icon: <Users size={24} strokeWidth={1.5} />, label: 'Assign Grade', desc: 'Susunan tim' },
+          { id: 'proses', icon: <Wallet size={24} strokeWidth={1.5} />, label: 'Proses Gaji', desc: 'Saldo' },
+          { id: 'riwayat', icon: <ReceiptText size={24} strokeWidth={1.5} />, label: 'Riwayat Slip', desc: 'Histori' }
         ].map(t => (
           <button key={t.id} className={`gaji-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id as any)}>
-            <div className="gaji-tab-icon">{t.icon}</div>
+            <div className="gaji-tab-icon-wrapper">{t.icon}</div>
             <div className="gaji-tab-text">
               <strong>{t.label}</strong>
               <span>{t.desc}</span>
@@ -260,11 +260,14 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
       <div className="gaji-content">
         {/* ================= 1. KELOLA GRADE ================= */}
         {activeTab === 'grade' && (
-          <div className="gaji-card animate-fade-in">
-            <div className="gaji-card-header">
-              <h2>🏅 Kelola Templat Tim & Grade</h2>
-              <button className="gaji-btn gaji-btn-primary" onClick={() => { setEditingGrade(null); setShowGradeModal(true); }}>
-                ➕ Tambah Grade
+          <div className="animate-fade-in">
+            <div className="gaji-card-header" style={{ borderBottom: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ backgroundColor: '#eef2ff', padding: '0.5rem', borderRadius: '50%', color: '#4f46e5', display: 'flex' }}><Award size={24} /></div>
+                Kelola Templat Tim & Grade
+              </h2>
+              <button className="gaji-btn gaji-btn-primary" style={{ borderRadius: '9999px', padding: '0.6rem 1.5rem', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)' }} onClick={() => { setEditingGrade(null); setShowGradeModal(true); }}>
+                + Tambah Grade
               </button>
             </div>
             {grades.length === 0 ? (
@@ -275,7 +278,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
             ) : (
               <div className="gaji-grid">
                 {grades.map(g => (
-                  <div key={g.id} className="gaji-grade-card" style={{ border: '1px solid #e2e8f0', padding: '1.5rem', borderRadius: '1rem', backgroundColor: '#fff' }}>
+                  <div key={g.id} className="gaji-grade-card" style={{ border: '1px solid #e2e8f0', padding: '1.5rem', borderRadius: '1.5rem', backgroundColor: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05)', transition: 'transform 0.2s', cursor: 'default' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                       <div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>{g.name}</h3>
