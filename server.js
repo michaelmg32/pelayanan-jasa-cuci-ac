@@ -118,6 +118,11 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
+// Force all MySQL connections to use WIB timezone natively
+pool.on('connection', (connection) => {
+  connection.query("SET time_zone = '+07:00'");
+});
+
 // Test Database Connection
 app.get('/api/test-connection', async (req, res) => {
   console.log('✅ Test connection endpoint called');
