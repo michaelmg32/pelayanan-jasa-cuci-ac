@@ -560,6 +560,19 @@ const initializeDatabaseSettings = async () => {
         }
       }
 
+      // Auto-migration: Create monthly_salary_history table
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS monthly_salary_history (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id VARCHAR(50) NOT NULL,
+          amount DECIMAL(10,2) DEFAULT 0,
+          notes VARCHAR(255) NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
+      console.log("✅ Auto-migrated 'monthly_salary_history' table");
+
       // Auto-migration: Create fixed_assets table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS fixed_assets (
