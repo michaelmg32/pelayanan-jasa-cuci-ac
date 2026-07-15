@@ -154,16 +154,6 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
     }
   };
 
-  const handleTriggerMonthly = async () => {
-    try {
-      const res = await triggerMonthlySalaryProcessing();
-      alert(`Berhasil memproses gaji bulanan untuk ${res.processedCount} karyawan`);
-      loadStaff();
-    } catch (err) {
-      alert('Gagal memproses gaji bulanan');
-    }
-  };
-
   const loadGrades = useCallback(async () => {
     try { const data = await fetchStaffGrades(); setGrades(data); } catch { }
   }, []);
@@ -469,12 +459,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
 
             <div className="gaji-card animate-fade-in">
               <div className="gaji-card-header">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                   <h2>💰 Saldo Gaji & Poin Karyawan</h2>
-                  <button onClick={handleTriggerMonthly} style={{ background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', border: 'none' }}>
-                    ⚡ Proses Gaji Bulanan
-                  </button>
-                </div>
               </div>
               <div className="table-responsive">
                 <table className="gaji-table">
