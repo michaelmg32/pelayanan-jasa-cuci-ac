@@ -351,9 +351,10 @@ export default function PelangganDashboard() {
     const matchModel = models.find(m => m.name === selectedModel);
     if (matchService && matchModel) {
       const priceEntry = servicePrices.find(sp => String(sp.serviceId) === String(matchService.id) && String(sp.modelId) === String(matchModel.id));
-      if (priceEntry) {
+      if (priceEntry && priceEntry.price > 0) {
         return priceEntry.price;
       }
+      return matchService.price || 0;
     }
     return 0;
   };
@@ -381,10 +382,7 @@ export default function PelangganDashboard() {
       price: currentServicePrice
     }]);
 
-    // Reset values
-    setSelectedCategory('');
-    setSelectedService('');
-    setSelectedModel('');
+    // Reset only quantity
     setQuantity(1);
   };
 
