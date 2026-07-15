@@ -1491,9 +1491,16 @@ return (
               </svg>
             )}
           </a>
-          <div className="text-left">
-            <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h1>
-            <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>
+          <div className="text-left flex items-center gap-2.5">
+            <div>
+              <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'CoolAir Pro'}</h1>
+              <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>
+            </div>
+            {activeUser?.region_id && (
+              <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
+                Region: {activeUser.region_id}
+              </span>
+            )}
           </div>
         </div>
       </div>
