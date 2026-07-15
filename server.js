@@ -3507,6 +3507,7 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
     }
 
     const [claims] = await connection.query('SELECT * FROM claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
+    const [monthlySalaries] = await connection.query('SELECT * FROM monthly_salary_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
 
     const history = [];
 
@@ -3533,6 +3534,18 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
         amount: hAmount,
         status: c.status,
         notes: c.notes || (c.type === 'gaji_bulanan' ? 'Penerimaan otomatis' : 'Pengajuan klaim')
+      });
+    });
+
+    monthlySalaries.forEach(ms => {
+      history.push({
+        id: `ms-${ms.id}`,
+        date: ms.created_at,
+        type: 'tambah_gaji_bulanan',
+        title: 'Gaji Pokok & Uang Jalan Bulanan',
+        amount: Number(ms.amount),
+        status: 'approved',
+        notes: ms.notes || 'Penerimaan otomatis'
       });
     });
 
