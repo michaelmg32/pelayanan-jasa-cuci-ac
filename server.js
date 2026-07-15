@@ -3726,25 +3726,31 @@ app.post('/api/claims', verifyToken, async (req, res) => {
 
 // 5. Get All Claims
 app.get('/api/claims', verifyToken, async (req, res) => {
-  if (req.user.role !== 'keuangan' && req.user.role !== 'admin' && req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    const [claims] = await connection.query(`
-      SELECT c.*, u.name as user_name, u.role as user_role 
-      FROM claims c 
-      JOIN users u ON c.user_id = u.id 
-      ORDER BY c.created_at DESC
-    `);
-    res.json(claims);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    if (connection) connection.release();
-  }
-});
+    if (req.user.role !== 'keuangan' && req.user.role !== 'admin' && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      let query = `
+        SELECT c.*, u.name as user_name, u.role as user_role, u.region_id
+        FROM claims c 
+        JOIN users u ON c.user_id = u.id 
+      `;
+      const queryParams = [];
+      if (req.user.role !== 'owner') {
+         query += ` WHERE u.region_id = ? `;
+         queryParams.push(req.user.region_id);
+      }
+      query += ` ORDER BY c.created_at DESC `;
+      const [claims] = await connection.query(query, queryParams);
+      res.json(claims);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (connection) connection.release();
+    }
+  });
 
 // 6. Approve / Reject Claim
 app.put('/api/claims/:id', verifyToken, async (req, res) => {
@@ -3755,11 +3761,12 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    const [claimRows] = await connection.query('SELECT * FROM claims WHERE id = ?', [req.params.id]);
-    if (claimRows.length === 0) return res.status(404).json({ error: 'Claim not found' });
-    const claim = claimRows[0];
-    
-    if (claim.status !== 'pending') return res.status(400).json({ error: 'Claim already processed' });
+    const [claimRows] = await connection.query('SELECT c.*, u.region_id FROM claims c JOIN users u ON c.user_id = u.id WHERE c.id = ?', [req.params.id]);
+      if (claimRows.length === 0) return res.status(404).json({ error: 'Claim not found' });
+      const claim = claimRows[0];
+      if (req.user.role !== 'owner' && claim.region_id !== req.user.region_id) return res.status(403).json({ error: 'Akses ditolak: Klaim ini dari wilayah lain' });
+
+      if (claim.status !== 'pending') return res.status(400).json({ error: 'Claim already processed' });
     
     if (status === 'approved' && claim.type === 'points') {
       await connection.query('UPDATE users SET points_balance = points_balance - ? WHERE id = ?', [claim.points_claimed, claim.user_id]);
