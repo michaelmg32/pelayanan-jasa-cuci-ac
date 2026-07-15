@@ -51,7 +51,7 @@ export default function OwnerDashboard() {
         const [fetchedAddons, fetchedAssets, claimsRes] = await Promise.all([
           api.fetchAddons(),
           api.fetchFixedAssets(),
-          fetch('/api/salary-claims')
+          fetch('/api/claims', { headers: api.getAuthHeaders() })
         ]);
         setAddons(fetchedAddons);
         setFixedAssets(fetchedAssets);
