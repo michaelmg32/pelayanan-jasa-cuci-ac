@@ -507,11 +507,15 @@ export default function OwnerDashboard() {
 
   const renderDashboardStats = () => {
     // Asset Totals
-    const totalMovingAssetValue = addons.reduce((sum, item) => sum + (Number(item.hpp) || 0) * (Number(item.stock) || 0), 0);
-    const totalFixedAssetValue = fixedAssets.reduce((sum, item) => sum + (Number(item.purchase_price) || 0), 0);
+    const filteredAddons = reportRegionId === 'ALL' ? addons : addons.filter(a => a.region_id === reportRegionId);
+    const totalMovingAssetValue = filteredAddons.reduce((sum, item) => sum + (Number(item.hpp) || 0) * (Number(item.stock) || 0), 0);
+    
+    const filteredFixedAssets = reportRegionId === 'ALL' ? fixedAssets : fixedAssets.filter(f => f.region_id === reportRegionId);
+    const totalFixedAssetValue = filteredFixedAssets.reduce((sum, item) => sum + (Number(item.purchase_price) || 0), 0);
 
     // Claimed Salary Calculation
-    const approvedClaims = claimsList.filter(c => ['DISETUJUI', 'DIBAYAR', 'SELESAI', 'APPROVED'].includes(c.status?.toUpperCase()));
+    const filteredClaimsList = reportRegionId === 'ALL' ? claimsList : claimsList.filter(c => c.region_id === reportRegionId);
+    const approvedClaims = filteredClaimsList.filter(c => ['DISETUJUI', 'DIBAYAR', 'SELESAI', 'APPROVED'].includes(c.status?.toUpperCase()));
     const totalClaimedPoints = approvedClaims.filter(c => c.type === 'points').reduce((sum, c) => sum + (Number(c.amount) || Number(c.points_claimed) || 0), 0);
     const totalClaimedSalary = approvedClaims.filter(c => c.type === 'daily_salary' || c.type === 'salary').reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
     const totalStaffSalaryExpense = (totalClaimedPoints * 1000) + totalClaimedSalary;
@@ -593,11 +597,11 @@ export default function OwnerDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {addons.length === 0 ? (
+                    {filteredAddons.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="py-4 text-center text-slate-400 font-medium">Belum ada aset terdaftar.</td>
                       </tr>
-                    ) : addons.map(a => (
+                    ) : filteredAddons.map(a => (
                       <tr key={a.id} className="hover:bg-slate-50/50 transition">
                         <td className="py-2.5 px-3 font-bold text-slate-800">{a.name}</td>
                         <td className="py-2.5 px-2 text-center">
@@ -638,11 +642,11 @@ export default function OwnerDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {fixedAssets.length === 0 ? (
+                    {filteredFixedAssets.length === 0 ? (
                       <tr>
                         <td colSpan={3} className="py-4 text-center text-slate-400 font-medium">Belum ada aset tetap.</td>
                       </tr>
-                    ) : fixedAssets.map(fa => (
+                    ) : filteredFixedAssets.map(fa => (
                       <tr key={fa.id} className="hover:bg-slate-50/50 transition">
                         <td className="py-2.5 px-3 text-slate-500 font-mono">{fa.purchase_date ? new Date(fa.purchase_date).toLocaleDateString('id-ID') : '-'}</td>
                         <td className="py-2.5 px-3 font-bold text-slate-800">{fa.name}</td>
