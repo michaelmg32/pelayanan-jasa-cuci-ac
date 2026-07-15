@@ -3832,13 +3832,10 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
             [total, localDate, st.id]
           );
           
-          // Insert into claims so it appears in history!
-          // We set status to 'approved' and type to 'daily_salary' (which is just 'salary' conceptually)
-          // Wait, the client KaryawanDashboard shows 'Pencairan Saldo Gaji' for claims.
-          // Let's use type 'gaji_bulanan' and status 'approved'.
+          // Insert into monthly_salary_history
           await connection.query(
-            'INSERT INTO claims (user_id, amount, points_claimed, type, status, notes, created_at) VALUES (?, ?, 0, ?, ?, ?, ?)',
-            [st.id, total, 'gaji_bulanan', 'approved', `Gaji Pokok & Uang Jalan Bulanan (${currentMonthStr})`, localDate]
+            'INSERT INTO monthly_salary_history (user_id, amount, notes, created_at) VALUES (?, ?, ?, ?)',
+            [st.id, total, `Gaji Pokok & Uang Jalan Bulanan (${currentMonthStr})`, localDate]
           );
           
           processedCount++;
