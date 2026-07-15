@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   fetchStaffGrades, createStaffGrade, updateStaffGrade, deleteStaffGrade,
-  assignTeam, fetchSalaryStaff, getAuthHeaders
+  assignTeam, fetchSalaryStaff, getAuthHeaders, updateStaffSalarySettings, triggerMonthlySalaryProcessing
 } from '@/lib/api';
 import type { StaffGrade, User } from '@/types';
 import { Users, UserCheck, CheckCircle, Clock, Search, X } from 'lucide-react';
@@ -144,6 +144,25 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
   const [assignMemberIds, setAssignMemberIds] = useState<string[]>([]);
   const [assignError, setAssignError] = useState('');
   const [assignSuccess, setAssignSuccess] = useState('');
+
+  const handleSalarySettingsChange = async (userId: string, type: string, date: number | null) => {
+    try {
+      await updateStaffSalarySettings(userId, type, date);
+      setStaffList(prev => prev.map(s => s.id === userId ? { ...s, salary_type: type, monthly_salary_date: date } : s));
+    } catch (err) {
+      alert('Gagal update pengaturan gaji');
+    }
+  };
+
+  const handleTriggerMonthly = async () => {
+    try {
+      const res = await triggerMonthlySalaryProcessing();
+      alert(`Berhasil memproses gaji bulanan untuk ${res.processedCount} karyawan`);
+      loadStaff();
+    } catch (err) {
+      alert('Gagal memproses gaji bulanan');
+    }
+  };
 
   const loadGrades = useCallback(async () => {
     try { const data = await fetchStaffGrades(); setGrades(data); } catch { }
@@ -450,7 +469,12 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
 
             <div className="gaji-card animate-fade-in">
               <div className="gaji-card-header">
-                <h2>💰 Saldo Gaji & Poin Karyawan</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <h2>💰 Saldo Gaji & Poin Karyawan</h2>
+                  <button onClick={handleTriggerMonthly} style={{ background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', border: 'none' }}>
+                    ⚡ Proses Gaji Bulanan
+                  </button>
+                </div>
               </div>
               <div className="table-responsive">
                 <table className="gaji-table">
@@ -458,6 +482,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                     <tr>
                       <th>NAMA STAFF</th>
                       <th>GRADE / TIM</th>
+                      <th>TIPE & TGL GAJI</th>
                       <th>SALDO UANG (GAJI)</th>
                       <th>SALDO POIN</th>
                     </tr>
@@ -480,6 +505,30 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                           ) : (
                             <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>Belum ada grade</span>
                           )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <select 
+                              value={s.salary_type || 'daily'}
+                              onChange={(e) => handleSalarySettingsChange(s.id, e.target.value, s.monthly_salary_date || null)}
+                              style={{ padding: '0.25rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', outline: 'none' }}
+                            >
+                              <option value="daily">Harian</option>
+                              <option value="monthly">Bulanan</option>
+                            </select>
+                            {s.salary_type === 'monthly' && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}>
+                                <span>Tgl:</span>
+                                <input 
+                                  type="number" 
+                                  min="1" max="31" 
+                                  value={s.monthly_salary_date || ''}
+                                  onChange={(e) => handleSalarySettingsChange(s.id, 'monthly', Number(e.target.value) || null)}
+                                  style={{ width: '40px', padding: '0.25rem', border: '1px solid #cbd5e1', borderRadius: '0.25rem', outline: 'none' }}
+                                />
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <strong style={{ color: '#059669', fontSize: '1.1rem' }}>{formatRupiah(s.salary_balance || 0)}</strong>
