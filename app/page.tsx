@@ -45,15 +45,15 @@ export default function SugarACCompanyProfile() {
 
   // Active Service Tab
   const [activeServiceTab, setActiveServiceTab] = useState('Cuci AC');
-  
+
   // Mobile Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const businessName = appSettings?.['GLOBAL']?.business_name || 'Sugar AC';
-  
+
   const activeRegion = regions?.find(r => r.name === selectedBranch);
   const activeRegionId = activeRegion?.id;
-  
+
   // Get dynamic phone from branch settings, fallback to global, fallback to default
   const dynamicPhone = appSettings?.[activeRegionId || '']?.phone_number || appSettings?.['GLOBAL']?.phone_number || '6281284976852';
   const cleanPhone = dynamicPhone.replace(/\D/g, '');
@@ -86,7 +86,7 @@ export default function SugarACCompanyProfile() {
             </div>
             <div>
               <span className="text-base font-black tracking-wider text-slate-900 block group-hover:text-blue-600 transition-colors duration-300">{businessName.toUpperCase()}</span>
-              <span className="text-[9px] font-bold text-blue-600 block uppercase tracking-widest -mt-0.5">Solusi AC Sejuk</span>
+              <span className="text-[9px] font-bold text-blue-600 block uppercase tracking-widest -mt-1">Sejuk Segar AC</span>
             </div>
           </a>
 
@@ -132,9 +132,9 @@ export default function SugarACCompanyProfile() {
             >
               {activeUser ? 'Dashboard' : 'Login'}
             </button>
-            
+
             {/* Hamburger Button for Mobile */}
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden text-slate-600 hover:text-blue-600 p-2 focus:outline-none"
             >
@@ -151,7 +151,7 @@ export default function SugarACCompanyProfile() {
               <a href="#services" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Pelayanan Kami</a>
               <a href="#education" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Edukasi Perawatan</a>
               <a href="#why-us" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Tentang Kami</a>
-              
+
               <div className="pt-4 mt-2 border-t border-slate-100">
                 <span className="text-[10px] text-slate-400 mb-3 block uppercase tracking-widest">Pilih Cabang</span>
                 <div className="grid grid-cols-2 gap-2">
@@ -166,7 +166,7 @@ export default function SugarACCompanyProfile() {
                   ))}
                 </div>
               </div>
-              
+
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
