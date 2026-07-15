@@ -937,16 +937,28 @@ export default function PelangganDashboard() {
                       );
                     })}
 
-                    {/* Extra button for New Order (Lainnya) */}
-                    <div
-                      onClick={() => setShowNewOrderModal(true)}
-                      className="flex flex-col items-center justify-start cursor-pointer group"
-                    >
-                      <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-slate-200 transition-colors">
-                        <Plus size={26} className="text-slate-600" />
+                    {hasMoreCategories && !isCategoriesExpanded && (
+                      <div
+                        onClick={() => setIsCategoriesExpanded(true)}
+                        className="flex flex-col items-center justify-start cursor-pointer group"
+                      >
+                        <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-slate-200 transition-colors">
+                          <MoreHorizontal size={26} className="text-slate-600" />
+                        </div>
+                        <span className="text-[10px] font-bold text-center text-slate-700">Lainnya</span>
                       </div>
-                      <span className="text-[10px] font-bold text-center text-slate-700">Lainnya</span>
-                    </div>
+                    )}
+                    {hasMoreCategories && isCategoriesExpanded && (
+                      <div
+                        onClick={() => setIsCategoriesExpanded(false)}
+                        className="flex flex-col items-center justify-start cursor-pointer group"
+                      >
+                        <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-slate-200 transition-colors">
+                          <ChevronUp size={26} className="text-slate-600" />
+                        </div>
+                        <span className="text-[10px] font-bold text-center text-slate-700">Tutup</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
