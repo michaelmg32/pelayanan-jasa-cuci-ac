@@ -689,7 +689,7 @@ export default function OwnerDashboard() {
                         return (
                           <tr key={c.id} className="hover:bg-slate-50/50 transition">
                             <td className="py-2.5 px-3 text-slate-500 font-mono">{new Date(c.created_at).toLocaleDateString('id-ID')}</td>
-                            <td className="py-2.5 px-3 font-bold text-slate-800">{c.employee_name || 'Tanpa Nama'}</td>
+                            <td className="py-2.5 px-3 font-bold text-slate-800">{c.user_name || c.employee_name || 'Tanpa Nama'}</td>
                             <td className="py-2.5 px-2">
                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${isPoints ? 'bg-cyan-50 text-cyan-600 border border-cyan-200' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'}`}>
                                  {isPoints ? 'Poin' : 'Gaji'}
