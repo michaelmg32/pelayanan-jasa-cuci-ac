@@ -1479,7 +1479,7 @@ export default function AdminDashboard() {
 return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
       {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}
-      <div className="bg-slate-900 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-30 relative">
+      <div className="bg-slate-900 text-white px-5 pt-4 pb-12 shrink-0 shadow-md rounded-b-[32px] flex justify-between items-start z-30 relative overflow-hidden">
         {/* Logo, Business Name & Slogan */}
         <div className="flex items-center gap-3">
           <a href="/" className="w-14 h-14 bg-gradient-to-tr from-rose-500 to-orange-400 rounded-2xl shadow-xl shadow-rose-900/20 flex items-center justify-center text-white mb-3 transform -rotate-6 hover:rotate-0 transition duration-300 relative z-10 overflow-hidden border-2 border-white/50 cursor-pointer block">
@@ -1498,54 +1498,56 @@ return (
         </div>
       </div>
 
-      {/* ===================== CONTROL TABS SYSTEM (GRID ICON) ===================== */}
-      <div className="bg-white border-b border-slate-200 px-4 md:px-8 lg:px-12 pt-4 pb-2 sticky top-0 z-20 shrink-0">
+      {/* ===================== CONTROL TABS SYSTEM (NEW GRID ICON) ===================== */}
+      <div className="px-5 -mt-8 relative z-40 shrink-0 mb-2">
+        <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/40 border border-slate-100/60 p-4 md:p-5">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-y-5 gap-x-2">
             
-            <div onClick={() => setActiveTab('JOBS_TRACKER')} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'JOBS_TRACKER' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
-                <ClipboardList size={26} />
+            <div onClick={() => setActiveTab('JOBS_TRACKER')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all group">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'JOBS_TRACKER' ? 'bg-blue-100 text-blue-600 border border-blue-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                <ClipboardList size={24} strokeWidth={2.5} />
               </div>
-              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'JOBS_TRACKER' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Pantauan Jasa</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'JOBS_TRACKER' ? 'text-blue-700' : 'text-slate-500 group-hover:text-slate-700'}`}>Pantauan Jasa</span>
             </div>
 
-            <div onClick={() => { setActiveTab('MASTER_DATA'); if (categories.length > 0) setNewServiceCategory(categories[0].id); }} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'MASTER_DATA' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
-                <Wrench size={26} />
+            <div onClick={() => { setActiveTab('MASTER_DATA'); if (categories.length > 0) setNewServiceCategory(categories[0].id); }} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all group">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'MASTER_DATA' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                <Wrench size={24} strokeWidth={2.5} />
               </div>
-              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'MASTER_DATA' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Edit Master Data</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'MASTER_DATA' ? 'text-emerald-700' : 'text-slate-500 group-hover:text-slate-700'}`}>Master Data</span>
             </div>
 
-            <div onClick={() => setActiveTab('USER_MANAGEMENT')} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'USER_MANAGEMENT' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
-                <UserCog size={26} />
+            <div onClick={() => setActiveTab('USER_MANAGEMENT')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all group">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'USER_MANAGEMENT' ? 'bg-orange-100 text-orange-600 border border-orange-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                <UserCog size={24} strokeWidth={2.5} />
               </div>
-              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'USER_MANAGEMENT' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Edit Pengguna</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'USER_MANAGEMENT' ? 'text-orange-700' : 'text-slate-500 group-hover:text-slate-700'}`}>Edit Pengguna</span>
             </div>
 
-            <div onClick={() => setActiveTab('VOUCHERS')} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'VOUCHERS' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
-                <Tag size={26} />
+            <div onClick={() => setActiveTab('VOUCHERS')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all group">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'VOUCHERS' ? 'bg-violet-100 text-violet-600 border border-violet-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                <Tag size={24} strokeWidth={2.5} />
               </div>
-              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'VOUCHERS' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Kelola Voucher</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'VOUCHERS' ? 'text-violet-700' : 'text-slate-500 group-hover:text-slate-700'}`}>Kelola Voucher</span>
             </div>
 
-            <div onClick={() => setActiveTab('PROFIL')} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'PROFIL' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
-                <UserIcon size={26} />
+            <div onClick={() => setActiveTab('PROFIL')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all group">
+              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-colors ${activeTab === 'PROFIL' ? 'bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}>
+                <UserIcon size={24} strokeWidth={2.5} />
               </div>
-              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'PROFIL' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Profile</span>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'PROFIL' ? 'text-indigo-700' : 'text-slate-500 group-hover:text-slate-700'}`}>Profil</span>
             </div>
 
-            <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2 cursor-pointer group">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 bg-rose-50 text-rose-500 group-hover:bg-rose-100">
-                <LogOut size={26} />
+            <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all group">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-100 transition-colors">
+                <LogOut size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[10px] font-bold text-center tracking-wide text-rose-600 group-hover:text-rose-700">Keluar</span>
+              <span className="text-[9px] font-extrabold text-center uppercase tracking-wider text-rose-600 group-hover:text-rose-700">Keluar</span>
             </div>
 
           </div>
         </div>
+      </div>
 
       {/* ===================== TAB BODY (SCROLLABLE Area) ===================== */}
       <div className="flex-1 overflow-y-auto p-4 min-h-0 space-y-4">
