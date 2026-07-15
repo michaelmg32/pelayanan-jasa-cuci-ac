@@ -8,7 +8,7 @@ import * as api from '@/lib/api';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 import {
-  Plus,
+  Plus, MoreHorizontal, ChevronUp,
   Clock,
   Calendar,
   MapPin,
@@ -82,6 +82,7 @@ export default function PelangganDashboard() {
     [allAddons, selectedRegionId]
   );
 
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
@@ -740,8 +741,11 @@ export default function PelangganDashboard() {
     { label: 'Selesai', desc: 'Nilai Teknisi' },
   ];
 
+  const hasMoreCategories = categories.length > 8;
+  const displayCategories = hasMoreCategories && !isCategoriesExpanded ? categories.slice(0, 7) : categories;
+
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative min-h-0 h-full">
+    <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 min-h-0 h-full overflow-hidden">
       <div className="w-full h-full flex flex-col relative">
         {/* GLOBAL INDIGO HEADER BAR WITH THREE-DOTS MENU */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-650 to-indigo-800 text-white px-5 py-4 shrink-0 shadow-md flex justify-between items-center z-20 relative">
@@ -881,8 +885,8 @@ export default function PelangganDashboard() {
               {/* Gojek-style Category Grid */}
               <div className="px-4 md:px-8 lg:px-12 -mt-6 relative z-10 mb-4">
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5">
-                  <div className="grid grid-cols-4 gap-y-6 gap-x-2">
-                    {categories.map((cat: any, idx: number) => {
+                  <div className="grid grid-cols-4 md:grid-cols-8 gap-y-6 gap-x-2">
+                    {displayCategories.map((cat: any, idx: number) => {
                       // Tentukan icon fallback (lucide) jika tidak ada icon di DB
                       const fallbackIcons = [
                         <Wind size={26} className="text-emerald-600" />,
