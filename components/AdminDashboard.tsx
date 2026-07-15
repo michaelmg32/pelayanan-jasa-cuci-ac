@@ -63,6 +63,7 @@ export default function AdminDashboard() {
     services, setServices,
     servicePrices, setServicePrices,
     addons, setAddons,
+    regions,
     logout,
     showAlert,
     appSettings
@@ -1498,7 +1499,7 @@ return (
             </div>
             {activeUser?.region_id && (
               <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
-                Region: {activeUser.region_id}
+                Region: {regions?.find(r => r.id === activeUser.region_id)?.name || activeUser.region_id}
               </span>
             )}
           </div>
