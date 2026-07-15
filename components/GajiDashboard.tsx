@@ -6,7 +6,7 @@ import {
   assignTeam, fetchSalaryStaff, getAuthHeaders, updateStaffSalarySettings, triggerMonthlySalaryProcessing
 } from '@/lib/api';
 import type { StaffGrade, User } from '@/types';
-import { Users, UserCheck, CheckCircle, Clock, Search, X, Award, Wallet, ReceiptText } from 'lucide-react';
+import { Users, UserCheck, CheckCircle, Clock, Search, X, Award, Wallet, ReceiptText, Pencil, Trash2 } from 'lucide-react';
 
 const formatRupiah = (n: any) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(n) || 0);
@@ -144,6 +144,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
   const [assignMemberIds, setAssignMemberIds] = useState<string[]>([]);
   const [assignError, setAssignError] = useState('');
   const [assignSuccess, setAssignSuccess] = useState('');
+  const [editingSettings, setEditingSettings] = useState<{ [id: string]: { type: string, date: number | null } }>({});
 
   const handleSalarySettingsChange = async (userId: string, type: string, date: number | null) => {
     try {
@@ -260,8 +261,8 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
       <div className="gaji-content">
         {/* ================= 1. KELOLA GRADE ================= */}
         {activeTab === 'grade' && (
-          <div className="animate-fade-in">
-            <div className="gaji-card-header" style={{ borderBottom: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
+          <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)', padding: '2rem' }}>
+            <div className="gaji-card-header" style={{ borderBottom: 'none', marginBottom: '1.5rem', paddingBottom: 0 }}>
               <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ backgroundColor: '#eef2ff', padding: '0.5rem', borderRadius: '50%', color: '#4f46e5', display: 'flex' }}><Award size={24} /></div>
                 Kelola Templat Tim & Grade
@@ -285,10 +286,14 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                         <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{g.description || 'Tidak ada deskripsi'}</span>
                       </div>
                       <div className="gaji-actions">
-                        <button className="gaji-icon-btn" onClick={() => { setEditingGrade(g); setShowGradeModal(true); }}>✏️</button>
-                        <button className="gaji-icon-btn text-danger" onClick={async () => {
+                        <button className="gaji-icon-btn" style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '0.5rem', transition: 'color 0.2s' }} onClick={() => { setEditingGrade(g); setShowGradeModal(true); }}>
+                          <Pencil size={18} />
+                        </button>
+                        <button className="gaji-icon-btn text-danger" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.5rem', transition: 'color 0.2s' }} onClick={async () => {
                           if (confirm('Yakin hapus grade ini?')) { await deleteStaffGrade(g.id); loadGrades(); }
-                        }}>🗑️</button>
+                        }}>
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -500,29 +505,56 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                             )}
                           </td>
                           <td style={{ padding: '1rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '140px' }}>
-                              <select 
-                                value={s.salary_type || 'daily'}
-                                onChange={(e) => handleSalarySettingsChange(s.id, e.target.value, s.monthly_salary_date || null)}
-                                style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 600, color: '#334155', transition: 'border-color 0.2s' }}
-                              >
-                                <option value="daily">Harian</option>
-                                <option value="monthly">Bulanan</option>
-                              </select>
-                              {s.salary_type === 'monthly' && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '0.5rem', padding: '0 0.5rem' }}>
-                                  <span style={{ color: '#64748b', fontWeight: 600 }}>Tgl:</span>
-                                  <input 
-                                    type="number" 
-                                    min="1" max="31" 
-                                    value={s.monthly_salary_date || ''}
-                                    onChange={(e) => handleSalarySettingsChange(s.id, 'monthly', Number(e.target.value) || null)}
-                                    style={{ width: '100%', padding: '0.5rem 0', border: 'none', outline: 'none', backgroundColor: 'transparent', fontWeight: 700, color: '#0f172a' }}
-                                    placeholder="1-31"
-                                  />
-                                </div>
-                              )}
-                            </div>
+                              {(() => {
+                                const editState = editingSettings[s.id];
+                                const isEditing = !!editState;
+
+                                if (isEditing) {
+                                  return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '160px' }}>
+                                      <select 
+                                        value={editState.type}
+                                        onChange={(e) => setEditingSettings({ ...editingSettings, [s.id]: { ...editState, type: e.target.value } })}
+                                        style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 600, color: '#334155' }}
+                                      >
+                                        <option value="daily">Harian</option>
+                                        <option value="monthly">Bulanan</option>
+                                      </select>
+                                      {editState.type === 'monthly' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '0.5rem', padding: '0 0.5rem' }}>
+                                          <span style={{ color: '#64748b', fontWeight: 600 }}>Tgl:</span>
+                                          <input 
+                                            type="number" min="1" max="31" 
+                                            value={editState.date || ''}
+                                            onChange={(e) => setEditingSettings({ ...editingSettings, [s.id]: { ...editState, date: Number(e.target.value) || null } })}
+                                            style={{ width: '100%', padding: '0.5rem 0', border: 'none', outline: 'none', backgroundColor: 'transparent', fontWeight: 700, color: '#0f172a' }}
+                                            placeholder="1-31"
+                                          />
+                                        </div>
+                                      )}
+                                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button onClick={async () => {
+                                          await handleSalarySettingsChange(s.id, editState.type, editState.date);
+                                          setEditingSettings(prev => { const next = {...prev}; delete next[s.id]; return next; });
+                                        }} style={{ flex: 1, padding: '0.4rem', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }}>Simpan</button>
+                                        <button onClick={() => setEditingSettings(prev => { const next = {...prev}; delete next[s.id]; return next; })} style={{ flex: 1, padding: '0.4rem', backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }}>Batal</button>
+                                      </div>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <span style={{ fontWeight: 700, color: '#334155', fontSize: '0.9rem' }}>{s.salary_type === 'monthly' ? 'Bulanan' : 'Harian'}</span>
+                                        {s.salary_type === 'monthly' && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Tgl: {s.monthly_salary_date || '-'}</span>}
+                                      </div>
+                                      <button onClick={() => setEditingSettings({ ...editingSettings, [s.id]: { type: s.salary_type || 'daily', date: s.monthly_salary_date || null } })} style={{ background: 'transparent', border: 'none', color: '#4f46e5', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: '#eef2ff', transition: 'background 0.2s' }}>
+                                        <Pencil size={14} />
+                                      </button>
+                                    </div>
+                                  );
+                                }
+                              })()}
                           </td>
                           <td style={{ padding: '1rem' }}>
                             <div style={{ display: 'inline-block', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.5rem 1rem', borderRadius: '0.75rem' }}>
