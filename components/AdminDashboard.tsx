@@ -196,7 +196,8 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState('');
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<TabType>('JOBS_TRACKER');
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  
 
   // Admin Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
@@ -343,21 +344,7 @@ export default function AdminDashboard() {
     }
   }, [activeUser]);
 
-  // Click-outside listener to close the three-dots menu dropdown
-  useEffect(() => {
-    if (!showMoreMenu) return;
-    const handleOutsideClick = () => {
-      setShowMoreMenu(false);
-    };
-    // Use timeout to prevent immediate closing during trigger click event propagation
-    const timer = setTimeout(() => {
-      document.addEventListener('click', handleOutsideClick);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('click', handleOutsideClick);
-    };
-  }, [showMoreMenu]);
+  
 
   // Client-side image compression
   const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
@@ -1509,117 +1496,56 @@ return (
             <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>
           </div>
         </div>
-
-        {/* Three-dots menu button */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMoreMenu(prev => !prev);
-            }}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer text-blue-200 hover:text-white"
-          >
-            <MoreVertical size={18} />
-          </button>
-
-          {showMoreMenu && (
-            <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-slate-800 text-left text-xs font-bold">
-              <button
-                onClick={() => {
-                  setActiveTab('JOBS_TRACKER');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab !== 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <ClipboardList size={14} className={activeTab !== 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Dashboard</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('PROFIL');
-                  setShowMoreMenu(false);
-                }}
-                className={`w-full px-4 py-2 hover:bg-slate-50 flex items-center gap-2 transition cursor-pointer text-slate-700 ${activeTab === 'PROFIL' ? 'text-indigo-600 bg-indigo-50/20 font-black' : ''}`}
-              >
-                <UserIcon size={14} className={activeTab === 'PROFIL' ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>Profile</span>
-              </button>
-              <hr className="my-1 border-slate-100" />
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  logout();
-                }}
-                className="w-full px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer text-rose-600"
-              >
-                <LogOut size={14} />
-                <span>Logout</span>
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* ===================== CONTROL TABS SYSTEM ===================== */}
-      {activeTab !== 'PROFIL' && (
-        <div className="bg-white border-b border-slate-200 px-4 py-0 sticky top-0 z-20 shrink-0 flex gap-1 overflow-x-auto flex-nowrap">
-          <button
-            onClick={() => setActiveTab('JOBS_TRACKER')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'JOBS_TRACKER'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
-              }`}
-          >
-            <span className="flex items-center gap-2">
-              <ClipboardList size={15} />
-              <span>Pantauan Jasa</span>
-            </span>
-          </button>
+      {/* ===================== CONTROL TABS SYSTEM (GRID ICON) ===================== */}
+      <div className="bg-white border-b border-slate-200 px-4 md:px-8 lg:px-12 pt-4 pb-2 sticky top-0 z-20 shrink-0">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-y-5 gap-x-2">
+            
+            <div onClick={() => setActiveTab('JOBS_TRACKER')} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'JOBS_TRACKER' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                <ClipboardList size={26} />
+              </div>
+              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'JOBS_TRACKER' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Pantauan Jasa</span>
+            </div>
 
-          <button
-            onClick={() => {
-              setActiveTab('MASTER_DATA');
-              if (categories.length > 0) setNewServiceCategory(categories[0].id);
-            }}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'MASTER_DATA'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
-              }`}
-          >
-            <span className="flex items-center gap-2">
-              <Wrench size={15} />
-              <span>Edit Master Data</span>
-            </span>
-          </button>
+            <div onClick={() => { setActiveTab('MASTER_DATA'); if (categories.length > 0) setNewServiceCategory(categories[0].id); }} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'MASTER_DATA' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                <Wrench size={26} />
+              </div>
+              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'MASTER_DATA' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Edit Master Data</span>
+            </div>
 
-          <button
-            onClick={() => setActiveTab('USER_MANAGEMENT')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'USER_MANAGEMENT'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
-              }`}
-          >
-            <span className="flex items-center gap-2">
-              <UserCog size={15} />
-              <span>Edit Pengguna ({allUsers.filter(u => u.role !== Role.USER).length})</span>
-            </span>
-          </button>
+            <div onClick={() => setActiveTab('USER_MANAGEMENT')} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'USER_MANAGEMENT' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                <UserCog size={26} />
+              </div>
+              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'USER_MANAGEMENT' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Edit Pengguna</span>
+            </div>
 
+            <div onClick={() => setActiveTab('VOUCHERS')} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'VOUCHERS' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                <Tag size={26} />
+              </div>
+              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'VOUCHERS' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Kelola Voucher</span>
+            </div>
 
-          <button
-            onClick={() => setActiveTab('VOUCHERS')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'VOUCHERS'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-600 border-transparent hover:text-slate-800'
-              }`}
-          >
-            <span className="flex items-center gap-2">
-              <Tag size={15} />
-              <span>Kelola Voucher</span>
-            </span>
-          </button>
+            <div onClick={() => setActiveTab('PROFIL')} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${activeTab === 'PROFIL' ? 'bg-indigo-600 text-white shadow-indigo-500/40 scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                <UserIcon size={26} />
+              </div>
+              <span className={`text-[10px] font-bold text-center tracking-wide ${activeTab === 'PROFIL' ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Profile</span>
+            </div>
+
+            <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 bg-rose-50 text-rose-500 group-hover:bg-rose-100">
+                <LogOut size={26} />
+              </div>
+              <span className="text-[10px] font-bold text-center tracking-wide text-rose-600 group-hover:text-rose-700">Keluar</span>
+            </div>
+
+          </div>
         </div>
-      )}
 
       {/* ===================== TAB BODY (SCROLLABLE Area) ===================== */}
       <div className="flex-1 overflow-y-auto p-4 min-h-0 space-y-4">
@@ -4805,6 +4731,26 @@ return (
           </div>
         </div>
       )}
-      </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <LogOut size={32} className="text-rose-500" />
+              </div>
+              <h3 className="text-lg font-black text-slate-800 mb-2">Keluar dari Akun?</h3>
+              <p className="text-sm text-slate-500 mb-6">Anda harus login kembali untuk masuk ke dashboard Admin.</p>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setShowLogoutConfirm(false)} className="py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+                <button onClick={() => { setShowLogoutConfirm(false); logout(); }} className="py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/30 transition">Ya, Keluar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
