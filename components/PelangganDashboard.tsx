@@ -2067,9 +2067,13 @@ export default function PelangganDashboard() {
                         className="w-full bg-white border border-slate-200 text-slate-800 text-xs px-3 py-2.5 rounded-xl outline-none"
                       >
                         <option value="09:00">09:00 - Pagi</option>
+                        <option value="10:00">10:00 - Pagi</option>
                         <option value="11:00">11:00 - Siang</option>
+                        <option value="12:00">12:00 - Siang</option>
                         <option value="13:00">13:00 - Siang</option>
+                        <option value="14:00">14:00 - Sore</option>
                         <option value="15:00">15:00 - Sore</option>
+                        <option value="16:00">16:00 - Sore</option>
                         <option value="17:00">17:00 - Sore</option>
                       </select>
                     </div>
