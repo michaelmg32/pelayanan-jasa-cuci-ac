@@ -926,6 +926,8 @@ export default function AdminDashboard() {
         address: adminAddress,
         lat: adminLat,
         lng: adminLng,
+        latitude: adminLat,
+        longitude: adminLng,
         scheduledDate: adminDate,
         scheduledTime: adminTime,
         notes: adminNotes,
