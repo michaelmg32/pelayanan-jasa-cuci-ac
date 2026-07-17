@@ -328,8 +328,8 @@ export default function PelangganDashboard() {
 
   // Filter orders
   const myOrders = orders.filter(o => o.customerId === activeUser.id);
-  const activeOrders = myOrders.filter(o => o.status !== OrderStatus.DIBATALKAN && (o.status !== OrderStatus.SELESAI || !o.rating || o.rating === null));
-  const completedOrders = myOrders.filter(o => o.status === OrderStatus.DIBATALKAN || (o.status === OrderStatus.SELESAI && o.rating !== null && o.rating !== undefined));
+  const activeOrders = myOrders.filter(o => o.status !== OrderStatus.DIBATALKAN && (o.status !== OrderStatus.SELESAI || !o.rating || o.rating === null)).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  const completedOrders = myOrders.filter(o => o.status === OrderStatus.DIBATALKAN || (o.status === OrderStatus.SELESAI && o.rating !== null && o.rating !== undefined)).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
   // Handle Category Switch
   const handleCategoryChange = (categoryId: string) => {
