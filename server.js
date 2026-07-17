@@ -3485,7 +3485,7 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
     const currentMonthStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}`;
     
     const [users] = await connection.query(`
-      SELECT u.id, u.name, u.is_leader, u.points_balance, u.salary_balance, sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
+      SELECT u.id, u.name, u.is_leader, u.salary_type, u.points_balance, u.salary_balance, sg.leader_daily_base_salary, sg.leader_daily_travel_allowance, sg.leader_point_reward,
              sg.member_daily_base_salary, sg.member_daily_travel_allowance, sg.member_point_reward
       FROM users u
       LEFT JOIN staff_grades sg ON u.grade_id = sg.id
@@ -3571,7 +3571,7 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
       dayOrders.sort((a, b) => new Date(a.completed_at) - new Date(b.completed_at));
       
       const firstOrder = dayOrders[0];
-      if (dailyBase > 0 || dailyTravel > 0) {
+      if ((!user.salary_type || user.salary_type === 'daily') && (dailyBase > 0 || dailyTravel > 0)) {
         history.push({
           id: `salary-${firstOrder.id}`,
           date: firstOrder.completed_at,
