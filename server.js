@@ -1008,10 +1008,21 @@ app.post('/api/users', async (req, res) => {
       }
     }
 
+    let dbRole = 'pelanggan';
+    if (role) {
+      const upperRole = role.toUpperCase();
+      if (upperRole === 'STAFF') dbRole = 'karyawan';
+      else if (upperRole === 'ADMIN') dbRole = 'admin';
+      else if (upperRole === 'OWNER') dbRole = 'owner';
+      else if (upperRole === 'KEUANGAN') dbRole = 'keuangan';
+      else if (upperRole === 'USER') dbRole = 'pelanggan';
+      else dbRole = role.toLowerCase();
+    }
+
     const userId = id || `usr_${Date.now()}`;
     await connection.query(
       'INSERT INTO users (id, name, email, phone, role, password, region_id, ktpPhoto, selfiePhoto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, name, email, phone || null, role || 'pelanggan', hashedPassword, region_id || null, ktpPhoto || null, selfiePhoto || null]
+      [userId, name, email, phone || null, dbRole, hashedPassword, region_id || null, ktpPhoto || null, selfiePhoto || null]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Pengguna', `Menambahkan pengguna baru: ${name} (${role})`);
@@ -1053,15 +1064,24 @@ app.put('/api/users/:id', verifyToken, async (req, res) => {
       updateValues.push(phone || null);
     }
     if (role) {
+      let dbRole = role;
+      const upperRole = role.toUpperCase();
+      if (upperRole === 'STAFF') dbRole = 'karyawan';
+      else if (upperRole === 'ADMIN') dbRole = 'admin';
+      else if (upperRole === 'OWNER') dbRole = 'owner';
+      else if (upperRole === 'KEUANGAN') dbRole = 'keuangan';
+      else if (upperRole === 'USER') dbRole = 'pelanggan';
+      else dbRole = role.toLowerCase();
+
       const [currentUserRows] = await connection.query('SELECT role FROM users WHERE id = ?', [id]);
-      if (currentUserRows.length > 0 && currentUserRows[0].role !== role) {
+      if (currentUserRows.length > 0 && currentUserRows[0].role !== dbRole) {
         if (req.user.role !== 'owner') {
           connection.release();
           return res.status(403).json({ error: 'Hanya Owner yang diperbolehkan mengelola/mengubah peran (role) pengguna.' });
         }
       }
       updateFields.push('role = ?');
-      updateValues.push(role);
+      updateValues.push(dbRole);
     }
     if (password) {
       // If password is being updated, hash it
