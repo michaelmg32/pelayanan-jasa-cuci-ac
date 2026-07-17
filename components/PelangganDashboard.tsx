@@ -2486,7 +2486,7 @@ export default function PelangganDashboard() {
                   <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Pekerja / Teknisi</span>
                   <div className="font-bold bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl flex items-center gap-2">
                     <UserIcon size={14} className="text-slate-400" />
-                    {selectedHistoryOrder.assignedToName || 'Belum/Tidak Ada Teknisi'}
+                    {selectedHistoryOrder.assignedEmployeeName || 'Belum/Tidak Ada Teknisi'}
                   </div>
                 </div>
 
