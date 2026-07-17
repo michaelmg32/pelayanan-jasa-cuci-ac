@@ -2053,7 +2053,7 @@ app.put('/api/orders/:id', async (req, res) => {
 
           for (const wId of workerIds) {
             const [users] = await connection.query(`
-              SELECT u.is_leader, sg.leader_point_reward, sg.member_point_reward,
+              SELECT u.is_leader, u.salary_type, sg.leader_point_reward, sg.member_point_reward,
                      sg.leader_daily_base_salary, sg.leader_daily_travel_allowance,
                      sg.member_daily_base_salary, sg.member_daily_travel_allowance
               FROM users u
@@ -2087,7 +2087,8 @@ app.put('/api/orders/:id', async (req, res) => {
                   AND o.id != ?
               `, [wId, order.id]);
 
-              if (completedToday[0].cnt === 0) {
+              // Only give daily salary if they are a daily worker
+              if (completedToday[0].cnt === 0 && (!user.salary_type || user.salary_type === 'daily')) {
                 const dailyBase = user.is_leader ? (Number(user.leader_daily_base_salary) || 0) : (Number(user.member_daily_base_salary) || 0);
                 const dailyTravel = user.is_leader ? (Number(user.leader_daily_travel_allowance) || 0) : (Number(user.member_daily_travel_allowance) || 0);
                 salaryEarned = dailyBase + dailyTravel;
