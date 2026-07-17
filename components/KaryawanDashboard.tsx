@@ -167,8 +167,8 @@ export default function KaryawanDashboard() {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  const activeTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status !== OrderStatus.SELESAI && o.status !== OrderStatus.DIBATALKAN && o.status !== OrderStatus.MENUNGGU);
-  const completedTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status === OrderStatus.SELESAI);
+  const activeTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status !== OrderStatus.SELESAI && o.status !== OrderStatus.DIBATALKAN && o.status !== OrderStatus.MENUNGGU).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  const completedTasks = orders.filter(o => o.assignedTo === activeUser.id && o.status === OrderStatus.SELESAI).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
   const formatRupiah = (num: any) => {
     return 'Rp' + Number(num || 0).toLocaleString('id-ID');
