@@ -3212,7 +3212,7 @@ app.get('/api/staff-grades', verifyToken, async (req, res) => {
       LEFT JOIN regions r ON sg.region_id = r.id
     `;
     let params = [];
-    if (user.role?.toLowerCase() === 'admin') {
+    if (user.region_id) {
       query += ' WHERE sg.region_id = ?';
       params.push(user.region_id);
     }
@@ -3443,7 +3443,7 @@ app.get('/api/salary/staff', verifyToken, async (req, res) => {
       WHERE u.role = 'karyawan'
     `;
     const params = [];
-    if (user.role?.toLowerCase() === 'admin') {
+    if (user.region_id) {
       query += ' AND u.region_id = ?';
       params.push(user.region_id);
     }
@@ -3766,7 +3766,7 @@ app.get('/api/claims', verifyToken, async (req, res) => {
         JOIN users u ON c.user_id = u.id 
       `;
       const queryParams = [];
-      if (req.user.role !== 'owner') {
+      if (req.user.region_id) {
          query += ` WHERE u.region_id = ? `;
          queryParams.push(req.user.region_id);
       }

@@ -79,7 +79,7 @@ export default function KeuanganDashboard() {
     return 'Rp ' + Number(num).toLocaleString('id-ID');
   };
 
-  const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active');
+  const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active' && (!activeUser?.region_id || u.region_id === activeUser.region_id));
 
 
   // Data States
@@ -983,7 +983,7 @@ export default function KeuanganDashboard() {
                       </div>
 
                       <div className="grid grid-cols-1 gap-5">
-                        {users.filter(u => u.role === Role.STAFF && u.status === 'active').map(staff => {
+                        {staffList.map(staff => {
                           const staffOrders = orders.filter(o => {
                             if (o.assignedTo !== staff.id || o.status !== 'SELESAI') return false;
                             const orderDateStr = o.completedAt || o.scheduledDate || o.createdAt;
@@ -1092,7 +1092,7 @@ export default function KeuanganDashboard() {
                           );
                         })}
 
-                        {users.filter(u => u.role === Role.STAFF && u.status === 'active').length === 0 && (
+                        {staffList.length === 0 && (
                           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 p-10 text-center text-slate-500 flex flex-col items-center justify-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                               <UserIcon size={28} className="text-slate-300" />
