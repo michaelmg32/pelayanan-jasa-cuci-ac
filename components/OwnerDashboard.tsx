@@ -139,6 +139,9 @@ export default function OwnerDashboard() {
       setEditProfilePhone(activeUser.phone || '');
       setEditProfileAddress(activeUser.address || '');
       setEditProfilePhoto(activeUser.photo || '');
+      if (activeUser.region_id) {
+        setReportRegionId(activeUser.region_id);
+      }
     }
   }, [activeUser]);
 
