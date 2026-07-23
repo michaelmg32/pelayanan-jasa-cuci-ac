@@ -953,7 +953,7 @@ const smtpConfig = {
 };
 
 const transporter = nodemailer.createTransport(smtpConfig);
-const SMTP_FROM = process.env.SMTP_FROM || '"CoolAir Pro" <noreply@coolairpro.com>';
+const SMTP_FROM = process.env.SMTP_FROM || '"Sugar AC" <noreply@sugarac.com>';
 
 // Request password reset link
 app.post('/api/auth/forgot-password', async (req, res) => {
@@ -991,12 +991,12 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const mailOptions = {
       from: SMTP_FROM,
       to: email,
-      subject: 'Reset Kata Sandi Anda - CoolAir Pro',
+      subject: 'Reset Kata Sandi Anda - Sugar AC',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
           <h2 style="color: #2563eb; margin-top: 0; font-family: 'Outfit', sans-serif;">Reset Kata Sandi Anda</h2>
           <p>Halo <strong>${user.name}</strong>,</p>
-          <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Anda di pelayanan cuci AC CoolAir Pro.</p>
+          <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Anda di pelayanan cuci AC Sugar AC.</p>
           <p style="margin: 28px 0; text-align: center;">
             <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">Reset Kata Sandi Sekarang</a>
           </p>
