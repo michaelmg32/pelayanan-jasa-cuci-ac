@@ -8,6 +8,9 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import fs from 'fs';
 import path from 'path';
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+
 
 dotenv.config();
 
@@ -596,7 +599,19 @@ const initializeDatabaseSettings = async () => {
     `);
     console.log("✅ Auto-migrated 'fixed_assets' table");
 
-
+    // Auto-migration: Create password_resets table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        token VARCHAR(255) NOT NULL,
+        expiresAt TIMESTAMP NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_email (email),
+        INDEX idx_token (token)
+      )
+    `);
+    console.log("✅ Auto-migrated 'password_resets' table");
 
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
@@ -924,6 +939,146 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/logout', verifyToken, (req, res) => {
   // Token is cleared on client-side
   res.json({ message: 'Logged out successfully' });
+});
+
+// ===== EMAIL CONFIGURATION & PASSWORD RESET API =====
+const smtpConfig = {
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
+  secure: process.env.SMTP_PORT === '465',
+  auth: {
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+  },
+};
+
+const transporter = nodemailer.createTransport(smtpConfig);
+const SMTP_FROM = process.env.SMTP_FROM || '"CoolAir Pro" <noreply@coolairpro.com>';
+
+// Request password reset link
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      return res.status(400).json({ error: 'Email wajib diisi' });
+    }
+
+    const connection = await pool.getConnection();
+    const [users] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
+
+    if (users.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Email tidak ditemukan' });
+    }
+
+    const user = users[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hour expiry
+
+    // Clean up any old tokens for this email first
+    await connection.query('DELETE FROM password_resets WHERE email = ?', [email]);
+
+    // Insert new token
+    await connection.query(
+      'INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)',
+      [email, token, expiresAt]
+    );
+    connection.release();
+
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+    const mailOptions = {
+      from: SMTP_FROM,
+      to: email,
+      subject: 'Reset Kata Sandi Anda - CoolAir Pro',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+          <h2 style="color: #2563eb; margin-top: 0; font-family: 'Outfit', sans-serif;">Reset Kata Sandi Anda</h2>
+          <p>Halo <strong>${user.name}</strong>,</p>
+          <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Anda di pelayanan cuci AC CoolAir Pro.</p>
+          <p style="margin: 28px 0; text-align: center;">
+            <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">Reset Kata Sandi Sekarang</a>
+          </p>
+          <p>Atau salin dan tempel tautan di bawah ini ke browser Anda:</p>
+          <p style="word-break: break-all; color: #64748b; font-size: 13px; background-color: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #f1f5f9;">${resetUrl}</p>
+          <p style="margin-top: 28px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 16px; line-height: 1.5;">
+            Tautan ini hanya berlaku selama 1 jam. Jika Anda tidak pernah meminta pengaturan ulang kata sandi ini, silakan abaikan email ini dengan aman.
+          </p>
+        </div>
+      `,
+    };
+
+    let emailSent = false;
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        await transporter.sendMail(mailOptions);
+        emailSent = true;
+        console.log(`[SMTP] Reset password email sent to ${email}`);
+      } catch (mailErr) {
+        console.error('[SMTP] Failed to send email:', mailErr);
+      }
+    } else {
+      console.log('[SMTP] SMTP is not configured. Printed link in terminal instead.');
+    }
+
+    // Always log to console for development convenience
+    console.log(`\n======================================================`);
+    console.log(`🔑 PASSWORD RESET LINK:`);
+    console.log(`👉 ${resetUrl}`);
+    console.log(`======================================================\n`);
+
+    res.json({
+      message: 'Link reset kata sandi telah dikirim ke email Anda!',
+      devResetUrl: !emailSent ? resetUrl : undefined
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reset password action
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  try {
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token dan kata sandi baru diperlukan' });
+    }
+
+    const connection = await pool.getConnection();
+
+    // Verify token exists and is not expired
+    const [resets] = await connection.query(
+      'SELECT * FROM password_resets WHERE token = ? AND expiresAt > NOW()',
+      [token]
+    );
+
+    if (resets.length === 0) {
+      connection.release();
+      return res.status(400).json({ error: 'Token tidak valid atau telah kadaluarsa' });
+    }
+
+    const resetRequest = resets[0];
+    const email = resetRequest.email;
+
+    // Hash the new password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+    // Update user password
+    await connection.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+
+    // Delete token
+    await connection.query('DELETE FROM password_resets WHERE token = ?', [token]);
+
+    connection.release();
+
+    res.json({ message: 'Kata sandi Anda berhasil diperbarui. Silakan login kembali.' });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ===== REGIONS API =====

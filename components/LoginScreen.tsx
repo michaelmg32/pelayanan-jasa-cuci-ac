@@ -19,12 +19,17 @@ interface LoginScreenProps {
 
 export default function LoginScreen({ onLogin, onRegisterCustomer, availableUsers }: LoginScreenProps) {
   const { appSettings } = useApp();
-  const [formMode, setFormMode] = useState<'login' | 'register_pelanggan'>('login');
+  const [formMode, setFormMode] = useState<'login' | 'register_pelanggan' | 'forgot_password'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Forgot Password state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccessMsg, setForgotSuccessMsg] = useState('');
+
 
   // Register state (Pelanggan & Karyawan)
   const [regName, setRegName] = useState('');
@@ -203,6 +208,46 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
       }
     } catch (error) {
       console.error('Login error:', error);
+      setErrorMsg('Kesalahan koneksi. Silakan periksa server.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setErrorMsg('Email tidak boleh kosong.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg('');
+    setForgotSuccessMsg('');
+
+    try {
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, window.location.hostname);
+      }
+      
+      const response = await fetch(`${apiUrl}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim() })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMsg(data.error || 'Gagal mengirim email reset.');
+        return;
+      }
+
+      setForgotSuccessMsg(data.message || 'Link reset kata sandi telah dikirim ke email Anda!');
+      setForgotEmail('');
+    } catch (err) {
+      console.error('Forgot password error:', err);
       setErrorMsg('Kesalahan koneksi. Silakan periksa server.');
     } finally {
       setIsLoading(false);
@@ -440,32 +485,47 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
           </div>
 
           {/* Tab Selection */}
-          <div className="flex border-b border-slate-100 mb-5 relative">
-            <button
-              type="button"
-              onClick={() => { setFormMode('login'); setErrorMsg(''); setAgreeTerms(false); }}
-              className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'login' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Masuk
-              {formMode === 'login' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setFormMode('register_pelanggan'); setErrorMsg(''); setAgreeTerms(false); }}
-              className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'register_pelanggan' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Pelanggan
-              {formMode === 'register_pelanggan' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-              )}
-            </button>
-          </div>
+          {formMode !== 'forgot_password' ? (
+            <div className="flex border-b border-slate-100 mb-5 relative">
+              <button
+                type="button"
+                onClick={() => { setFormMode('login'); setErrorMsg(''); setAgreeTerms(false); }}
+                className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'login' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Masuk
+                {formMode === 'login' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFormMode('register_pelanggan'); setErrorMsg(''); setAgreeTerms(false); }}
+                className={`flex-1 text-center font-bold text-[10.5px] pb-3 transition duration-200 relative ${formMode === 'register_pelanggan' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Pelanggan
+                {formMode === 'register_pelanggan' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="flex border-b border-slate-100 mb-5 relative justify-center">
+              <span className="text-blue-600 font-extrabold text-[12px] pb-3 uppercase tracking-wider">
+                Reset Kata Sandi
+              </span>
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
+            </div>
+          )}
 
           {errorMsg && (
             <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3 rounded-2xl mb-4 text-center font-semibold animate-shake">
               {errorMsg}
+            </div>
+          )}
+
+          {forgotSuccessMsg && (
+            <div className="bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs p-3 rounded-2xl mb-4 text-center font-semibold animate-pulse">
+              {forgotSuccessMsg}
             </div>
           )}
 
@@ -490,6 +550,13 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Kata Sandi</label>
+                  <button
+                    type="button"
+                    onClick={() => { setFormMode('forgot_password'); setErrorMsg(''); setForgotSuccessMsg(''); }}
+                    className="text-[10.5px] text-blue-600 hover:underline font-bold focus:outline-none cursor-pointer"
+                  >
+                    Lupa Kata Sandi?
+                  </button>
                 </div>
                 <div className="relative group">
                   <Key size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
@@ -660,6 +727,53 @@ export default function LoginScreen({ onLogin, onRegisterCustomer, availableUser
                     Daftar Sekarang
                   </>
                 )}
+              </button>
+            </form>
+          ) : formMode === 'forgot_password' ? (
+            /* FORGOT PASSWORD FORM */
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+              <p className="text-xs text-slate-500 leading-relaxed text-center px-1 mb-2">
+                Masukkan alamat email Anda yang terdaftar. Kami akan mengirimkan tautan untuk menyetel ulang kata sandi Anda.
+              </p>
+              
+              <div className="space-y-1.5">
+                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block ml-1">Alamat E-mail</label>
+                <div className="relative group">
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors duration-200" />
+                  <input
+                    type="email"
+                    placeholder="Masukkan Email Anda"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full bg-slate-50/60 border border-slate-200 text-slate-800 text-sm pl-10 pr-4 py-3 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition duration-200"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full mt-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-[0.98] text-sm flex items-center justify-center gap-2 transition duration-200 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader size={15} className="animate-spin" />
+                    Mengirim...
+                  </>
+                ) : (
+                  <>
+                    Kirim Link Reset
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setFormMode('login'); setErrorMsg(''); setForgotSuccessMsg(''); }}
+                className="w-full mt-1 border border-slate-200 hover:bg-slate-50 text-slate-650 font-bold py-2.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition duration-200 cursor-pointer"
+              >
+                Kembali ke Login
               </button>
             </form>
           ) : null}
