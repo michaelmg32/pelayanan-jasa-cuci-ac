@@ -198,8 +198,15 @@ export default function AdminDashboard() {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<TabType>('JOBS_TRACKER');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
+  const [accessibleRegions, setAccessibleRegions] = useState<any[]>([]);
 
+  useEffect(() => {
+    if (activeUser && (activeUser.role === Role.ADMIN || activeUser.role === Role.KEUANGAN)) {
+      api.fetchAccessibleRegions().then(regions => {
+        setAccessibleRegions(regions);
+      }).catch(err => console.error("Error fetching accessible regions:", err));
+    }
+  }, [activeUser]);
   // Admin Profile States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
   const [editProfileName, setEditProfileName] = useState(activeUser?.name || '');
@@ -1500,9 +1507,26 @@ return (
               <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Admin</p>
             </div>
             {activeUser?.region_id && (
-              <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
-                Region: {regions?.find(r => r.id === activeUser.region_id)?.name || activeUser.region_id}
-              </span>
+              <>
+                {accessibleRegions.length > 1 ? (
+                  <select
+                    className="bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded-lg border border-indigo-400 outline-none uppercase tracking-wider shadow-sm ml-1 cursor-pointer hover:bg-indigo-700 transition"
+                    value={activeUser.region_id}
+                    onChange={(e) => {
+                      localStorage.setItem('activeRegionId', e.target.value);
+                      window.location.reload();
+                    }}
+                  >
+                    {accessibleRegions.map(r => (
+                      <option key={r.id} value={r.id} className="bg-white text-slate-800">{r.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
+                    Region: {regions?.find(r => r.id === activeUser.region_id)?.name || activeUser.region_id}
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>

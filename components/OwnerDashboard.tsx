@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { OrderStatus } from '@/types';
 import { useApp } from '@/lib/auth-context';
 import * as api from '@/lib/api';
+import RegionTeamsManager from './RegionTeamsManager';
 import {
   LogOut,
   TrendingUp,
@@ -27,11 +28,15 @@ import {
   UserCog,
   UserPlus,
   Clock,
+  Layers,
 } from 'lucide-react';
 import { Role, User } from '@/types';
 
 export default function OwnerDashboard() {
-  const { activeUser, setActiveUser, orders: allOrders, users: allUsers, setUsers, logout, appSettings, updateAppSettings, regions } = useApp();
+  const { 
+    activeUser, setActiveUser, logout, appSettings, updateAppSettings, regions, showAlert,
+    users: allUsers, orders: allOrders, setUsers, models, categories, services
+  } = useApp();
 
   const orders = activeUser?.region_id ? allOrders.filter(o => o.region_id === activeUser.region_id) : allOrders;
   const usersRaw = activeUser?.region_id ? allUsers.filter(u => u.region_id === activeUser.region_id) : allUsers;
@@ -39,7 +44,7 @@ export default function OwnerDashboard() {
 
   const [expandedRegionId, setExpandedRegionId] = useState<string | null>(null);
   const [expandedDashboardRegionId, setExpandedDashboardRegionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'users' | 'regions' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'users' | 'regions' | 'settings' | 'teams'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [addons, setAddons] = useState<any[]>([]);
   const [fixedAssets, setFixedAssets] = useState<any[]>([]);
@@ -893,6 +898,13 @@ export default function OwnerDashboard() {
               <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'users' ? 'text-indigo-700' : 'text-slate-500'}`}>Akses</span>
             </div>
 
+            <div onClick={() => setActiveTab('teams')} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
+              <div className={`w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border ${activeTab === 'teams' ? 'bg-gradient-to-br from-indigo-50 to-blue-100/50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-400 shadow-slate-200/30 hover:bg-slate-50'}`}>
+                 <Layers size={24} strokeWidth={2.5} />
+              </div>
+              <span className={`text-[9px] font-extrabold text-center uppercase tracking-wider ${activeTab === 'teams' ? 'text-indigo-700' : 'text-slate-500'}`}>Tim Region</span>
+            </div>
+
 
             <div onClick={() => setShowLogoutConfirm(true)} className="flex flex-col items-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95 transition-all">
               <div className="w-14 h-14 rounded-[18px] flex items-center justify-center shadow-md border bg-rose-50 border-rose-100 text-rose-500 shadow-rose-200/30 hover:bg-rose-100">
@@ -1386,6 +1398,16 @@ export default function OwnerDashboard() {
         )}
 
 
+
+        {/* ===================== TAB: TIM REGION ===================== */}
+        {activeTab === 'teams' && (
+          <RegionTeamsManager 
+            regions={regions}
+            showAlert={showAlert}
+            getAuthHeaders={api.getAuthHeaders}
+            API_BASE_URL={api.API_BASE_URL}
+          />
+        )}
 
         {/* ===================== TAB: USER MANAGEMENT ===================== */}
         {activeTab === 'users' && (

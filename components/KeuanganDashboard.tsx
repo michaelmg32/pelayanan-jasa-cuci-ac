@@ -44,6 +44,15 @@ export default function KeuanganDashboard() {
   const { activeUser, logout, regions, showAlert, appSettings, users, orders, setActiveUser } = useApp();
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [accessibleRegions, setAccessibleRegions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeUser && (activeUser.role === Role.ADMIN || activeUser.role === Role.KEUANGAN)) {
+      api.fetchAccessibleRegions().then(regions => {
+        setAccessibleRegions(regions);
+      }).catch(err => console.error("Error fetching accessible regions:", err));
+    }
+  }, [activeUser]);
   const [performanceSubTab, setPerformanceSubTab] = useState<'STATISTICS' | 'PAYROLL'>('STATISTICS');
   const getFirstDayOfMonth = () => {
     const d = new Date();
@@ -539,9 +548,28 @@ export default function KeuanganDashboard() {
               <h1 className="text-sm font-black leading-none">{appSettings?.['GLOBAL']?.business_name || 'Sugar AC'}</h1>
               <p className="text-[9px] text-blue-200 mt-1">Sistem Layanan AC Profesional | Keuangan</p>
             </div>
-            <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
-              Region: {userRegionName}
-            </span>
+            {activeUser?.region_id && (
+              <>
+                {accessibleRegions.length > 1 ? (
+                  <select
+                    className="bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded-lg border border-indigo-400 outline-none uppercase tracking-wider shadow-sm ml-1 cursor-pointer hover:bg-indigo-700 transition"
+                    value={activeUser.region_id}
+                    onChange={(e) => {
+                      localStorage.setItem('activeRegionId', e.target.value);
+                      window.location.reload();
+                    }}
+                  >
+                    {accessibleRegions.map(r => (
+                      <option key={r.id} value={r.id} className="bg-white text-slate-800">{r.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[8px] font-black px-2.5 py-1 rounded-full border border-indigo-400/20 uppercase tracking-widest ml-1 shadow-sm">
+                    Region: {userRegionName}
+                  </span>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

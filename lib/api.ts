@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 // ===== AUTHENTICATION HELPERS =====
 // Authentication handled via MySQL database sessions, reading token from cookies
@@ -33,6 +33,13 @@ export const getAuthHeaders = () => {
     } else {
       headers['Authorization'] = 'Bearer dummy-jwt-token-123';
     }
+    
+    try {
+      const activeRegion = localStorage.getItem('activeRegionId');
+      if (activeRegion) {
+        headers['X-Active-Region'] = activeRegion;
+      }
+    } catch (e) {}
   } else {
     headers['Authorization'] = 'Bearer dummy-jwt-token-123';
   }
@@ -959,3 +966,11 @@ export const triggerMonthlySalaryProcessing = async () => {
   if (!res.ok) throw new Error((await res.json()).error || 'Gagal memproses gaji bulanan');
   return res.json();
 };
+e x p o r t   c o n s t   f e t c h A c c e s s i b l e R e g i o n s   =   a s y n c   ( )   = >   {   c o n s t   r e s   =   a w a i t   f e t c h ( \ \ / a c c e s s i b l e - r e g i o n s \ ,   {   h e a d e r s :   g e t A u t h H e a d e r s ( ) ,   c a c h e :   ' n o - s t o r e '   } ) ;   i f   ( ! r e s . o k )   t h r o w   n e w   E r r o r ( ' G a g a l ' ) ;   r e t u r n   r e s . j s o n ( ) ;   } ;  
+ 
+export const fetchAccessibleRegions = async () => {
+  const res = await fetch(${API_BASE_URL}/accessible-regions, { headers: getAuthHeaders(), cache: 'no-store' });
+  if (!res.ok) throw new Error('Gagal memuat region');
+  return res.json();
+};
+
