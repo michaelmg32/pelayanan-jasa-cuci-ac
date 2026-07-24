@@ -167,7 +167,7 @@ export default function SugarACCompanyProfile() {
           <div className="max-w-xl lg:max-w-2xl space-y-7">
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-slate-900 leading-[1.15] tracking-tight">
               Layanan Service AC <br className="hidden md:block" />
-              di <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-black">{selectedBranch}</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-black">Terpercaya</span>
             </h1>
             <p className="text-[15px] md:text-base text-slate-600 leading-relaxed font-medium">
               Sugar AC adalah mitra terpercaya untuk segala kebutuhan layanan AC Anda. Tim teknisi ahli kami siap memberikan solusi perbaikan AC bocor, tidak dingin, cuci AC berkala, hingga bongkar pasang AC dengan garansi resmi.
@@ -180,7 +180,7 @@ export default function SugarACCompanyProfile() {
                 <MessageCircle size={16} /> Pesan Sekarang
               </button>
               <button
-                onClick={() => handleQuickContact('phone')}
+                onClick={() => document.getElementById('footer-branches')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-blue-600 hover:bg-slate-900 text-white font-extrabold text-[11px] py-4 px-8 uppercase tracking-widest transition-colors duration-300 w-full sm:w-auto shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2"
               >
                 <Phone size={16} /> Hubungi Kami
@@ -560,7 +560,7 @@ export default function SugarACCompanyProfile() {
       </section>
 
       {/* ================= BOTTOM INFO BAR ================= */}
-      <footer className="bg-slate-900 text-white">
+      <footer id="footer-branches" className="bg-slate-900 text-white">
         {/* Branch contacts row */}
         {(regions || []).length > 0 && (
           <div className="border-b border-slate-700">
