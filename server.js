@@ -127,7 +127,15 @@ const getOptionalUser = (req) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (token) {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const requestedRegionId = req.headers['x-active-region'];
+      if (requestedRegionId && decoded.region_id && requestedRegionId !== String(decoded.region_id)) {
+        const role = decoded.role ? decoded.role.toLowerCase() : '';
+        if (role === 'admin' || role === 'keuangan' || role === 'staff') {
+          decoded.region_id = requestedRegionId;
+        }
+      }
+      return decoded;
     } catch (e) {}
   }
   return null;
