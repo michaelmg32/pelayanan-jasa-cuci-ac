@@ -2,12 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Check, Users } from 'lucide-react';
 
-export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders, API_BASE_URL }) {
-  const [teams, setTeams] = useState([]);
+interface RegionTeamsManagerProps {
+  regions: any[];
+  showAlert: (type: 'success' | 'error' | 'info', msg: string) => void;
+  getAuthHeaders: () => Record<string, string>;
+  API_BASE_URL: string;
+}
+
+export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders, API_BASE_URL }: RegionTeamsManagerProps) {
+  const [teams, setTeams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editTeamId, setEditTeamId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', region_ids: [] });
+  const [editTeamId, setEditTeamId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<{ name: string, region_ids: number[] }>({ name: '', region_ids: [] });
 
   useEffect(() => {
     fetchTeams();
@@ -20,7 +27,7 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
       if (!res.ok) throw new Error('Gagal memuat tim');
       const data = await res.json();
       setTeams(data);
-    } catch (e) {
+    } catch (e: any) {
       showAlert('error', e.message);
     } finally {
       setIsLoading(false);
@@ -46,14 +53,14 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
       showAlert('success', 'Berhasil menyimpan tim region');
       setShowModal(false);
       fetchTeams();
-    } catch (e) {
+    } catch (e: any) {
       showAlert('error', e.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('Hapus tim ini?')) return;
     setIsLoading(true);
     try {
@@ -64,14 +71,14 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
       if (!res.ok) throw new Error('Gagal menghapus');
       showAlert('success', 'Tim dihapus');
       fetchTeams();
-    } catch (e) {
+    } catch (e: any) {
       showAlert('error', e.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleRegion = (regId) => {
+  const toggleRegion = (regId: number) => {
     setFormData(prev => ({
       ...prev,
       region_ids: prev.region_ids.includes(regId)
@@ -116,7 +123,7 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
                 <button
                   onClick={() => {
                     setEditTeamId(team.id);
-                    setFormData({ name: team.name, region_ids: team.regions?.map(r => r.id) || [] });
+                    setFormData({ name: team.name, region_ids: team.regions?.map((r: any) => r.id) || [] });
                     setShowModal(true);
                   }}
                   className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100"
@@ -135,7 +142,7 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
             <div className="space-y-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cabang:</p>
               <div className="flex flex-wrap gap-2">
-                {team.regions?.length > 0 ? team.regions.map(r => (
+                {team.regions?.length > 0 ? team.regions.map((r: any) => (
                   <span key={r.id} className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-semibold">
                     {r.name}
                   </span>
@@ -176,7 +183,7 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2">Pilih Cabang untuk Bergabung</label>
                 <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                  {regions.map(r => {
+                  {regions.map((r: any) => {
                     const isSelected = formData.region_ids.includes(r.id);
                     return (
                       <div
