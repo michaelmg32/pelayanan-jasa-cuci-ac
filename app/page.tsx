@@ -95,28 +95,6 @@ export default function SugarACCompanyProfile() {
             <a href="#services" className="hover:text-blue-600 transition">Pelayanan Kami</a>
             <a href="#education" className="hover:text-blue-600 transition">Edukasi Perawatan</a>
             <a href="#why-us" className="hover:text-blue-600 transition">Tentang Kami</a>
-
-            {/* Custom Branch selector dropdown in Header */}
-            <div className="relative group">
-              <button className="flex items-center gap-1 hover:text-blue-600 transition py-2">
-                <span>Cabang: {selectedBranch}</span>
-                <span className="text-[10px]">▼</span>
-              </button>
-              {/* The pt-2 transparent area bridges the gap so hover isn't lost */}
-              <div className="absolute right-0 top-full pt-2 w-48 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition duration-200">
-                <div className="bg-white rounded-xl shadow-xl border border-slate-100 py-1">
-                  {(regions || []).map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => setSelectedBranch(r.name)}
-                      className="w-full px-4 py-2.5 hover:bg-slate-50 hover:text-blue-600 text-left text-xs font-bold text-slate-700 block transition"
-                    >
-                      Cabang {r.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -151,21 +129,6 @@ export default function SugarACCompanyProfile() {
               <a href="#services" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Pelayanan Kami</a>
               <a href="#education" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Edukasi Perawatan</a>
               <a href="#why-us" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 transition">Tentang Kami</a>
-
-              <div className="pt-4 mt-2 border-t border-slate-100">
-                <span className="text-[10px] text-slate-400 mb-3 block uppercase tracking-widest">Pilih Cabang</span>
-                <div className="grid grid-cols-2 gap-2">
-                  {(regions || []).map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => { setSelectedBranch(r.name); setIsMobileMenuOpen(false); }}
-                      className={`text-left px-3 py-2.5 rounded-xl text-xs font-bold transition ${selectedBranch === r.name ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-                    >
-                      {r.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               <button
                 onClick={() => {
@@ -596,7 +559,52 @@ export default function SugarACCompanyProfile() {
         </div>
       </section>
 
-      {/* Mobile Sticky Footer removed as requested */}
+      {/* ================= BOTTOM INFO BAR ================= */}
+      <footer className="bg-slate-900 text-white">
+        {/* Branch contacts row */}
+        {(regions || []).length > 0 && (
+          <div className="border-b border-slate-700">
+            <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 py-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Cabang Kami</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {(regions || []).map((r) => {
+                  const branchPhone = appSettings?.[r.id]?.phone_number || appSettings?.['GLOBAL']?.phone_number || '';
+                  const cleanBranchPhone = branchPhone.replace(/\D/g, '');
+                  return (
+                    <div key={r.id} className="flex items-start gap-3 bg-slate-800/60 rounded-2xl px-4 py-3">
+                      <div className="w-8 h-8 bg-blue-600/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <MapPin size={14} className="text-blue-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-white truncate">{r.name}</p>
+                        {cleanBranchPhone ? (
+                          <a
+                            href={`tel:+${cleanBranchPhone}`}
+                            className="text-[11px] font-medium text-blue-400 hover:text-blue-300 transition flex items-center gap-1 mt-0.5"
+                          >
+                            <Phone size={10} />
+                            {branchPhone}
+                          </a>
+                        ) : (
+                          <p className="text-[11px] text-slate-500 mt-0.5">Hubungi pusat</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Copyright row */}
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-[11px] text-slate-500 font-medium">
+            &copy; {new Date().getFullYear()} {businessName}. All rights reserved.
+          </p>
+          <p className="text-[10px] text-slate-600 font-medium">Jasa Cuci &amp; Service AC Profesional</p>
+        </div>
+      </footer>
     </div>
   );
 }
