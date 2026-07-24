@@ -2134,7 +2134,7 @@ return (
             </div>
 
             <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
-              {allUsers.filter(u => u.role !== Role.USER && u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
+              {allUsers.filter(u => u.role !== Role.USER && (u.region_id === selectedRegion || !u.region_id) && u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
                 <div key={u.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-left">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
