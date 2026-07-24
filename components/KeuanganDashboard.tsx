@@ -95,7 +95,7 @@ export default function KeuanganDashboard() {
     return 'Rp ' + Number(num).toLocaleString('id-ID');
   };
 
-  const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active' && (!activeUser?.region_id || u.region_id === activeUser.region_id));
+  const staffList = users.filter(u => u.role === Role.STAFF && u.status === 'active' && (!selectedRegion || u.region_id === selectedRegion));
 
 
   // Data States
@@ -105,7 +105,7 @@ export default function KeuanganDashboard() {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Asset region info
-  const userRegionName = regions.find(r => r.id === activeUser?.region_id)?.name || 'Seluruh Wilayah';
+  const userRegionName = regions.find(r => r.id === selectedRegion)?.name || 'Seluruh Wilayah';
 
   // Profile Form States
   const [profileViewMode, setProfileViewMode] = useState<'readonly' | 'edit-profile' | 'edit-password'>('readonly');
@@ -333,8 +333,8 @@ export default function KeuanganDashboard() {
     setIsLoadingData(true);
     try {
       const [fetchedAddons, fetchedAssets, fetchedTx] = await Promise.all([
-        api.fetchAddons(activeUser?.region_id),
-        api.fetchFixedAssets(activeUser?.region_id),
+        api.fetchAddons(selectedRegion),
+        api.fetchFixedAssets(selectedRegion),
         api.fetchAddonTransactions(),
       ]);
       setAddons(fetchedAddons);
@@ -365,7 +365,7 @@ export default function KeuanganDashboard() {
 
   // Regional Branch Performance
   const regionalOrders = (orders || []).filter((o: any) => 
-    !activeUser?.region_id || o.region_id === activeUser.region_id
+    !selectedRegion || o.region_id === selectedRegion
   );
   const completedRegionalOrders = regionalOrders.filter((o: any) => o.status === 'SELESAI');
   const totalRevenue = completedRegionalOrders.reduce((sum, o: any) => sum + (Number(o.finalPrice) || Number(o.totalCost) || 0), 0);
@@ -393,7 +393,7 @@ export default function KeuanganDashboard() {
         purchase_date: assetPurchaseDate,
         purchase_price: assetPurchasePrice,
         description: assetDescription.trim() || null,
-        region_id: activeUser?.region_id,
+        region_id: selectedRegion,
       };
 
       if (editingAsset) {
@@ -460,7 +460,7 @@ export default function KeuanganDashboard() {
         price: addonPrice,
         hpp: addonHpp,
         description: addonDescription.trim() || null,
-        region_id: activeUser?.region_id,
+        region_id: selectedRegion,
       };
 
       if (editingAddon) {

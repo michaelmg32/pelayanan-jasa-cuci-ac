@@ -298,12 +298,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (user: User) => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('activeRegionId');
+    }
     setActiveUser(user);
   };
 
   const logout = () => {
     if (typeof window !== 'undefined') {
       document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      localStorage.removeItem('activeRegionId');
     }
     setActiveUser(null);
   };

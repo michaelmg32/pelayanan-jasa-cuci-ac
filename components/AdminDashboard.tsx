@@ -1489,10 +1489,10 @@ export default function AdminDashboard() {
 
   if (!activeUser) return null;
 
-    const filteredModels = models.filter((m: any) => !activeUser?.region_id || m.region_id === activeUser.region_id);
-  const filteredCategories = categories.filter((c: any) => !activeUser?.region_id || c.region_id === activeUser.region_id);
-  const filteredServices = services.filter((s: any) => !activeUser?.region_id || s.region_id === activeUser.region_id);
-  const filteredAddons = addons.filter((a: any) => !activeUser?.region_id || a.region_id === activeUser.region_id);
+    const filteredModels = models.filter((m: any) => !selectedRegion || m.region_id === selectedRegion);
+  const filteredCategories = categories.filter((c: any) => !selectedRegion || c.region_id === selectedRegion);
+  const filteredServices = services.filter((s: any) => !selectedRegion || s.region_id === selectedRegion);
+  const filteredAddons = addons.filter((a: any) => !selectedRegion || a.region_id === selectedRegion);
 return (
     <div className="flex-1 flex flex-col bg-slate-100 text-slate-800 text-left min-h-0 h-full overflow-hidden">
       {/* GLOBAL HEADER BAR WITH THREE-DOTS MENU */}

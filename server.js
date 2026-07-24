@@ -2434,13 +2434,22 @@ app.post('/api/orders/:id/send-invoice', async (req, res) => {
 
 // ===== AC MODELS API =====
 app.get('/api/models', async (req, res) => {
+  const user = getOptionalUser(req);
+  const userRole = user?.role ? user.role.toUpperCase() : '';
+  const { region_id } = req.query;
+
   try {
     const connection = await pool.getConnection();
-    let query = 'SELECT * FROM ac_models';
+    let query = 'SELECT * FROM ac_models WHERE 1=1';
     let params = [];
-    if (req.query.region_id) {
-       query += ' WHERE region_id = ?';
-       params.push(req.query.region_id);
+    if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+      if (user.region_id) {
+         query += ' AND region_id = ?';
+         params.push(user.region_id);
+      }
+    } else if (region_id) {
+       query += ' AND region_id = ?';
+       params.push(region_id);
     }
     const [models] = await connection.query(query, params);
     connection.release();
@@ -2463,7 +2472,7 @@ app.post('/api/models', verifyToken, async (req, res) => {
     );
     connection.release();
     await logActivity(req, 'Menambahkan Model AC', `Menambahkan model AC baru: ${name}`);
-    res.status(201).json({ id: newId, name, manufacturer: manufacturer || null });
+    res.status(201).json({ id: newId, name, manufacturer: manufacturer || null, region_id: finalRegionId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -2489,13 +2498,22 @@ app.put('/api/models/:id', verifyToken, async (req, res) => {
 
 // ===== AC CATEGORIES API =====
 app.get('/api/categories', async (req, res) => {
+  const user = getOptionalUser(req);
+  const userRole = user?.role ? user.role.toUpperCase() : '';
+  const { region_id } = req.query;
+
   try {
     const connection = await pool.getConnection();
-    let query = 'SELECT * FROM ac_categories';
+    let query = 'SELECT * FROM ac_categories WHERE 1=1';
     let params = [];
-    if (req.query.region_id) {
-       query += ' WHERE region_id = ?';
-       params.push(req.query.region_id);
+    if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+      if (user.region_id) {
+         query += ' AND region_id = ?';
+         params.push(user.region_id);
+      }
+    } else if (region_id) {
+       query += ' AND region_id = ?';
+       params.push(region_id);
     }
     const [categories] = await connection.query(query, params);
     connection.release();
@@ -2517,7 +2535,7 @@ app.post('/api/categories', verifyToken, async (req, res) => {
     );
     connection.release();
     await logActivity(req, 'Menambahkan Kategori Layanan', `Menambahkan kategori baru: ${name}`);
-    res.status(201).json({ id: newId, name, description: description || null, hasServices: hasServices !== undefined ? hasServices : true });
+    res.status(201).json({ id: newId, name, description: description || null, hasServices: hasServices !== undefined ? hasServices : true, region_id: finalRegionId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -2543,13 +2561,22 @@ app.put('/api/categories/:id', verifyToken, async (req, res) => {
 
 // ===== AC SERVICES API =====
 app.get('/api/services', async (req, res) => {
+  const user = getOptionalUser(req);
+  const userRole = user?.role ? user.role.toUpperCase() : '';
+  const { region_id } = req.query;
+
   try {
     const connection = await pool.getConnection();
-    let query = 'SELECT * FROM ac_services';
+    let query = 'SELECT * FROM ac_services WHERE 1=1';
     let params = [];
-    if (req.query.region_id) {
-       query += ' WHERE region_id = ?';
-       params.push(req.query.region_id);
+    if (userRole === 'ADMIN' || userRole === 'KEUANGAN') {
+      if (user.region_id) {
+         query += ' AND region_id = ?';
+         params.push(user.region_id);
+      }
+    } else if (region_id) {
+       query += ' AND region_id = ?';
+       params.push(region_id);
     }
     const [services] = await connection.query(query, params);
     connection.release();
@@ -2559,18 +2586,19 @@ app.get('/api/services', async (req, res) => {
   }
 });
 
-app.post('/api/services', async (req, res) => {
-  const { id, name, description, duration, categoryId } = req.body;
+app.post('/api/services', verifyToken, async (req, res) => {
+  const { id, name, description, duration, categoryId, region_id } = req.body;
+  const finalRegionId = req.user && req.user.region_id ? req.user.region_id : (region_id || null);
   try {
     const connection = await pool.getConnection();
     const newId = id || `svc_${Date.now()}`;
     await connection.query(
-      'INSERT INTO ac_services (id, categoryId, name, description, duration) VALUES (?, ?, ?, ?, ?)',
-      [newId, categoryId || null, name, description || null, duration || null]
+      'INSERT INTO ac_services (id, categoryId, name, description, duration, region_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [newId, categoryId || null, name, description || null, duration || null, finalRegionId]
     );
     connection.release();
     await logActivity(req, 'Menambahkan Layanan AC', `Menambahkan layanan baru: ${name}`);
-    res.status(201).json({ id: newId, categoryId: categoryId || null, name, description: description || null, duration: duration || null });
+    res.status(201).json({ id: newId, categoryId: categoryId || null, name, description: description || null, duration: duration || null, region_id: finalRegionId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
