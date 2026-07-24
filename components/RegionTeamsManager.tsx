@@ -24,7 +24,10 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/region-groups`, { headers: getAuthHeaders(), cache: 'no-store' });
-      if (!res.ok) throw new Error('Gagal memuat tim');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Gagal memuat tim');
+      }
       const data = await res.json();
       setTeams(data);
     } catch (e: any) {
@@ -48,7 +51,10 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
         body: JSON.stringify(formData)
       });
       
-      if (!res.ok) throw new Error('Gagal menyimpan tim');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Gagal menyimpan tim');
+      }
       
       showAlert('success', 'Berhasil menyimpan tim region');
       setShowModal(false);
@@ -68,7 +74,10 @@ export default function RegionTeamsManager({ regions, showAlert, getAuthHeaders,
         method: 'DELETE',
         headers: getAuthHeaders()
       });
-      if (!res.ok) throw new Error('Gagal menghapus');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Gagal menghapus');
+      }
       showAlert('success', 'Tim dihapus');
       fetchTeams();
     } catch (e: any) {

@@ -107,7 +107,7 @@ const verifyToken = async (req, res, next) => {
           `, [req.user.region_id, requestedRegionId]);
           
           if (rows.length > 0) {
-            req.user.region_id = parseInt(requestedRegionId, 10);
+            req.user.region_id = requestedRegionId;
           }
         } catch (e) {
           console.error("Error cross-region check:", e);
