@@ -1137,22 +1137,21 @@ app.delete('/api/regions/:id', verifyToken, async (req, res) => {
     res.json({ success: true });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
-
 // ===== USERS API =====
 app.get('/api/users', verifyToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
-        let query = 'SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt, region_id, is_leader FROM users';
+    let query = 'SELECT id, name, email, phone, role, photo, address, lat, lng, ktpPhoto, selfiePhoto, status, createdAt, region_id, is_leader FROM users';
     let params = [];
     const userRole = req.user.role ? req.user.role.toUpperCase() : '';
     if (userRole === 'ADMIN' || userRole === 'KARYAWAN') {
        if (req.user.region_id) {
-         query += ' WHERE region_id = ? OR (region_id IS NULL AND LOWER(role) IN ("user", "pelanggan"))';
-         params.push(req.user.region_id);
+         query += ' WHERE region_id = ? OR id = ? OR (region_id IS NULL AND LOWER(role) IN ("user", "pelanggan"))';
+         params.push(req.user.region_id, req.user.id);
        }
     } else if (req.query.region_id) {
-       query += ' WHERE region_id = ?';
-       params.push(req.query.region_id);
+       query += ' WHERE region_id = ? OR id = ?';
+       params.push(req.query.region_id, req.user.id);
     }
     const [users] = await connection.query(query, params);
     connection.release();
