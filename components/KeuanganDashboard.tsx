@@ -45,6 +45,13 @@ export default function KeuanganDashboard() {
   const [activeTab, setActiveTab] = useState<FinanceTab>('OVERVIEW');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [accessibleRegions, setAccessibleRegions] = useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
+
+  useEffect(() => {
+    if (activeUser?.region_id) {
+      setSelectedRegion(localStorage.getItem('activeRegionId') || activeUser.region_id);
+    }
+  }, [activeUser]);
 
   useEffect(() => {
     if (activeUser && (activeUser.role === Role.ADMIN || activeUser.role === Role.KEUANGAN)) {
@@ -553,8 +560,9 @@ export default function KeuanganDashboard() {
                 {accessibleRegions.length > 1 ? (
                   <select
                     className="bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded-lg border border-indigo-400 outline-none uppercase tracking-wider shadow-sm ml-1 cursor-pointer hover:bg-indigo-700 transition"
-                    value={activeUser.region_id}
+                    value={selectedRegion}
                     onChange={(e) => {
+                      setSelectedRegion(e.target.value);
                       localStorage.setItem('activeRegionId', e.target.value);
                       window.location.reload();
                     }}
