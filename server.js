@@ -646,6 +646,35 @@ const initializeDatabaseSettings = async () => {
     `);
     console.log("✅ Auto-migrated 'password_resets' table");
 
+    // Auto-migration: Create registered_ac table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS registered_ac (
+        barcode VARCHAR(100) PRIMARY KEY,
+        brand VARCHAR(255) NOT NULL,
+        model VARCHAR(255) NULL,
+        pk VARCHAR(50) NULL,
+        ac_type VARCHAR(100) NULL,
+        notes TEXT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log("✅ Auto-migrated 'registered_ac' table");
+
+    // Auto-migration: Create ac_order_links table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ac_order_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        barcode VARCHAR(100) NOT NULL,
+        order_id VARCHAR(50) NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (barcode) REFERENCES registered_ac(barcode) ON DELETE CASCADE,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+        UNIQUE INDEX idx_barcode_order (barcode, order_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log("✅ Auto-migrated 'ac_order_links' table");
+
   } catch (err) {
     console.error('❌ Failed to initialize settings table in database:', err);
   } finally {
@@ -2427,6 +2456,102 @@ app.post('/api/orders/:id/send-invoice', async (req, res) => {
   try {
     await sendFonnteInvoice(id, true);
     res.json({ success: true, message: 'Invoice sent successfully via Fonnte' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// ===== AC BARCODE SYSTEM API =====
+app.get('/api/registered-ac/:barcode', verifyToken, async (req, res) => {
+  const { barcode } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.query('SELECT * FROM registered_ac WHERE barcode = ?', [barcode]);
+    connection.release();
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'AC belum terdaftar' });
+    }
+    res.json({ success: true, ac: rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/registered-ac', verifyToken, async (req, res) => {
+  const { barcode, brand, model, pk, ac_type, notes } = req.body;
+  if (!barcode || !brand) {
+    return res.status(400).json({ error: 'Barcode dan Merk AC harus diisi' });
+  }
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'INSERT INTO registered_ac (barcode, brand, model, pk, ac_type, notes) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE brand=?, model=?, pk=?, ac_type=?, notes=?',
+      [barcode, brand, model || null, pk || null, ac_type || null, notes || null, brand, model || null, pk || null, ac_type || null, notes || null]
+    );
+    const [rows] = await connection.query('SELECT * FROM registered_ac WHERE barcode = ?', [barcode]);
+    connection.release();
+    res.json({ success: true, ac: rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/staff/active-orders', verifyToken, async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const userRole = req.user.role ? req.user.role.toUpperCase() : '';
+    let query = 'SELECT id, customerName, address, status, createdAt FROM orders WHERE status NOT IN ("SELESAI", "DIBATALKAN", "MENUNGGU")';
+    let params = [];
+    
+    if (userRole === 'KARYAWAN') {
+      query += ' AND workerId = ?';
+      params.push(req.user.id);
+    } else if (req.user.region_id) {
+      query += ' AND region_id = ?';
+      params.push(req.user.region_id);
+    }
+    
+    query += ' ORDER BY createdAt DESC';
+    const [orders] = await connection.query(query, params);
+    connection.release();
+    res.json({ success: true, orders });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ac-order-links', verifyToken, async (req, res) => {
+  const { barcode, order_id } = req.body;
+  if (!barcode || !order_id) {
+    return res.status(400).json({ error: 'Barcode dan Order ID harus diisi' });
+  }
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'INSERT IGNORE INTO ac_order_links (barcode, order_id) VALUES (?, ?)',
+      [barcode, order_id]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/ac-order-links/history/:barcode', verifyToken, async (req, res) => {
+  const { barcode } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.query(`
+      SELECT l.createdAt as linkedAt, o.id, o.customerName, o.workerId, o.assignedEmployeeName, o.status, o.scheduledDate, o.scheduledTime, o.completedAt
+      FROM ac_order_links l
+      JOIN orders o ON l.order_id = o.id
+      WHERE l.barcode = ?
+      ORDER BY o.createdAt DESC
+    `, [barcode]);
+    connection.release();
+    res.json({ success: true, history: rows });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

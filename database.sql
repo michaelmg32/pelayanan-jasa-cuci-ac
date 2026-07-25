@@ -188,5 +188,24 @@ CREATE TABLE IF NOT EXISTS ac_addon_transactions (
 );
 
 -- Master Data AC Pelanggan
+CREATE TABLE IF NOT EXISTS registered_ac (
+  barcode VARCHAR(100) PRIMARY KEY,
+  brand VARCHAR(255) NOT NULL,
+  model VARCHAR(255) NULL,
+  pk VARCHAR(50) NULL,
+  ac_type VARCHAR(100) NULL,
+  notes TEXT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
+-- AC Order Links Table (Relasi Histori AC ke Order)
+CREATE TABLE IF NOT EXISTS ac_order_links (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  barcode VARCHAR(100) NOT NULL,
+  order_id VARCHAR(50) NOT NULL,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (barcode) REFERENCES registered_ac(barcode) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  UNIQUE INDEX idx_barcode_order (barcode, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

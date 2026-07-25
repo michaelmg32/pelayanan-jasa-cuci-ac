@@ -26,6 +26,7 @@ import {
   LogOut,
   Printer,
   FileText,
+  QrCode,
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
@@ -36,7 +37,7 @@ export default function KaryawanDashboard() {
   const alert = showAlert;
 
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'gaji' | 'team'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'gaji' | 'team' | 'barcode'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
 
@@ -146,6 +147,227 @@ export default function KaryawanDashboard() {
       setEditPhoto(activeUser.photo || '');
     }
   }, [activeUser]);
+
+  // ==================== BARCODE SCANNER STATES & LOGIC ====================
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [scannedAc, setScannedAc] = useState<any | null>(null);
+  const [isSearchingAc, setIsSearchingAc] = useState(false);
+  const [searchAcError, setSearchAcError] = useState<string | null>(null);
+  const [activeStaffOrders, setActiveStaffOrders] = useState<any[]>([]);
+  const [selectedOrderToLink, setSelectedOrderToLink] = useState('');
+  const [isRegisteringAc, setIsRegisteringAc] = useState(false);
+  const [acHistoryList, setAcHistoryList] = useState<any[]>([]);
+  const [isLinkingOrder, setIsLinkingOrder] = useState(false);
+
+  // New AC registration form states
+  const [newAcBrand, setNewAcBrand] = useState('');
+  const [newAcModel, setNewAcModel] = useState('');
+  const [newAcPk, setNewAcPk] = useState('1 PK');
+  const [newAcType, setNewAcType] = useState('Split');
+  const [newAcNotes, setNewAcNotes] = useState('');
+
+  // Scanner dynamic load states
+  const [scannerInstance, setScannerInstance] = useState<any>(null);
+  const [scanning, setScanning] = useState(false);
+
+  // Stop scanner when user changes tab
+  useEffect(() => {
+    if (activeTab !== 'barcode' && scanning) {
+      stopScanner();
+    }
+  }, [activeTab]);
+
+  const startScanner = async () => {
+    try {
+      setScanning(true);
+      setSearchAcError(null);
+      
+      // Delay slightly to ensure target container "#reader" exists in DOM
+      setTimeout(async () => {
+        try {
+          const { Html5Qrcode } = await import('html5-qrcode');
+          const html5QrCode = new Html5Qrcode("reader");
+          setScannerInstance(html5QrCode);
+          
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 }
+            },
+            (decodedText) => {
+              setBarcodeInput(decodedText);
+              handleBarcodeSearch(decodedText);
+              html5QrCode.stop().then(() => {
+                setScanning(false);
+                setScannerInstance(null);
+              }).catch(err => console.error("Error stopping scanner:", err));
+            },
+            (errorMessage) => {
+              // silent QR scanning errors
+            }
+          );
+        } catch (innerErr: any) {
+          console.error(innerErr);
+          alert("Gagal mengaktifkan kamera scanner: " + innerErr.message);
+          setScanning(false);
+        }
+      }, 300);
+    } catch (e: any) {
+      console.error(e);
+      alert("Error memuat library scanner: " + e.message);
+      setScanning(false);
+    }
+  };
+
+  const stopScanner = async () => {
+    if (scannerInstance) {
+      try {
+        await scannerInstance.stop();
+      } catch (e) {
+        console.error("Error during scanner stop:", e);
+      }
+      setScannerInstance(null);
+    }
+    setScanning(false);
+  };
+
+  const fetchActiveStaffOrders = async () => {
+    try {
+      const res = await fetch('/api/staff/active-orders', { headers: api.getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setActiveStaffOrders(data.orders || []);
+      }
+    } catch (e) {
+      console.error("Gagal mengambil orderan aktif:", e);
+    }
+  };
+
+  const handleBarcodeSearch = async (code: string) => {
+    const cleanCode = code.trim();
+    if (!cleanCode) return;
+    
+    setIsSearchingAc(true);
+    setSearchAcError(null);
+    setScannedAc(null);
+    setIsRegisteringAc(false);
+    setAcHistoryList([]);
+
+    try {
+      const res = await fetch(`/api/registered-ac/${encodeURIComponent(cleanCode)}`, {
+        headers: api.getAuthHeaders()
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setScannedAc(data.ac);
+        fetchAcHistory(cleanCode);
+        fetchActiveStaffOrders();
+      } else if (res.status === 404) {
+        setIsRegisteringAc(true);
+        setNewAcBrand('');
+        setNewAcModel('');
+        setNewAcPk('1 PK');
+        setNewAcType('Split');
+        setNewAcNotes('');
+      } else {
+        const errData = await res.json();
+        setSearchAcError(errData.error || 'Gagal mencari AC');
+      }
+    } catch (error: any) {
+      setSearchAcError('Gagal terhubung ke server database');
+    } finally {
+      setIsSearchingAc(false);
+    }
+  };
+
+  const fetchAcHistory = async (code: string) => {
+    try {
+      const res = await fetch(`/api/ac-order-links/history/${encodeURIComponent(code)}`, {
+        headers: api.getAuthHeaders()
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAcHistoryList(data.history || []);
+      }
+    } catch (e) {
+      console.error("Gagal memuat histori AC:", e);
+    }
+  };
+
+  const handleRegisterAc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAcBrand.trim()) {
+      alert('Merk AC wajib diisi');
+      return;
+    }
+    setIsSearchingAc(true);
+
+    try {
+      const res = await fetch('/api/registered-ac', {
+        method: 'POST',
+        headers: api.getAuthHeaders(),
+        body: JSON.stringify({
+          barcode: barcodeInput,
+          brand: newAcBrand,
+          model: newAcModel,
+          pk: newAcPk,
+          ac_type: newAcType,
+          notes: newAcNotes
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert('AC Baru Berhasil Didaftarkan!');
+        setScannedAc(data.ac);
+        setIsRegisteringAc(false);
+        fetchAcHistory(barcodeInput);
+        fetchActiveStaffOrders();
+      } else {
+        const err = await res.json();
+        alert('Gagal mendaftarkan AC: ' + (err.error || 'Terjadi kesalahan'));
+      }
+    } catch (e) {
+      alert('Error koneksi server');
+    } finally {
+      setIsSearchingAc(false);
+    }
+  };
+
+  const handleLinkAcToOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrderToLink) {
+      alert('Pilih salah satu orderan aktif untuk mencatatkan AC ini');
+      return;
+    }
+    setIsLinkingOrder(true);
+
+    try {
+      const res = await fetch('/api/ac-order-links', {
+        method: 'POST',
+        headers: api.getAuthHeaders(),
+        body: JSON.stringify({
+          barcode: barcodeInput,
+          order_id: selectedOrderToLink
+        })
+      });
+
+      if (res.ok) {
+        alert('AC dengan Barcode ' + barcodeInput + ' Berhasil Dicatatkan ke Orderan #' + selectedOrderToLink + '!');
+        setSelectedOrderToLink('');
+        fetchAcHistory(barcodeInput);
+      } else {
+        const err = await res.json();
+        alert('Gagal menghubungkan AC ke orderan: ' + (err.error || 'Terjadi kesalahan'));
+      }
+    } catch (e) {
+      alert('Error koneksi server');
+    } finally {
+      setIsLinkingOrder(false);
+    }
+  };
 
   // Click-outside listener to close the three-dots menu dropdown
   useEffect(() => {
@@ -863,6 +1085,13 @@ export default function KaryawanDashboard() {
                 </div>
                 <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Gaji & Poin</span>
               </div>
+              
+              <div onClick={() => setActiveTab('barcode')} className="flex flex-col items-center gap-2 cursor-pointer">
+                <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${activeTab === 'barcode' ? 'bg-sky-100 text-sky-600 border border-sky-200 shadow-sm' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
+                   <QrCode size={22} strokeWidth={2.5} />
+                </div>
+                <span className="text-[8px] font-extrabold text-slate-700 text-center uppercase tracking-wider">Barcode AC</span>
+              </div>
 
               {activeUser?.is_leader && (
                 <div onClick={() => setActiveTab('team')} className="flex flex-col items-center gap-2 cursor-pointer">
@@ -1517,6 +1746,270 @@ export default function KaryawanDashboard() {
                         </button>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ==================== TAB: BARCODE AC ==================== */}
+          {activeTab === 'barcode' && (
+            <div>
+              <div className="px-5 py-5 space-y-6 animate-in fade-in duration-300 max-w-2xl mx-auto">
+                <div className="flex flex-col items-center text-center space-y-1">
+                  <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider">Sistem Scan Barcode AC</h3>
+                  <p className="text-[10px] text-slate-500">Scan label barcode pada unit AC untuk mencatatkan pengerjaan servis</p>
+                </div>
+
+                {/* SCANNER CONTAINER */}
+                <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col items-center space-y-4">
+                  {scanning ? (
+                    <div className="w-full flex flex-col items-center space-y-4">
+                      {/* Reader Container */}
+                      <div className="relative w-full max-w-sm aspect-square overflow-hidden rounded-2xl border-4 border-slate-800 shadow-md bg-slate-950">
+                        <div id="reader" className="w-full h-full" />
+                        {/* Neon laser line animation */}
+                        <div className="absolute top-0 left-0 w-full h-[3px] bg-sky-500 shadow-[0_0_8px_#38bdf8] animate-bounce z-10" style={{ animationDuration: '3s' }} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={stopScanner}
+                        className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[11px] px-6 py-2.5 rounded-full uppercase tracking-wider shadow-md shadow-rose-200 cursor-pointer transition"
+                      >
+                        Matikan Kamera
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-full flex flex-col items-center py-6 space-y-4">
+                      <div className="w-20 h-20 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
+                        <QrCode size={36} strokeWidth={1.5} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={startScanner}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] px-6 py-2.5 rounded-full uppercase tracking-wider shadow-md shadow-blue-200 cursor-pointer transition flex items-center gap-2"
+                      >
+                        <Camera size={14} /> Mulai Scan Barcode
+                      </button>
+                    </div>
+                  )}
+
+                  {/* MANUAL INPUT */}
+                  <div className="w-full border-t border-slate-100 pt-4 flex flex-col space-y-2">
+                    <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Input Kode Manual (Alternatif)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={barcodeInput}
+                        onChange={(e) => setBarcodeInput(e.target.value)}
+                        placeholder="Ketik kode barcode di sini..."
+                        className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleBarcodeSearch(barcodeInput)}
+                        disabled={isSearchingAc || !barcodeInput.trim()}
+                        className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-5 py-2.5 rounded-xl cursor-pointer disabled:opacity-50 transition"
+                      >
+                        {isSearchingAc ? 'Mencari...' : 'Cari'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* LOADER & SEARCH ERROR */}
+                {isSearchingAc && (
+                  <div className="flex flex-col items-center justify-center p-8 bg-white border border-slate-100 rounded-3xl space-y-3">
+                    <Loader className="animate-spin text-blue-500" size={28} />
+                    <span className="text-xs font-bold text-slate-600">Sedang memproses data...</span>
+                  </div>
+                )}
+
+                {searchAcError && (
+                  <div className="bg-rose-50 border border-rose-200 p-4 rounded-3xl text-rose-700 text-xs font-semibold flex items-start gap-2.5">
+                    <X size={16} className="mt-0.5 shrink-0" />
+                    <span>{searchAcError}</span>
+                  </div>
+                )}
+
+                {/* 1. REGISTER NEW AC FORM */}
+                {isRegisteringAc && !isSearchingAc && (
+                  <div className="bg-white rounded-3xl p-5 border border-amber-100 shadow-xl shadow-amber-50/50 space-y-4 animate-in slide-in-from-bottom duration-300">
+                    <div className="border-b border-slate-100 pb-3">
+                      <span className="badge bg-amber-100 text-amber-800 text-[9px] font-black uppercase px-2 py-0.5 rounded-md">BARCODE BELUM TERDAFTAR</span>
+                      <h4 className="font-extrabold text-slate-800 text-sm mt-2">Daftarkan Unit AC Baru</h4>
+                      <p className="text-[10px] text-slate-500">Isi spesifikasi unit AC dengan kode barcode <span className="font-mono font-bold text-slate-700">{barcodeInput}</span></p>
+                    </div>
+
+                    <form onSubmit={handleRegisterAc} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col space-y-1.5 col-span-2">
+                          <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider">Merk AC (Brand) <span className="text-rose-500">*</span></label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Contoh: Daikin, Panasonic, Sharp"
+                            value={newAcBrand}
+                            onChange={(e) => setNewAcBrand(e.target.value)}
+                            className="px-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider">Model / Seri AC (Opsional)</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: FTNE15JV14"
+                            value={newAcModel}
+                            onChange={(e) => setNewAcModel(e.target.value)}
+                            className="px-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider">Kapasitas (PK)</label>
+                          <select
+                            value={newAcPk}
+                            onChange={(e) => setNewAcPk(e.target.value)}
+                            className="px-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                          >
+                            <option value="0.5 PK">0.5 PK</option>
+                            <option value="0.75 PK">0.75 PK</option>
+                            <option value="1 PK">1 PK</option>
+                            <option value="1.5 PK">1.5 PK</option>
+                            <option value="2 PK">2 PK</option>
+                            <option value="2.5 PK">2.5 PK</option>
+                            <option value="3 PK">3 PK</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider">Tipe AC</label>
+                          <select
+                            value={newAcType}
+                            onChange={(e) => setNewAcType(e.target.value)}
+                            className="px-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                          >
+                            <option value="Split">Split Wall</option>
+                            <option value="Cassette">Cassette</option>
+                            <option value="Standing">Standing Floor</option>
+                            <option value="Ducting">Ducting</option>
+                            <option value="Portable">Portable</option>
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col space-y-1.5 col-span-2">
+                          <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider">Catatan Tambahan (Opsional)</label>
+                          <textarea
+                            placeholder="Catatan fisik AC (Contoh: Unit agak berisik, dipasang di lantai 2 luar)"
+                            value={newAcNotes}
+                            onChange={(e) => setNewAcNotes(e.target.value)}
+                            rows={3}
+                            className="px-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] py-3 rounded-xl uppercase tracking-wider shadow-md shadow-blue-100 cursor-pointer transition"
+                      >
+                        Daftarkan Unit AC & Lanjutkan
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* 2. SPECIFICATION & LINK ACTIVE ORDER VIEW */}
+                {scannedAc && !isSearchingAc && (
+                  <div className="space-y-6 animate-in slide-in-from-bottom duration-300">
+                    {/* SPECIFICATION CARD */}
+                    <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xl shadow-slate-200/40 space-y-4">
+                      <div className="border-b border-slate-100 pb-3 flex justify-between items-start">
+                        <div>
+                          <span className="badge bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase px-2 py-0.5 rounded-md">UNIT AC TERDAFTAR</span>
+                          <h4 className="font-extrabold text-slate-800 text-base mt-2">{scannedAc.brand} - {scannedAc.model || 'No Model'}</h4>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID Barcode: {scannedAc.barcode}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-block bg-slate-100 text-slate-700 text-[9px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide">{scannedAc.ac_type}</span>
+                          <span className="block text-xs font-black text-slate-700 mt-1">{scannedAc.pk}</span>
+                        </div>
+                      </div>
+
+                      {scannedAc.notes && (
+                        <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl text-[11px] text-slate-600 italic">
+                          <strong>Catatan Unit:</strong> {scannedAc.notes}
+                        </div>
+                      )}
+
+                      {/* LINK ACTIVE ORDER FORM */}
+                      <form onSubmit={handleLinkAcToOrder} className="border-t border-slate-100 pt-4 space-y-3.5">
+                        <label className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider block">Catatkan Unit AC Ini ke Pekerjaan Aktif Anda</label>
+                        
+                        <div className="flex flex-col space-y-1.5">
+                          {activeStaffOrders.length === 0 ? (
+                            <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl text-center text-xs text-slate-500">
+                              Tidak ada orderan aktif yang sedang Anda kerjakan saat ini.
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <select
+                                required
+                                value={selectedOrderToLink}
+                                onChange={(e) => setSelectedOrderToLink(e.target.value)}
+                                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 bg-white font-semibold"
+                              >
+                                <option value="">-- Pilih Orderan Aktif Anda --</option>
+                                {activeStaffOrders.map(ord => (
+                                  <option key={ord.id} value={ord.id}>
+                                    #{ord.id} - {ord.customerName} ({ord.address?.substring(0, 30)}...)
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="submit"
+                                disabled={isLinkingOrder || !selectedOrderToLink}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl cursor-pointer disabled:opacity-50 transition"
+                              >
+                                {isLinkingOrder ? 'Menyimpan...' : 'Tautkan'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* AC ORDER SERVICE HISTORY TIMELINE */}
+                    <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xl shadow-slate-200/40 space-y-4">
+                      <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider pl-1 border-b border-slate-100 pb-3 flex items-center gap-1.5">
+                        <span>📊</span> Riwayat Servis AC Ini
+                      </h4>
+
+                      {acHistoryList.length === 0 ? (
+                        <p className="text-center text-slate-400 text-xs py-4">Belum ada riwayat servis tercatat untuk unit AC ini.</p>
+                      ) : (
+                        <div className="relative border-l border-slate-100 ml-2.5 pl-5 space-y-5">
+                          {acHistoryList.map((hist, idx) => (
+                            <div key={idx} className="relative">
+                              {/* Timeline indicator circle */}
+                              <div className="absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white ring-4 ring-emerald-50" />
+                              
+                              <div>
+                                <span className="text-[9px] font-bold text-slate-400 block">{hist.completedAt || hist.linkedAt}</span>
+                                <h5 className="font-bold text-xs text-slate-800 mt-0.5">Order #{hist.id} - Pelanggan: {hist.customerName}</h5>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  Teknisi: <span className="font-semibold text-slate-600">{hist.assignedEmployeeName || 'Belum ditugaskan'}</span>
+                                </p>
+                                <span className={`inline-block mt-1 px-2 py-0.5 text-[8px] font-black uppercase rounded-md ${hist.status === 'SELESAI' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
+                                  {hist.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
