@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   fetchStaffGrades, createStaffGrade, updateStaffGrade, deleteStaffGrade,
-  assignTeam, fetchSalaryStaff, getAuthHeaders, updateStaffSalarySettings, triggerMonthlySalaryProcessing
+  assignTeam, fetchSalaryStaff, getAuthHeaders, updateStaffSalarySettings, triggerMonthlySalaryProcessing, createSalaryAdjustment
 } from '@/lib/api';
 import type { StaffGrade, User } from '@/types';
 import { Users, UserCheck, CheckCircle, Clock, Search, X, Award, Wallet, ReceiptText, Pencil, Trash2 } from 'lucide-react';
@@ -145,6 +145,9 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
   const [assignError, setAssignError] = useState('');
   const [assignSuccess, setAssignSuccess] = useState('');
   const [editingSettings, setEditingSettings] = useState<{ [id: string]: { type: string, date: number | null } }>({});
+  
+  const [adjustModal, setAdjustModal] = useState<{ isOpen: boolean, user: any }>({ isOpen: false, user: null });
+  const [adjustForm, setAdjustForm] = useState({ balance_type: 'salary', type: 'addition', amount: '', description: '' });
 
   const handleSalarySettingsChange = async (userId: string, type: string, date: number | null) => {
     try {
@@ -174,10 +177,12 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
     } catch { }
   }, []);
 
+  const loadStaffAndClaims = async () => { await loadStaff(); await loadClaims(); };
+
   useEffect(() => {
     if (activeTab === 'grade') loadGrades();
     if (activeTab === 'assign') { loadGrades(); loadStaff(); }
-    if (activeTab === 'proses' || activeTab === 'riwayat') { loadStaff(); loadClaims(); }
+    if (activeTab === 'proses' || activeTab === 'riwayat') { loadStaffAndClaims(); }
   }, [activeTab, loadGrades, loadStaff, loadClaims]);
 
   // Auto-prepopulate Leader & Members when a Team (Grade) is selected
@@ -227,13 +232,33 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
       });
       if (res.ok) {
         alert('Klaim berhasil diproses.');
-        loadClaims(); loadStaff();
+        loadStaffAndClaims();
       } else {
         const err = await res.json();
         alert('Gagal memproses klaim: ' + err.error);
       }
     } catch (e: any) {
       alert('Terjadi kesalahan: ' + e.message);
+    }
+  };
+
+  const handleAdjustmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustModal.user) return;
+    try {
+      await createSalaryAdjustment({
+        user_id: adjustModal.user.id,
+        balance_type: adjustForm.balance_type as any,
+        type: adjustForm.type as any,
+        amount: Number(adjustForm.amount),
+        description: adjustForm.description
+      });
+      setAdjustModal({ isOpen: false, user: null });
+      setAdjustForm({ balance_type: 'salary', type: 'addition', amount: '', description: '' });
+      await loadStaffAndClaims();
+      alert('Berhasil melakukan penyesuaian.');
+    } catch (error: any) {
+      alert(error.message);
     }
   };
 
@@ -483,6 +508,7 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                         <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TIPE & TGL GAJI</th>
                         <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SALDO UANG</th>
                         <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SALDO POIN</th>
+                        <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>AKSI</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -566,6 +592,19 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
                               <strong style={{ color: '#d97706', fontSize: '1.15rem' }}>{s.points_balance || 0}</strong> <span style={{ fontSize: '0.8rem', color: '#b45309', fontWeight: 600 }}>pts</span>
                             </div>
                           </td>
+                          <td style={{ padding: '1rem', textAlign: 'right' }}>
+                            <button 
+                              onClick={() => {
+                                setAdjustModal({ isOpen: true, user: s });
+                                setAdjustForm({ balance_type: 'salary', type: 'addition', amount: '', description: '' });
+                              }}
+                              style={{ padding: '0.5rem 1rem', backgroundColor: '#e2e8f0', color: '#334155', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'background 0.2s' }}
+                              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#cbd5e1')}
+                              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#e2e8f0')}
+                            >
+                              Penyesuaian
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -628,6 +667,51 @@ export default function GajiDashboard({ activeUser, embedded = false }: { active
           </div>
         )}
       </div>
+
+      {adjustModal.isOpen && adjustModal.user && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '1rem', width: '100%', maxWidth: '400px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>Penyesuaian Saldo</h3>
+              <button onClick={() => setAdjustModal({ isOpen: false, user: null })} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleAdjustmentSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ backgroundColor: '#f1f5f9', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '0.5rem' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>Staff: <strong style={{ color: '#0f172a' }}>{adjustModal.user.name}</strong></p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>Jenis Saldo</label>
+                <select required value={adjustForm.balance_type} onChange={e => setAdjustForm({...adjustForm, balance_type: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none' }}>
+                  <option value="salary">Saldo Uang / Gaji</option>
+                  <option value="points">Saldo Poin</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>Aksi</label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                    <input type="radio" name="adj_type" value="addition" checked={adjustForm.type === 'addition'} onChange={() => setAdjustForm({...adjustForm, type: 'addition'})} /> Tambah (+)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                    <input type="radio" name="adj_type" value="deduction" checked={adjustForm.type === 'deduction'} onChange={() => setAdjustForm({...adjustForm, type: 'deduction'})} /> Kurang (-)
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>Nominal / Poin</label>
+                <input type="number" required min="1" value={adjustForm.amount} onChange={e => setAdjustForm({...adjustForm, amount: e.target.value})} placeholder="Masukkan nominal" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>Catatan</label>
+                <input type="text" value={adjustForm.description} onChange={e => setAdjustForm({...adjustForm, description: e.target.value})} placeholder="Contoh: Bonus kerajinan" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none' }} />
+              </div>
+              <button type="submit" style={{ marginTop: '1rem', width: '100%', padding: '0.85rem', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 800, cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#4338ca')} onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#4f46e5')}>
+                Proses Penyesuaian
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showGradeModal && <GradeModal grade={editingGrade} onClose={() => setShowGradeModal(false)} onSave={loadGrades} />}
     </div>

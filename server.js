@@ -3876,6 +3876,7 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
 
     const [claims] = await connection.query('SELECT * FROM claims WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
     const [monthlySalaries] = await connection.query('SELECT * FROM monthly_salary_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
+    const [adjustments] = await connection.query('SELECT * FROM salary_adjustments WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
 
     const history = [];
 
@@ -3914,6 +3915,20 @@ app.get('/api/staff/my-salary', verifyToken, async (req, res) => {
         amount: Number(ms.amount),
         status: 'approved',
         notes: ms.notes || 'Penerimaan otomatis'
+      });
+    });
+
+    adjustments.forEach(adj => {
+      const isAddition = adj.type === 'addition';
+      const isSalary = adj.balance_type === 'salary';
+      history.push({
+        id: `adj-${adj.id}`,
+        date: adj.created_at,
+        type: isAddition ? (isSalary ? 'tambah_gaji' : 'tambah_poin') : (isSalary ? 'klaim_gaji' : 'klaim_poin'),
+        title: 'Penyesuaian Manual',
+        amount: isAddition ? Number(adj.amount) : -Number(adj.amount),
+        status: 'approved',
+        notes: adj.description || 'Penyesuaian manual oleh Keuangan/Admin'
       });
     });
 
@@ -4169,6 +4184,38 @@ app.put('/api/claims/:id', verifyToken, async (req, res) => {
       );
       res.json({ success: true });
     } catch (error) {
+      res.status(500).json({ error: error.message });
+    } finally {
+      if (connection) connection.release();
+    }
+  });
+
+  app.post('/api/salary-adjustments', verifyToken, async (req, res) => {
+    let connection;
+    try {
+      const { user_id, balance_type, type, amount, description } = req.body;
+      const amountNum = Number(amount);
+      if (!user_id || !balance_type || !type || !amountNum) {
+        return res.status(400).json({ error: 'Data tidak lengkap' });
+      }
+
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      await connection.query(
+        'INSERT INTO salary_adjustments (user_id, balance_type, type, amount, description, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+        [user_id, balance_type, type, amountNum, description || null, req.user.id]
+      );
+
+      const field = balance_type === 'points' ? 'points_balance' : 'salary_balance';
+      const op = type === 'addition' ? '+' : '-';
+      
+      await connection.query(`UPDATE users SET ${field} = ${field} ${op} ? WHERE id = ?`, [amountNum, user_id]);
+
+      await connection.commit();
+      res.status(201).json({ success: true });
+    } catch (error) {
+      if (connection) await connection.rollback();
       res.status(500).json({ error: error.message });
     } finally {
       if (connection) connection.release();

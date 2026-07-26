@@ -972,3 +972,13 @@ export const fetchAccessibleRegions = async () => {
   if (!res.ok) throw new Error('Gagal memuat region');
   return res.json();
 };
+
+export const createSalaryAdjustment = async (data: { user_id: string, balance_type: 'salary'|'points', type: 'addition'|'deduction', amount: number, description: string }) => {
+  const res = await fetch(`${API_BASE_URL}/salary-adjustments`, {
+    method: 'POST',
+    headers: getAuthHeaders(), cache: 'no-store',
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
