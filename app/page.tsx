@@ -504,9 +504,9 @@ export default function SugarACCompanyProfile() {
               <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 <Shield size={22} />
               </div>
-              <h4 className="font-extrabold text-sm text-slate-800">Garansi Pengerjaan 30 Hari</h4>
+              <h4 className="font-extrabold text-sm text-slate-800">Garansi Pengerjaan 7 Hari</h4>
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Setiap layanan cuci AC dan penggantian suku cadang dilengkapi dengan garansi 30 hari. Jika AC Anda kembali bermasalah, teknisi kami siap datang kembali tanpa biaya tambahan.
+                Setiap layanan cuci AC dan penggantian suku cadang dilengkapi dengan garansi 7 hari. Jika AC Anda kembali bermasalah, teknisi kami siap datang kembali tanpa biaya tambahan.
               </p>
             </div>
 
