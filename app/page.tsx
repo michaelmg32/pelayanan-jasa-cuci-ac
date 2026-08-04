@@ -546,16 +546,42 @@ export default function SugarACCompanyProfile() {
       {/* ================= SOCIAL MEDIA BANNER SECTION ================= */}
       <section className="py-12 bg-blue-600 text-white border-y border-blue-700">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 text-center space-y-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Instagram size={32} className="text-white" />
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+              <Instagram size={28} className="text-white" />
+            </div>
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+              <svg className="w-7 h-7 fill-white" viewBox="0 0 24 24">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.83V7.65a6.34 6.34 0 0 0-5.1 6.32 6.34 6.34 0 0 0 10.79 4.49 6.32 6.32 0 0 0 1.66-4.49V9.3a8.16 8.16 0 0 0 4.76 1.54V7.4a4.86 4.86 0 0 1-2-0.71z" />
+              </svg>
+            </div>
           </div>
           <h2 className="text-3xl font-black leading-tight text-white">Ikuti Media Sosial Kami</h2>
           <p className="text-sm text-blue-100 font-medium max-w-2xl mx-auto">
-            Dapatkan tips perawatan AC harian, promo menarik, dan lihat hasil kerja teknisi kami secara langsung di Instagram.
+            Dapatkan tips perawatan AC harian, promo menarik, dan lihat hasil kerja teknisi kami secara langsung di Instagram &amp; TikTok.
           </p>
-          <a href="https://instagram.com/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-white text-blue-600 font-extrabold text-sm px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-            <Instagram size={18} />
-          </a>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <a
+              href="https://instagram.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 bg-white text-blue-600 font-extrabold text-sm px-7 py-3.5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            >
+              <Instagram size={20} />
+              <span>Instagram</span>
+            </a>
+            <a
+              href="https://www.tiktok.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 bg-slate-900 text-white font-extrabold text-sm px-7 py-3.5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all border border-slate-700"
+            >
+              <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.83V7.65a6.34 6.34 0 0 0-5.1 6.32 6.34 6.34 0 0 0 10.79 4.49 6.32 6.32 0 0 0 1.66-4.49V9.3a8.16 8.16 0 0 0 4.76 1.54V7.4a4.86 4.86 0 0 1-2-0.71z" />
+              </svg>
+              <span>TikTok</span>
+            </a>
+          </div>
         </div>
       </section>
 
