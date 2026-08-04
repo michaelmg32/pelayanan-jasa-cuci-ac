@@ -547,56 +547,41 @@ export default function SugarACCompanyProfile() {
       {/* ================= SOCIAL MEDIA BANNER SECTION ================= */}
       <section className="py-12 bg-blue-600 text-white border-y border-blue-700">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 text-center space-y-6">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center shadow-md">
-              <Instagram size={28} className="text-white" />
-            </div>
-            <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center shadow-md p-3">
-              <svg className="w-7 h-7" viewBox="0 0 24 24">
-                <path fill="#25F4EE" d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.5 2.5 2.5 0 0 1 1.56.54V10.2a5.7 5.7 0 1 0 4.12 5.2V9.06a7.35 7.35 0 0 0 4.46 1.48V7.35a4.3 4.3 0 0 1-3.4-1.53z" transform="translate(-0.5, -0.5)"/>
-                <path fill="#FE2C55" d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.5 2.5 2.5 0 0 1 1.56.54V10.2a5.7 5.7 0 1 0 4.12 5.2V9.06a7.35 7.35 0 0 0 4.46 1.48V7.35a4.3 4.3 0 0 1-3.4-1.53z" transform="translate(0.5, 0.5)"/>
-                <path fill="#FFFFFF" d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.5 2.5 2.5 0 0 1 1.56.54V10.2a5.7 5.7 0 1 0 4.12 5.2V9.06a7.35 7.35 0 0 0 4.46 1.48V7.35a4.3 4.3 0 0 1-3.4-1.53z"/>
-              </svg>
-            </div>
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center shadow-md">
-              <Facebook size={28} className="text-white fill-current" />
-            </div>
-          </div>
           <h2 className="text-3xl font-black leading-tight text-white">Ikuti Media Sosial Kami</h2>
           <p className="text-sm text-blue-100 font-medium max-w-2xl mx-auto">
             Dapatkan tips perawatan AC harian, promo menarik, dan lihat hasil kerja teknisi kami secara langsung di Instagram, TikTok &amp; Facebook.
           </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="flex items-center justify-center gap-5 pt-2">
             <a
               href="https://instagram.com/"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-white text-blue-600 font-extrabold text-sm px-7 py-3.5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+              title="Instagram"
+              className="w-16 h-16 bg-white text-pink-600 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
             >
-              <Instagram size={20} />
-              <span>Instagram</span>
+              <Instagram size={32} />
             </a>
             <a
               href="https://www.tiktok.com/"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-black text-white font-extrabold text-sm px-7 py-3.5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all border border-slate-800"
+              title="TikTok"
+              className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 border border-slate-800 p-3"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <svg className="w-8 h-8" viewBox="0 0 24 24">
                 <path fill="#25F4EE" d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.5 2.5 2.5 0 0 1 1.56.54V10.2a5.7 5.7 0 1 0 4.12 5.2V9.06a7.35 7.35 0 0 0 4.46 1.48V7.35a4.3 4.3 0 0 1-3.4-1.53z" transform="translate(-0.4, -0.4)"/>
                 <path fill="#FE2C55" d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.5 2.5 2.5 0 0 1 1.56.54V10.2a5.7 5.7 0 1 0 4.12 5.2V9.06a7.35 7.35 0 0 0 4.46 1.48V7.35a4.3 4.3 0 0 1-3.4-1.53z" transform="translate(0.4, 0.4)"/>
                 <path fill="#FFFFFF" d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.5 2.5 2.5 0 0 1 1.56.54V10.2a5.7 5.7 0 1 0 4.12 5.2V9.06a7.35 7.35 0 0 0 4.46 1.48V7.35a4.3 4.3 0 0 1-3.4-1.53z"/>
               </svg>
-              <span>TikTok</span>
             </a>
             <a
               href="https://facebook.com/"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-[#1877F2] text-white font-extrabold text-sm px-7 py-3.5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+              title="Facebook"
+              className="w-16 h-16 bg-[#1877F2] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
             >
-              <Facebook size={20} className="fill-current" />
-              <span>Facebook</span>
+              <Facebook size={32} className="fill-current" />
             </a>
           </div>
         </div>
